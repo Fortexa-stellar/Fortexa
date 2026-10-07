@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { NextRequest } from "next/server";
 
 import { requireAuth } from "@/lib/auth/require-auth";
-import { decisionAmountStroops, evaluateDecision } from "@/lib/decision/engine";
+import { buildPaymentComparisonFromQuoteInput, decisionAmountStroops, evaluateDecision } from "@/lib/decision/engine";
 import { jsonWithRequestContext } from "@/lib/observability/http";
 import {
   getRequestLogContext,
@@ -15,6 +15,7 @@ import { readinessBlockResponse } from "@/lib/readiness/guard";
 import { recordDecisionOutcome } from "@/lib/observability/metrics";
 import { redactSensitiveFields } from "@/lib/observability/redact";
 import { demoScenarios } from "@/lib/scenarios/seed";
+import { enforceRequestGate, gateErrorHeaders } from "@/lib/security/enforcement-gate";
 import { rateLimitHeaders } from "@/lib/security/rate-limit";
 import {
   appendAuditEntry,
@@ -25,6 +26,7 @@ import { getUserWallet } from "@/lib/storage/user-wallet-store";
 import { getPolicyConfig } from "@/lib/storage/policy-store";
 import { buildPaymentQuoteFromDecision } from "@/lib/stellar/verify-payment-quote";
 import type { AuditEntry } from "@/lib/types/domain";
+import { formatValidationErrorResponse, logValidationFailure, VALIDATION_ERROR_CODES } from "@/lib/validation/errors";
 import { decisionRequestSchema } from "@/lib/validation/schemas";
 
 export async function POST(request: NextRequest) {
@@ -65,7 +67,7 @@ export async function POST(request: NextRequest) {
     actionDomain: typeof rawActionDomain === "string" ? rawActionDomain : undefined,
   });
 
-  if (!rate.ok) {
+  if (!gate.ok) {
     logWarn("Decision route rate limited", context);
     return respond(request, {
       route: "/api/decision",
@@ -90,8 +92,17 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = auth.session.userId;
+    const assignedWallet = await getUserWallet(userId);
+    if (!assignedWallet || "expired" in assignedWallet) {
+      return respond(request, {
+        route: "/api/decision",
+        startedAtMs,
+        status: 401,
+        body: { error: "No active wallet mapping found for this user." },
+        headers: rateLimitHeaders(rate),
+      });
+    }
 
-    const rawBody = (await request.json().catch(() => ({}))) as unknown;
     requestBody = rawBody;
     const parsedBody = decisionRequestSchema.safeParse(rawBody);
 
@@ -101,10 +112,7 @@ export async function POST(request: NextRequest) {
         route: "/api/decision",
         startedAtMs,
         status: 400,
-        body: {
-          error: "Invalid decision request body.",
-          details: parsedBody.error.flatten(),
-        },
+        body: formatValidationErrorResponse(parsedBody.error, "Invalid decision request body."),
         headers: rateLimitHeaders(rate),
       });
     }
@@ -124,7 +132,11 @@ export async function POST(request: NextRequest) {
         route: "/api/decision",
         startedAtMs,
         status: 400,
-        body: { error: "No action provided." },
+        body: {
+          error: "No action provided.",
+          code: VALIDATION_ERROR_CODES.MISSING_FIELD,
+          details: { formErrors: ["No action provided."], fieldErrors: { action: ["Required"] } },
+        },
         headers: rateLimitHeaders(rate),
       });
     }

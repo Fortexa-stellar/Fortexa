@@ -56,7 +56,11 @@ const agentActionShape = {
   kind: actionKindSchema,
   target: z.string().min(3).max(400),
   domain: z.string().min(3).max(255),
-  amountXLM: z.number().positive().max(100000),
+  amountXLM: z
+    .number()
+    .refine(isValidPaymentAmountNumber, {
+      message: PAYMENT_AMOUNT_ERROR,
+    }),
   tool: z.string().min(1).max(120).optional(),
   outputPreview: z.string().min(1).max(2000).optional(),
   metadata: z.record(z.string(), metadataValueSchema).optional(),
@@ -111,12 +115,9 @@ export const stellarSetupRequestSchema = z.object({
 export const stellarBuildPaymentRequestSchema = z.object({
   auditEntryId: z.string().uuid(),
   destination: stellarPublicKeySchema,
-  amountXLM: z
-    .string()
-    .regex(
-      /^\d+(\.\d{1,7})?$/,
-      "amountXLM must be a positive decimal string with up to 7 decimals",
-    ),
+  amountXLM: z.string().refine(isValidPaymentAmountString, {
+    message: PAYMENT_AMOUNT_ERROR,
+  }),
   asset: z.enum(["native"]).default("native"),
   memo: z.string().max(28).optional(),
   network: z.enum(["testnet"]).default("testnet"),

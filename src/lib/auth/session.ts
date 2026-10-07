@@ -2,18 +2,22 @@ import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 
 import type { NextRequest } from "next/server";
 
+import { isSessionGenerationCurrent, registerSession, rotateSessionGeneration } from "@/lib/auth/session-store";
+
 export type AuthRole = "operator" | "signer" | "viewer";
 
 export type AuthSession = {
   userId: string;
   email: string;
   role: AuthRole;
+  roles?: AuthRole[];
   /**
    * Session id. Minted once at login and carried forward by refresh, so every
    * token generation of one login shares it. Logout revokes by this id.
    */
   sid: string;
   exp: number;
+  gen?: number;
   publicKey?: string;
 };
 
@@ -21,6 +25,14 @@ export const AUTH_COOKIE_KEY = "fortexa_session";
 
 /** Longest lifetime any session token is issued with. */
 export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
+
+function normalizeGeneration(value: unknown): number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : 0;
+}
+
+function normalizeSessionId(value: unknown): string {
+  return typeof value === "string" && value.length > 0 ? value : "";
+}
 
 function getAuthSecret() {
   const secret = process.env.FORTEXA_AUTH_SECRET?.trim();
@@ -44,12 +56,24 @@ function sign(payloadPart: string) {
   return createHmac("sha256", getAuthSecret()).update(payloadPart).digest("base64url");
 }
 
-export function createSessionToken(input: { email: string; role: AuthRole; userId?: string; expiresInSeconds?: number; publicKey?: string }) {
+export function createSessionToken(input: {
+  email: string;
+  role: AuthRole;
+  roles?: AuthRole[];
+  userId?: string;
+  sessionId?: string;
+  generation?: number;
+  expiresInSeconds?: number;
+  publicKey?: string;
+}) {
   const now = Math.floor(Date.now() / 1000);
   const payload: AuthSession = {
     userId: input.userId ?? randomUUID(),
     email: input.email,
     role: input.role,
+    roles: input.roles,
+    sid: input.sessionId ?? randomUUID(),
+    gen: normalizeGeneration(input.generation),
     exp: now + (input.expiresInSeconds ?? 60 * 60 * 24 * 7),
     publicKey: input.publicKey,
   };
@@ -115,9 +139,11 @@ export function verifySessionToken(token: string, options?: VerifySessionTokenOp
       userId: parsed.userId,
       email: parsed.email,
       role: parsed.role,
+      roles: parsed.roles,
       exp: parsed.exp,
       gen: normalizeGeneration(parsed.gen),
       sid: normalizeSessionId(parsed.sid),
+      publicKey: parsed.publicKey,
     };
 
     if (!options?.allowStaleGeneration) {

@@ -2,7 +2,7 @@ declare global {
   var MOCK_SESSION_PUBLIC_KEY: string | undefined;
 }
 
-import { Account, Asset, Keypair, Networks, Operation, TransactionBuilder } from "@stellar/stellar-sdk";
+import { Account, Asset, Keypair, Memo, Networks, Operation, TransactionBuilder } from "@stellar/stellar-sdk";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -64,9 +64,10 @@ vi.mock("@/lib/storage/user-wallet-store", () => ({
   getUserWallet: vi.fn(),
 }));
 
-vi.mock("@/lib/storage/audit-store", () => ({ getAuditEntryById: vi.fn(async () => ({ id: "decision-1" })) }));
+vi.mock("@/lib/storage/audit-store", () => ({ getAuditEntryById: getAuditEntryMock }));
 vi.mock("@/lib/stellar/verify-payment-quote", async (importOriginal) => ({
   ...await importOriginal<typeof import("@/lib/stellar/verify-payment-quote")>(),
+  verifyPaymentAgainstQuote: verifyQuoteMock,
   isPaymentDecisionCurrent: vi.fn(() => true),
 }));
 vi.mock("@/lib/stellar/payment-build-authorization", async (importOriginal) => ({
@@ -161,6 +162,11 @@ function makeDecisionReceipt(
 
 beforeEach(() => {
   vi.clearAllMocks();
+  getAuditEntryMock.mockResolvedValue({
+    id: "00000000-0000-4000-8000-000000000000",
+    paymentQuote: { memo: "approved-memo" },
+  });
+  verifyQuoteMock.mockReturnValue({ ok: true, quote: {} });
   vi.mocked(requireAuth).mockImplementation(() => ({
     ok: true,
     session: { userId: "user-1", publicKey: globalThis.MOCK_SESSION_PUBLIC_KEY || "GCDEFAULTTESTWALLET123" },
@@ -171,7 +177,9 @@ describe("POST /api/stellar/submit-signed - source wallet verification", () => {
   it("accepts a submission whose XDR source matches the session wallet and the decision receipt", async () => {
     const walletKp = Keypair.random();
     globalThis.MOCK_SESSION_PUBLIC_KEY = walletKp.publicKey();
-    const signedXdr = buildSignedXdr(walletKp, walletKp.publicKey());
+    const destination = Keypair.random().publicKey();
+    const signedXdr = buildSignedXdr(walletKp, walletKp.publicKey(), destination, "1", "approved-memo");
+    const decisionReceipt = makeDecisionReceipt(destination, "1", "approved-memo");
 
     vi.mocked(getUserWallet).mockResolvedValue({
       userId: "user-1",

@@ -202,6 +202,40 @@ export function getQuoteExpiresAt(auditEntry: AuditEntry): string {
   return Number.isFinite(legacyExpiryMs) ? new Date(legacyExpiryMs).toISOString() : "";
 }
 
+/** Rechecks the persisted decision and its original expiry at submission time. */
+export function isPaymentDecisionCurrent(
+  auditEntry: AuditEntry | undefined,
+  decisionId: string,
+  quoteExpiresAt: string,
+  nowMs = Date.now(),
+): boolean {
+  if (!auditEntry?.paymentQuote || auditEntry.id !== decisionId ||
+      !EXECUTABLE_DECISIONS.has(auditEntry.decision)) return false;
+  const storedExpiry = getQuoteExpiresAt(auditEntry);
+  const expiryMs = Date.parse(storedExpiry);
+  return storedExpiry === quoteExpiresAt && Number.isFinite(expiryMs) && nowMs < expiryMs;
+}
+
+export function validateDecisionReceipt(
+  receipt: PaymentQuote,
+):
+  | { ok: true; normalized: PaymentQuote }
+  | { ok: false; status?: number; error: string; field?: PaymentQuoteField } {
+  if (
+    !receipt?.destination ||
+    !receipt?.amountXLM ||
+    !receipt?.asset ||
+    !receipt?.memo ||
+    !receipt?.network
+  ) {
+    return {
+      ok: false,
+      status: 400,
+      error: "Payment decision receipt is missing required fields.",
+      field: "memo",
+    };
+  }
+
   try {
     const normalized = {
       destination: receipt.destination.trim().toUpperCase(),
@@ -286,7 +320,14 @@ export function verifyPaymentAgainstQuote(
     };
   }
 
-  const { quote } = gate;
+  const quote = auditEntry.paymentQuote;
+  if (!quote) {
+    return {
+      ok: false,
+      status: 403,
+      error: "Decision is missing an authorized payment quote.",
+    };
+  }
 
   const normalizedRequest = {
     destination: request.destination.trim().toUpperCase(),

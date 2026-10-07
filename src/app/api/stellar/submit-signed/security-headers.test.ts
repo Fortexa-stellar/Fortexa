@@ -17,6 +17,7 @@ function operatorCookie() {
   const token = createSessionToken({
     email: "submit-headers@fortexa.local",
     role: "operator",
+    roles: ["operator", "signer"],
     userId: "submit-headers-user",
     expiresInSeconds: 120,
   });

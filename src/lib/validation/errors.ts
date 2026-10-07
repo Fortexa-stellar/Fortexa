@@ -54,6 +54,105 @@ export function toPublicValidationDetails(error: ZodError): PublicValidationDeta
   };
 }
 
+export const VALIDATION_ERROR_CODES = {
+  MISSING_FIELD: "MISSING_FIELD",
+  INVALID_AMOUNT: "INVALID_AMOUNT",
+  INVALID_ASSET: "INVALID_ASSET",
+  INVALID_MEMO: "INVALID_MEMO",
+  INVALID_PAYLOAD: "INVALID_PAYLOAD",
+} as const;
+
+export type ValidationErrorCode =
+  (typeof VALIDATION_ERROR_CODES)[keyof typeof VALIDATION_ERROR_CODES];
+
+export const MISSING_FIELD = VALIDATION_ERROR_CODES.MISSING_FIELD;
+export const INVALID_AMOUNT = VALIDATION_ERROR_CODES.INVALID_AMOUNT;
+export const INVALID_ASSET = VALIDATION_ERROR_CODES.INVALID_ASSET;
+export const INVALID_MEMO = VALIDATION_ERROR_CODES.INVALID_MEMO;
+export const INVALID_PAYLOAD = VALIDATION_ERROR_CODES.INVALID_PAYLOAD;
+
+export function categorizeValidationIssue(issue: {
+  code?: string;
+  path: (string | number)[];
+  message?: string;
+  received?: string;
+}): ValidationErrorCode {
+  const pathSegments = issue.path.map((p) => String(p).toLowerCase());
+  const lastSegment = pathSegments[pathSegments.length - 1] ?? "";
+  const fullPath = pathSegments.join(".");
+  const message = (issue.message ?? "").toLowerCase();
+
+  const isMissing =
+    (issue.code === "invalid_type" &&
+      (issue.received === "undefined" || message.includes("undefined"))) ||
+    message.includes("required") ||
+    message.includes("must be provided") ||
+    message.includes("received undefined");
+
+  if (isMissing) {
+    return VALIDATION_ERROR_CODES.MISSING_FIELD;
+  }
+
+  if (
+    lastSegment.includes("amount") ||
+    lastSegment.includes("capxlm") ||
+    lastSegment.includes("capstroops") ||
+    fullPath.includes("amount") ||
+    fullPath.includes("capxlm") ||
+    fullPath.includes("capstroops")
+  ) {
+    return VALIDATION_ERROR_CODES.INVALID_AMOUNT;
+  }
+
+  if (lastSegment === "asset" || fullPath.endsWith(".asset")) {
+    return VALIDATION_ERROR_CODES.INVALID_ASSET;
+  }
+
+  if (lastSegment === "memo" || fullPath.endsWith(".memo")) {
+    return VALIDATION_ERROR_CODES.INVALID_MEMO;
+  }
+
+  return VALIDATION_ERROR_CODES.INVALID_PAYLOAD;
+}
+
+export function getValidationErrorCode(error: ZodError): ValidationErrorCode {
+  const codes = error.issues.map(categorizeValidationIssue);
+
+  const specific = codes.find(
+    (c) =>
+      c === VALIDATION_ERROR_CODES.INVALID_AMOUNT ||
+      c === VALIDATION_ERROR_CODES.INVALID_ASSET ||
+      c === VALIDATION_ERROR_CODES.INVALID_MEMO,
+  );
+  if (specific) {
+    return specific;
+  }
+
+  const missing = codes.find((c) => c === VALIDATION_ERROR_CODES.MISSING_FIELD);
+  if (missing) {
+    return missing;
+  }
+
+  return codes[0] ?? VALIDATION_ERROR_CODES.INVALID_PAYLOAD;
+}
+
+export type ValidationErrorResponse = {
+  error: string;
+  code: ValidationErrorCode;
+  details: PublicValidationDetails;
+};
+
+export function formatValidationErrorResponse(
+  error: ZodError,
+  fallbackMessage: string = "Validation failed.",
+): ValidationErrorResponse {
+  return {
+    error: fallbackMessage,
+    code: getValidationErrorCode(error),
+    details: toPublicValidationDetails(error),
+  };
+}
+
 const HORIZON_RESULT_CODE_PATTERN = /\btx_[a-z0-9_]+\b|\bop_[a-z0-9_]+\b/gi;
 
 export function logValidationFailure(

@@ -23,7 +23,19 @@ vi.mock("@/lib/readiness/production", () => ({
 }));
 
 vi.mock("@/lib/http/read-json-body", () => ({
-  readJsonBody: vi.fn(async () => ({ ok: true as const, data: { signedXdr: "A".repeat(40) } })),
+  readJsonBody: vi.fn(async () => ({
+    ok: true as const,
+    data: {
+      signedXdr: "A".repeat(40),
+      decisionReceipt: {
+        destination: TEST_DESTINATION,
+        amountXLM: "1",
+        asset: "native",
+        memo: "approved-memo",
+        network: "testnet",
+      },
+    },
+  })),
 }));
 
 vi.mock("@/lib/storage/submit-idempotency-store", () => ({
@@ -49,7 +61,16 @@ function submitRequest() {
   return new NextRequest("http://localhost/api/stellar/submit-signed", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ signedXdr: "A".repeat(40) }),
+    body: JSON.stringify({
+      signedXdr: "A".repeat(40),
+      decisionReceipt: {
+        destination: TEST_DESTINATION,
+        amountXLM: "1",
+        asset: "native",
+        memo: "approved-memo",
+        network: "testnet",
+      },
+    }),
   });
 }
 
@@ -58,7 +79,11 @@ describe("/api/stellar/submit-signed observability redaction", () => {
     consoleErrorSpy.mockClear();
     vi.mocked(requireAuth).mockReturnValue({
       ok: true,
-      session: { userId: "submit-redaction-user" },
+      session: {
+        userId: "submit-redaction-user",
+        roles: ["signer"],
+        publicKey: TEST_DESTINATION,
+      },
     } as ReturnType<typeof requireAuth>);
     resetMetrics();
   });

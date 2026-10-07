@@ -92,3 +92,24 @@ export async function evaluateDecision(
 
   return result;
 }
+
+/**
+ * Build a PaymentComparison from a decision-route quote input plus the
+ * evaluated action amount. Shared helper so the decision route and any
+ * test/fixture constructing the "live" path use identical normalization.
+ */
+export function buildPaymentComparisonFromQuoteInput(input: {
+  destination: string;
+  memo?: string;
+  network?: string;
+  asset?: string;
+  amountXLM: number;
+}) {
+  return {
+    asset: input.asset ?? "native",
+    amount: input.amountXLM,
+    destination: input.destination,
+    memo: input.memo,
+    network: input.network ?? "testnet",
+  };
+}

@@ -12,7 +12,7 @@ import { DuplicateRuleError, validateNoDuplicateRules } from "@/lib/policy/engin
 import { parsePolicyImport, policyImportMatchesActive } from "@/lib/policy/import-export";
 import { getPolicyConfig, PolicyVersionConflict, updatePolicyConfig } from "@/lib/storage/policy-store";
 import { policyConfigSchema } from "@/lib/validation/schemas";
-import { logValidationFailure, toPublicValidationDetails } from "@/lib/validation/errors";
+import { formatValidationErrorResponse, logValidationFailure, toPublicValidationDetails } from "@/lib/validation/errors";
 import { hasSensitiveField } from "@/lib/settings/save-safety";
 import { getStellarNetworkFingerprint, resolveStellarNetworkConfig } from "@/lib/stellar/network-config";
 
@@ -154,6 +154,16 @@ export async function POST(request: NextRequest) {
       return jsonWithRequestContext(request, {
         route: "/api/policy",
         startedAtMs,
+        status: 200,
+        body: updated,
+        headers: rateLimitHeaders(rate),
+      });
+    }
+
+    if (hasSensitiveField(bodyResult.data)) {
+      return jsonWithRequestContext(request, {
+        route: "/api/policy",
+        startedAtMs,
         status: 400,
         body: { error: "Policy payload contains a sensitive field." },
         headers: rateLimitHeaders(rate),
@@ -185,7 +195,7 @@ export async function POST(request: NextRequest) {
         route: "/api/policy",
         startedAtMs,
         status: 400,
-        body: { error: "Invalid policy payload.", details: toPublicValidationDetails(parsed.error) },
+        body: formatValidationErrorResponse(parsed.error, "Invalid policy payload."),
         headers: rateLimitHeaders(rate),
       });
     }
@@ -229,7 +239,7 @@ export async function POST(request: NextRequest) {
         route: "/api/policy",
         startedAtMs,
         status: 400,
-        body: { error: "Invalid policy payload.", details: toPublicValidationDetails(versionMeta.error) },
+        body: formatValidationErrorResponse(versionMeta.error, "Invalid policy payload."),
         headers: rateLimitHeaders(rate),
       });
     }
