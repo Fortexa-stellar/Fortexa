@@ -11,8 +11,10 @@ vi.mock("@/lib/stellar/client", () => ({
 }));
 
 const mockGetDatabaseMigrationStatus = vi.fn();
+const mockRunWithDatabase = vi.fn();
 vi.mock("@/lib/storage/db", () => ({
   getDatabaseMigrationStatus: (...args: unknown[]) => mockGetDatabaseMigrationStatus(...args),
+  runWithDatabase: (...args: unknown[]) => mockRunWithDatabase(...args),
 }));
 
 const mockGetBlocklistHealth = vi.fn();
@@ -23,6 +25,7 @@ vi.mock("@/lib/security/blocklist", () => ({
 describe("GET /api/health", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockRunWithDatabase.mockResolvedValue({ available: true });
     mockGetDatabaseMigrationStatus.mockResolvedValue({
       configured: false,
       ready: true,

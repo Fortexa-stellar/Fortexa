@@ -159,7 +159,7 @@ describe("production readiness", () => {
         STELLAR_HORIZON_URL: "https://horizon.stellar.org",
         STELLAR_NETWORK_PASSPHRASE: Networks.PUBLIC,
       } as unknown as NodeJS.ProcessEnv,
-      { cwd: "/srv/fortexa", appliedMigrationId: "006_audit_chain_sequence" }
+      { cwd: "/srv/fortexa", appliedMigrationId: "005_audit_chain_sequence" }
     );
 
     expect(report.ok).toBe(true);
@@ -176,7 +176,7 @@ describe("production readiness", () => {
         STELLAR_HORIZON_URL: "https://horizon.stellar.org",
         STELLAR_NETWORK_PASSPHRASE: Networks.TESTNET,
       } as unknown as NodeJS.ProcessEnv,
-      { cwd: "/srv/fortexa", appliedMigrationId: "006_audit_chain_sequence" }
+      { cwd: "/srv/fortexa", appliedMigrationId: "005_audit_chain_sequence" }
     );
 
     expect(report.ok).toBe(false);
