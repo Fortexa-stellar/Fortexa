@@ -34,6 +34,10 @@ jobs:
       - name: Repository malware guard
         run: npm run check:malware
 
+      - name: Verify Node.js toolchain
+        run: |
+          node -e "const engines = require('./package.json').engines; const declaredMajor = Number(engines.node.match(/>=([0-9]+)/)[1]); const runningMajor = Number(process.versions.node.split('.')[0]); if (runningMajor !== declaredMajor) { throw new Error('Node.js major ' + runningMajor + ' does not match declared support ' + declaredMajor); }"
+
       - name: Install dependencies
         run: npm ci
 

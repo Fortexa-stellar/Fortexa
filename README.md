@@ -237,8 +237,8 @@ Usage: `tsx scripts/verify-audit-export.ts <file>`
 ## 8) 🛠️ Local Setup
 
 ### Requirements
-- Node.js 20+
-- npm 10+
+- Node.js 22.x
+- npm 10.x
 
 ### Start
 
