@@ -20,6 +20,10 @@ jobs:
           node-version: 22
           cache: npm
 
+      # Stdlib-only static scan, so it runs before any dependency is installed.
+      - name: Repository malware guard
+        run: npm run check:malware
+
       - name: Install dependencies
         run: npm ci
 
