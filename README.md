@@ -697,3 +697,20 @@ Fortexa ensures that all interactive components share a consistent, high-contras
 - **Button Component**: [`src/components/ui/button.tsx`](src/components/ui/button.tsx) aligns with this standard via `focus-visible:ring-2` and `focus-visible:ring-offset-2`.
 
 Verified via `scripts/focus-visible-audit.test.ts` (`npx vitest run scripts/focus-visible-audit.test.ts`).
+
+---
+
+## 21) 🎨 Code Formatting & CI Checks
+
+Fortexa enforces deterministic code formatting across the repository using [Prettier](https://prettier.io/).
+
+- **Check code formatting (non-mutating, executed in CI):**
+  ```bash
+  npm run format:check
+  ```
+- **Format files in-place:**
+  ```bash
+  npm run format
+  ```
+
+Formatting rules are centrally configured in `.prettierrc` (2-space indentation, double quotes, semicolons, and ES5 trailing commas). Build artifacts, cache directories, and package lockfiles are excluded via `.prettierignore`.
