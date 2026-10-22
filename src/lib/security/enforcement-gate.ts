@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 
-import { fetchBlocklist } from "@/lib/security/blocklist";
+import { BlocklistUrlError, fetchBlocklist } from "@/lib/security/blocklist";
 import {
   consumeRateLimit,
   rateLimitHeaders,
@@ -76,7 +76,10 @@ async function checkDestinationAgainstBlocklist(
   try {
     const blocklist = await fetchBlocklist();
     return { blocked: blocklist.includes(destinationDomain) };
-  } catch {
+  } catch (err) {
+    if (err instanceof BlocklistUrlError) {
+      throw err;
+    }
     // Feed unavailable: degrade open (the analyzer records the degraded
     // state for the decision path; submit/build still enforce rate limits).
     return { blocked: false };

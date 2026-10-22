@@ -6,6 +6,7 @@ import {
   getStellarHorizonUrl,
   inferStellarNetworkFromHorizonUrl,
 } from "@/lib/stellar/network";
+import { productionBlocklistUrlProblem } from "@/lib/security/blocklist";
 import { STORAGE_MIGRATIONS } from "@/lib/storage/migrations";
 
 const STELLAR_PUBLIC_KEY = /^G[A-Z2-7]{55}$/u;
@@ -166,6 +167,16 @@ export function checkProductionReadiness(
         "Use a public-network Horizon URL together with the public network passphrase."
       );
     }
+  }
+
+  const blocklistProblem = productionBlocklistUrlProblem(env.FORTEXA_BLOCKLIST_URL);
+  if (blocklistProblem) {
+    addIssue(
+      issues,
+      "FORTEXA_BLOCKLIST_URL",
+      blocklistProblem,
+      "Set FORTEXA_BLOCKLIST_URL to an HTTPS URL for the external blocklist feed."
+    );
   }
 
   const authSecret = normalizeConfiguredValue(env.FORTEXA_AUTH_SECRET);
