@@ -206,11 +206,29 @@ export function ColorBends({
 
     const clock = new THREE.Clock();
 
+    const mediaQuery =
+      typeof window !== "undefined" && typeof window.matchMedia === "function"
+        ? window.matchMedia("(prefers-reduced-motion: reduce)")
+        : null;
+    let isReducedMotion = Boolean(mediaQuery?.matches);
+
+    const renderStaticFrame = () => {
+      material.uniforms.uTime.value = 0;
+      const deg = rotationRef.current % 360;
+      const rad = (deg * Math.PI) / 180;
+      material.uniforms.uRot.value.set(Math.cos(rad), Math.sin(rad));
+      material.uniforms.uPointer.value.set(0, 0);
+      renderer.render(scene, camera);
+    };
+
     const handleResize = () => {
       const w = container.clientWidth || 1;
       const h = container.clientHeight || 1;
       renderer.setSize(w, h, false);
       material.uniforms.uCanvas.value.set(w, h);
+      if (isReducedMotion) {
+        renderStaticFrame();
+      }
     };
 
     handleResize();
@@ -220,6 +238,10 @@ export function ColorBends({
     resizeObserverRef.current = ro;
 
     const loop = () => {
+      if (isReducedMotion) {
+        renderStaticFrame();
+        return;
+      }
       const dt = clock.getDelta();
       const elapsed = clock.elapsedTime;
       material.uniforms.uTime.value = elapsed;
@@ -234,10 +256,31 @@ export function ColorBends({
       rafRef.current = requestAnimationFrame(loop);
     };
 
-    rafRef.current = requestAnimationFrame(loop);
+    const handleMotionChange = (e: MediaQueryListEvent) => {
+      isReducedMotion = e.matches;
+      if (isReducedMotion) {
+        if (rafRef.current !== null) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = null;
+        }
+        renderStaticFrame();
+      } else {
+        clock.start();
+        rafRef.current = requestAnimationFrame(loop);
+      }
+    };
+
+    mediaQuery?.addEventListener("change", handleMotionChange);
+
+    if (isReducedMotion) {
+      renderStaticFrame();
+    } else {
+      rafRef.current = requestAnimationFrame(loop);
+    }
 
     return () => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      mediaQuery?.removeEventListener("change", handleMotionChange);
       resizeObserverRef.current?.disconnect();
       geometry.dispose();
       material.dispose();
