@@ -112,7 +112,7 @@ Challenge TTL: `FORTEXA_AUTH_CHALLENGE_TTL_SECONDS` (default `300`).
 `POST /api/decision`, `POST /api/stellar/build-payment`, and `POST /api/stellar/submit-signed` share one enforcement gate (`src/lib/security/enforcement-gate.ts`) that runs before any side effect:
 
 1. **Rate limit** — the caller's per-route budget is consumed atomically through the shared security state (Redis `EVAL` when `REDIS_URL` is set, file-backed otherwise), so parallel requests cannot both pass the last allowed slot.
-2. **Blocklist** — the payment destination (and, on decision, the action domain) is checked against the `FORTEXA_BLOCKLIST_URL` feed. A destination blocked on one route is blocked on all three.
+2. **Blocklist** — the payment destination (and, on decision, the action domain) is checked against the `FORTEXA_BLOCKLIST_URL` feed. A refresh that takes longer than `FORTEXA_BLOCKLIST_TIMEOUT_MS` (default 5 seconds) is aborted and the last good list is used, so a slow feed cannot hold up a request or let a listed domain through. A destination blocked on one route is blocked on all three.
 
 Denied requests return a stable machine-readable `code` alongside the usual rate-limit headers:
 
@@ -334,9 +334,10 @@ NEXT_PUBLIC_STELLAR_DESTINATION=
 
 # Optional external blocklist URL for dynamic threat-intel
 # Accepts JSON array of domains or plain-text (one domain per line, # comments ignored)
-# Responses are limited to 1 MiB; cached in-memory for 5 minutes;
-# feed failures fall back silently
+# Responses are limited to 1 MiB; cached in-memory for 5 minutes; a failed or timed-out refresh uses the last good list and marks the decision degraded
 FORTEXA_BLOCKLIST_URL=
+# Optional: abort a blocklist refresh after this many ms (default 5000; whole numbers, clamped to 100-30000)
+# FORTEXA_BLOCKLIST_TIMEOUT_MS=5000
 ```
 
 ---

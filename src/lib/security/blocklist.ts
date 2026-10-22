@@ -1,6 +1,12 @@
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
-const DEFAULT_FETCH_TIMEOUT_MS = 5000; // 5 second timeout for blocklist fetch
 const MAX_BLOCKLIST_RESPONSE_BYTES = 1024 * 1024; // 1 MiB
+
+/** Longest a blocklist refresh waits before giving up, unless configured. */
+export const DEFAULT_BLOCKLIST_TIMEOUT_MS = 5000;
+/** Floor for `FORTEXA_BLOCKLIST_TIMEOUT_MS`: a smaller value could not finish a normal fetch. */
+export const MIN_BLOCKLIST_TIMEOUT_MS = 100;
+/** Ceiling for `FORTEXA_BLOCKLIST_TIMEOUT_MS`, so a typo cannot turn the timeout into a hang. */
+export const MAX_BLOCKLIST_TIMEOUT_MS = 30_000;
 
 async function readLimitedResponseBody(response: Response): Promise<string> {
   const reader = response.body?.getReader();
@@ -103,14 +109,36 @@ export type BlocklistHealth = {
   lastError: string | null;
 };
 
-/** Get the configured blocklist fetch timeout in milliseconds. */
-function getBlocklistTimeout(): number {
-  const envTimeout = process.env.FORTEXA_BLOCKLIST_TIMEOUT_MS;
-  if (envTimeout) {
-    const parsed = parseInt(envTimeout, 10);
-    return isNaN(parsed) ? DEFAULT_FETCH_TIMEOUT_MS : Math.max(100, parsed);
+/** Thrown when the feed does not answer (headers and body) within the timeout. */
+export class BlocklistTimeoutError extends Error {
+  readonly timeoutMs: number;
+
+  constructor(timeoutMs: number) {
+    super(`Blocklist fetch timed out after ${timeoutMs}ms`);
+    this.name = "BlocklistTimeoutError";
+    this.timeoutMs = timeoutMs;
   }
-  return DEFAULT_FETCH_TIMEOUT_MS;
+}
+
+/** Whether `err` is the abort a refresh raises when the timeout elapses. */
+export function isBlocklistTimeout(err: unknown): boolean {
+  return (
+    err instanceof BlocklistTimeoutError ||
+    (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError"))
+  );
+}
+
+/**
+ * The blocklist fetch timeout in milliseconds.
+ *
+ * `FORTEXA_BLOCKLIST_TIMEOUT_MS` must be a whole number; anything else (unset,
+ * empty, negative, `5s`, `1e3`) falls back to the default rather than guessing.
+ * A valid value is clamped to [MIN_BLOCKLIST_TIMEOUT_MS, MAX_BLOCKLIST_TIMEOUT_MS].
+ */
+export function getBlocklistTimeoutMs(): number {
+  const raw = process.env.FORTEXA_BLOCKLIST_TIMEOUT_MS?.trim();
+  if (!raw || !/^\d+$/.test(raw)) return DEFAULT_BLOCKLIST_TIMEOUT_MS;
+  return Math.min(MAX_BLOCKLIST_TIMEOUT_MS, Math.max(MIN_BLOCKLIST_TIMEOUT_MS, Number(raw)));
 }
 
 /** Return current blocklist feed health without triggering a refresh. */
@@ -123,15 +151,34 @@ export function getBlocklistHealth(): BlocklistHealth {
   };
 }
 
-/** Fetch and cache the external blocklist. Returns [] on any failure. */
+/**
+ * The last list fetched successfully, even if it has expired. This is the
+ * fallback when a refresh fails: a stale list can only add matches, so using
+ * it never lets a known-bad domain through.
+ */
+export function getStaleBlocklist(): string[] {
+  return [...cachedDomains];
+}
+
+/**
+ * Fetch and cache the external blocklist.
+ *
+ * Returns [] when no feed is configured. A failed refresh throws and leaves the
+ * previous cache untouched; a refresh that takes longer than
+ * {@link getBlocklistTimeoutMs} is aborted and throws a
+ * {@link BlocklistTimeoutError}, so a feed that never answers cannot hold up the
+ * caller. The response is read through a 1 MiB limit.
+ */
 export async function fetchBlocklist(): Promise<string[]> {
   const url = readConfiguredBlocklistUrl();
   if (!url) return [];
 
   if (Date.now() < cacheExpiresAt) return cachedDomains;
 
+  const timeoutMs = getBlocklistTimeoutMs();
   try {
-    const timeoutMs = getBlocklistTimeout();
+    // One signal for the whole exchange: it also aborts a body that stalls
+    // after the headers arrive.
     const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
@@ -154,9 +201,10 @@ export async function fetchBlocklist(): Promise<string[]> {
     lastRefreshAt = new Date().toISOString();
     lastErrorSummary = null;
   } catch (err) {
+    const failure = isBlocklistTimeout(err) ? new BlocklistTimeoutError(timeoutMs) : err;
     lastErrorSummary =
-      err instanceof Error ? err.message : "Unknown fetch error";
-    throw err;
+      failure instanceof Error ? failure.message : "Unknown fetch error";
+    throw failure;
   }
 
   return cachedDomains;
@@ -177,7 +225,8 @@ export type BlocklistVerdict =
 /**
  * Check a destination domain against the blocklist. On a failed refresh the
  * last cached list is still consulted so a known-bad domain is never allowed
- * just because the feed is unreachable.
+ * just because the feed is unreachable. A misconfigured production URL is not
+ * a feed failure and still throws.
  */
 export async function checkBlocklist(domain: string): Promise<BlocklistVerdict> {
   let domains: string[];
@@ -187,7 +236,7 @@ export async function checkBlocklist(domain: string): Promise<BlocklistVerdict> 
     if (err instanceof BlocklistUrlError) {
       throw err;
     }
-    domains = cachedDomains;
+    domains = getStaleBlocklist();
   }
 
   const normalized = domain.trim().toLowerCase();
