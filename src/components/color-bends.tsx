@@ -321,5 +321,7 @@ export function ColorBends({
     return () => container.removeEventListener("pointermove", handlePointerMove);
   }, []);
 
-  return <div ref={containerRef} className={`color-bends-container ${className}`.trim()} style={style} />;
+  return (
+    <div ref={containerRef} className={`color-bends-container ${className}`.trim()} style={style} />
+  );
 }

@@ -16,8 +16,7 @@ function freighterMock(overrides?: {
   signTransaction: ReturnType<typeof vi.fn>;
 } {
   return {
-    isConnected:
-      overrides?.isConnected ?? vi.fn().mockResolvedValue({ isConnected: true }),
+    isConnected: overrides?.isConnected ?? vi.fn().mockResolvedValue({ isConnected: true }),
     getNetwork:
       overrides?.getNetwork ??
       vi.fn().mockResolvedValue({ network: "TESTNET", networkPassphrase: EXPECTED_PASSPHRASE }),

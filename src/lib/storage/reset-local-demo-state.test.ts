@@ -201,7 +201,9 @@ describe("runReset script logic", () => {
 
     // Verify DB pool query executed for table truncates
     expect(queryMock).toHaveBeenCalled();
-    expect(queryMock).toHaveBeenCalledWith(expect.stringContaining("TRUNCATE TABLE fortexa_wallets"));
+    expect(queryMock).toHaveBeenCalledWith(
+      expect.stringContaining("TRUNCATE TABLE fortexa_wallets")
+    );
 
     // Verify default policy re-seeded
     expect(queryMock).toHaveBeenCalledWith(

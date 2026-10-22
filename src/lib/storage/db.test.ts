@@ -74,7 +74,9 @@ describe("db storage helper", () => {
 
     expect(
       queryMock.mock.calls.some(
-        (call) => typeof call[0] === "string" && call[0].includes("CREATE TABLE IF NOT EXISTS fortexa_wallets")
+        (call) =>
+          typeof call[0] === "string" &&
+          call[0].includes("CREATE TABLE IF NOT EXISTS fortexa_wallets")
       )
     ).toBe(true);
     expect(releaseMock).toHaveBeenCalledOnce();
@@ -93,10 +95,16 @@ describe("db storage helper", () => {
     });
 
     const action = vi.fn(async () => "should not run");
-    await expect(runWithDatabase("failed-migration", action)).rejects.toBeInstanceOf(DatabaseMigrationError);
+    await expect(runWithDatabase("failed-migration", action)).rejects.toBeInstanceOf(
+      DatabaseMigrationError
+    );
 
     expect(queryMock).toHaveBeenCalledWith("ROLLBACK");
-    expect(queryMock.mock.calls.some(([sql]) => typeof sql === "string" && sql.includes("fortexa_submit_idempotency"))).toBe(false);
+    expect(
+      queryMock.mock.calls.some(
+        ([sql]) => typeof sql === "string" && sql.includes("fortexa_submit_idempotency")
+      )
+    ).toBe(false);
     expect(action).not.toHaveBeenCalled();
   });
 

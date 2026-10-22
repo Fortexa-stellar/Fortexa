@@ -67,10 +67,9 @@ async function ensureSchema(targetPool: Pool) {
           await client.query("BEGIN");
           try {
             await client.query(migration.sql);
-            await client.query(
-              `INSERT INTO fortexa_schema_migrations (id) VALUES ($1)`,
-              [migration.id]
-            );
+            await client.query(`INSERT INTO fortexa_schema_migrations (id) VALUES ($1)`, [
+              migration.id,
+            ]);
             await client.query("COMMIT");
             appliedSet.add(migration.id);
           } catch (error) {
@@ -79,7 +78,9 @@ async function ensureSchema(targetPool: Pool) {
           }
         }
       } finally {
-        await client.query("SELECT pg_advisory_unlock(hashtext('fortexa-storage-migrations'))").catch(() => undefined);
+        await client
+          .query("SELECT pg_advisory_unlock(hashtext('fortexa-storage-migrations'))")
+          .catch(() => undefined);
         client.release();
       }
     })();

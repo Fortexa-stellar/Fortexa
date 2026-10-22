@@ -19,9 +19,7 @@ function makeAction(id: string): AgentAction {
   };
 }
 
-type EntryOverrides = Partial<
-  Omit<AuditEntry, "entryHash" | "previousHash" | "action">
-> & {
+type EntryOverrides = Partial<Omit<AuditEntry, "entryHash" | "previousHash" | "action">> & {
   action?: Partial<AgentAction>;
 };
 
@@ -82,9 +80,10 @@ write("valid-all-export.json", {
   scope: "all",
   entriesByUser: { "user-a": buildChain(2), "user-b": buildChain(1) },
 });
-write("tampered-field.json", chain.map((e, i) =>
-  i === 1 ? { ...e, explanation: "tampered explanation" } : e
-));
+write(
+  "tampered-field.json",
+  chain.map((e, i) => (i === 1 ? { ...e, explanation: "tampered explanation" } : e))
+);
 write("deleted-entry.json", [chain[0]!, chain[2]!]);
 write("reordered-entries.json", [
   chain[0]!,

@@ -21,7 +21,7 @@ export async function readinessBlockResponse(
   route: string,
   startedAtMs: number,
   headers?: JsonArgs["headers"],
-  env: NodeJS.ProcessEnv = process.env,
+  env: NodeJS.ProcessEnv = process.env
 ) {
   if (!shouldEnforceProductionReadiness(env)) {
     return null;

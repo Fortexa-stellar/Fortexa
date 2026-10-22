@@ -5,22 +5,13 @@ import { NextRequest } from "next/server";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { decisionAmountStroops, evaluateDecision } from "@/lib/decision/engine";
 import { jsonWithRequestContext } from "@/lib/observability/http";
-import {
-  getRequestLogContext,
-  logError,
-  logInfo,
-  logWarn,
-} from "@/lib/observability/logger";
+import { getRequestLogContext, logError, logInfo, logWarn } from "@/lib/observability/logger";
 import { readinessBlockResponse } from "@/lib/readiness/guard";
 import { recordDecisionOutcome } from "@/lib/observability/metrics";
 import { redactSensitiveFields } from "@/lib/observability/redact";
 import { demoScenarios } from "@/lib/scenarios/seed";
 import { rateLimitHeaders } from "@/lib/security/rate-limit";
-import {
-  appendAuditEntry,
-  consumeUsage,
-  getDailyUsage,
-} from "@/lib/storage/audit-store";
+import { appendAuditEntry, consumeUsage, getDailyUsage } from "@/lib/storage/audit-store";
 import { getUserWallet } from "@/lib/storage/user-wallet-store";
 import { getPolicyConfig } from "@/lib/storage/policy-store";
 import { buildPaymentQuoteFromDecision } from "@/lib/stellar/verify-payment-quote";
@@ -45,16 +36,17 @@ export async function POST(request: NextRequest) {
   const rawDestination =
     typeof rawBody === "object" && rawBody !== null
       ? ((rawBody as Record<string, unknown>).destination ??
-        ((rawBody as Record<string, unknown>).paymentQuoteInput as Record<string, unknown> | undefined)
-          ?.destination ??
+        (
+          (rawBody as Record<string, unknown>).paymentQuoteInput as
+            Record<string, unknown> | undefined
+        )?.destination ??
         ((rawBody as Record<string, unknown>).paymentQuote as Record<string, unknown> | undefined)
           ?.destination)
       : undefined;
 
   const rawActionDomain =
     typeof rawBody === "object" && rawBody !== null
-      ? ((rawBody as Record<string, unknown>).action as Record<string, unknown> | undefined)
-        ?.domain
+      ? ((rawBody as Record<string, unknown>).action as Record<string, unknown> | undefined)?.domain
       : undefined;
 
   const gate = await enforceRequestGate(request, {
@@ -96,7 +88,12 @@ export async function POST(request: NextRequest) {
     const parsedBody = decisionRequestSchema.safeParse(rawBody);
 
     if (!parsedBody.success) {
-      logValidationFailure("Decision route validation failed", { ...context, userId }, parsedBody.error, rawBody);
+      logValidationFailure(
+        "Decision route validation failed",
+        { ...context, userId },
+        parsedBody.error,
+        rawBody
+      );
       return respond(request, {
         route: "/api/decision",
         startedAtMs,
@@ -112,8 +109,7 @@ export async function POST(request: NextRequest) {
     const body = parsedBody.data;
 
     const scenarioAction = body.scenarioId
-      ? demoScenarios.find((scenario) => scenario.id === body.scenarioId)
-          ?.action
+      ? demoScenarios.find((scenario) => scenario.id === body.scenarioId)?.action
       : undefined;
 
     const action = body.action ?? scenarioAction;
@@ -168,11 +164,9 @@ export async function POST(request: NextRequest) {
       decision: finalDecision,
       explanation,
       triggeredPolicies: decision.triggeredPolicies.map(
-        (policy) => `${policy.code}: ${policy.message}`,
+        (policy) => `${policy.code}: ${policy.message}`
       ),
-      riskFindings: decision.riskFindings.map(
-        (finding) => `${finding.code}: ${finding.detail}`,
-      ),
+      riskFindings: decision.riskFindings.map((finding) => `${finding.code}: ${finding.detail}`),
       ...(decision.reasonCode ? { reasonCode: decision.reasonCode } : {}),
       ...((finalDecision === "APPROVE" || finalDecision === "WARN") &&
       (body.paymentQuote || body.paymentQuoteInput)
@@ -239,10 +233,7 @@ export async function POST(request: NextRequest) {
       startedAtMs,
       status: 500,
       body: {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Unexpected decision failure.",
+        error: error instanceof Error ? error.message : "Unexpected decision failure.",
       },
       headers: rateLimitHeaders(rate),
     });

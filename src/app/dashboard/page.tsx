@@ -52,18 +52,16 @@ export default async function DashboardPage() {
           sub="Manual approval trigger"
           icon={AlertTriangle}
         />
-        <StatCard
-          label="Network"
-          value="Testnet"
-          sub="Wallet-native XDR path"
-          icon={Wallet}
-        />
+        <StatCard label="Network" value="Testnet" sub="Wallet-native XDR path" icon={Wallet} />
       </section>
 
       <section>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Recent activity</h2>
-          <Link href="/settings?tab=activity" className="text-sm text-[hsl(var(--accent))] hover:underline">
+          <Link
+            href="/settings?tab=activity"
+            className="text-sm text-[hsl(var(--accent))] hover:underline"
+          >
             View all
           </Link>
         </div>

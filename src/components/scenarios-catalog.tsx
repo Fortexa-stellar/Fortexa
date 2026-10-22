@@ -8,11 +8,7 @@ import type { Scenario } from "@/lib/types/domain";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-export function ScenariosCatalog({
-  evaluations,
-}: {
-  evaluations: ScenarioEvaluation[];
-}) {
+export function ScenariosCatalog({ evaluations }: { evaluations: ScenarioEvaluation[] }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDecision, setSelectedDecision] = useState<string>("ALL");
 
@@ -38,8 +34,7 @@ export function ScenariosCatalog({
 
       const actualDecision =
         evaluationByScenario.get(scenario.id)?.actual ?? scenario.expectedDecision;
-      const matchesDecision =
-        selectedDecision === "ALL" || actualDecision === selectedDecision;
+      const matchesDecision = selectedDecision === "ALL" || actualDecision === selectedDecision;
 
       return matchesSearch && matchesDecision;
     });
@@ -122,11 +117,15 @@ export function ScenariosCatalog({
                 <p className="font-medium">{scenario.title}</p>
                 <DecisionBadge decision={engineDecision(scenario)} />
               </div>
-              <p className="mb-4 text-sm text-[hsl(var(--muted-foreground))]">{scenario.description}</p>
+              <p className="mb-4 text-sm text-[hsl(var(--muted-foreground))]">
+                {scenario.description}
+              </p>
               <dl className="grid gap-2 text-xs text-[hsl(var(--muted-foreground))]">
                 <div className="flex justify-between border-t border-[hsl(var(--border)/0.5)] pt-2">
                   <dt>Target</dt>
-                  <dd className="font-mono text-[hsl(var(--foreground))]">{scenario.action.target}</dd>
+                  <dd className="font-mono text-[hsl(var(--foreground))]">
+                    {scenario.action.target}
+                  </dd>
                 </div>
                 <div className="flex justify-between">
                   <dt>Domain</dt>

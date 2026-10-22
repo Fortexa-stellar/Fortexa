@@ -23,9 +23,9 @@ export function exportPolicyDocument(policy: PolicyConfig, version: number): Pol
   return { format: "fortexa-policy-export", active: true, version, policy };
 }
 
-export function parsePolicyImport(raw: unknown):
-  | { ok: true; document: PolicyExport }
-  | { ok: false; error: string } {
+export function parsePolicyImport(
+  raw: unknown
+): { ok: true; document: PolicyExport } | { ok: false; error: string } {
   const envelope = exportEnvelopeSchema.safeParse(raw);
   if (!envelope.success) {
     return { ok: false, error: "Invalid policy export format or version." };
@@ -39,9 +39,11 @@ export function parsePolicyImport(raw: unknown):
   // Migration may fill optional settings, but must never alter rule identity or order.
   for (const field of ruleLists) {
     const original = envelope.data.policy[field];
-    if (!Array.isArray(original) ||
-        original.length !== parsed.policy[field].length ||
-        original.some((id, index) => id !== parsed.policy[field][index])) {
+    if (
+      !Array.isArray(original) ||
+      original.length !== parsed.policy[field].length ||
+      original.some((id, index) => id !== parsed.policy[field][index])
+    ) {
       return { ok: false, error: `Migration changed ${field} rule identifiers or order.` };
     }
   }
@@ -52,10 +54,13 @@ export function parsePolicyImport(raw: unknown):
   };
 }
 
-export function policyImportMatchesActive(document: PolicyExport, active: {
-  policy: PolicyConfig;
-  version: number;
-}): string | null {
+export function policyImportMatchesActive(
+  document: PolicyExport,
+  active: {
+    policy: PolicyConfig;
+    version: number;
+  }
+): string | null {
   if (document.version !== active.version) {
     return `Policy version differs from the active export (v${active.version}).`;
   }

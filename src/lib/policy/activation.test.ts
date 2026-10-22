@@ -64,8 +64,7 @@ describe("policy activation gate", () => {
 
   it("falls back to the API error strings when no field map is returned", () => {
     const draftKey = serializePolicyDraft(POLICY);
-    const duplicateMessage =
-      'Duplicate rule identifier "dup.example.com" found in allowedDomains.';
+    const duplicateMessage = 'Duplicate rule identifier "dup.example.com" found in allowedDomains.';
     const gate = applyValidateResponse(draftKey, false, {
       valid: false,
       errors: [duplicateMessage],
@@ -101,7 +100,7 @@ describe("policy activation gate", () => {
       fieldErrorsToDisplayList({
         perTxCapXLM: ["Too small"],
         allowedDomains: ["Too small", "Invalid input"],
-      }),
+      })
     ).toEqual([
       "perTxCapXLM: Too small",
       "allowedDomains: Too small",

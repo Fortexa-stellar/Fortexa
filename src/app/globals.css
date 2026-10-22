@@ -157,27 +157,49 @@ body.app-shell {
   inset: 0;
   background:
     radial-gradient(ellipse 110% 95% at 50% 45%, transparent 28%, hsl(222 52% 2% / 0.82) 100%),
-    linear-gradient(to bottom, hsl(222 52% 2% / 0.55) 0%, transparent 18%, transparent 78%, hsl(222 52% 2% / 0.65) 100%);
+    linear-gradient(
+      to bottom,
+      hsl(222 52% 2% / 0.55) 0%,
+      transparent 18%,
+      transparent 78%,
+      hsl(222 52% 2% / 0.65) 100%
+    );
 }
 
 @keyframes app-orb-float-a {
-  from { transform: translate(0, 0) scale(1); }
-  to { transform: translate(4%, 6%) scale(1.06); }
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(4%, 6%) scale(1.06);
+  }
 }
 
 @keyframes app-orb-float-b {
-  from { transform: translate(0, 0) scale(1); }
-  to { transform: translate(-5%, -4%) scale(1.05); }
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(-5%, -4%) scale(1.05);
+  }
 }
 
 @keyframes app-orb-float-c {
-  from { transform: translate(0, 0) scale(1); }
-  to { transform: translate(3%, -5%) scale(1.08); }
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(3%, -5%) scale(1.08);
+  }
 }
 
 @keyframes app-beam-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 body.app-shell .glass-sidebar {
@@ -238,7 +260,10 @@ button:disabled {
   cursor: not-allowed;
 }
 
-h1, h2, h3, h4 {
+h1,
+h2,
+h3,
+h4 {
   letter-spacing: -0.025em;
 }
 
@@ -294,13 +319,23 @@ h1, h2, h3, h4 {
 }
 
 @keyframes aurora-drift {
-  from { transform: translate(0, 0) scale(1); }
-  to { transform: translate(5%, 8%) scale(1.08); }
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(5%, 8%) scale(1.08);
+  }
 }
 
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fade-up {
@@ -308,8 +343,15 @@ h1, h2, h3, h4 {
 }
 
 @keyframes pulse-ring {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50% { opacity: 0.8; transform: scale(1.05); }
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
 }
 
 .risk-ring {

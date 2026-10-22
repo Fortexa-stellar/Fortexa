@@ -46,9 +46,7 @@ export class BlocklistUrlError extends Error {
  * Returns a clear error message, or null when the value is acceptable.
  * Does not include the configured value, which may carry a query secret.
  */
-export function productionBlocklistUrlProblem(
-  value: string | undefined
-): string | null {
+export function productionBlocklistUrlProblem(value: string | undefined): string | null {
   const url = value?.trim() ?? "";
   if (!url) {
     return "FORTEXA_BLOCKLIST_URL is required in production and must be an HTTPS URL.";
@@ -154,8 +152,7 @@ export async function fetchBlocklist(): Promise<string[]> {
     lastRefreshAt = new Date().toISOString();
     lastErrorSummary = null;
   } catch (err) {
-    lastErrorSummary =
-      err instanceof Error ? err.message : "Unknown fetch error";
+    lastErrorSummary = err instanceof Error ? err.message : "Unknown fetch error";
     throw err;
   }
 
@@ -171,8 +168,7 @@ export function resetBlocklistCache(): void {
 }
 
 export type BlocklistVerdict =
-  | { allow: true; reasonCode: null }
-  | { allow: false; reasonCode: "BLOCKLIST_MATCH" };
+  { allow: true; reasonCode: null } | { allow: false; reasonCode: "BLOCKLIST_MATCH" };
 
 /**
  * Check a destination domain against the blocklist. On a failed refresh the

@@ -30,7 +30,7 @@ async function renderOpsTab(): Promise<string> {
 
 function readCounter(markup: string, testId: string): string | null {
   const match = new RegExp(`data-testid="ops-counter-${testId}"[^>]*>([^<]*)<`).exec(markup);
-  return match ? match[1] ?? null : null;
+  return match ? (match[1] ?? null) : null;
 }
 
 describe("/settings?tab=ops dashboard loader", () => {

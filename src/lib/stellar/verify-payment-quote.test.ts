@@ -71,7 +71,9 @@ describe("verifyPaymentAgainstQuote", () => {
       }),
     });
     const expiresAt = entry.paymentQuote!.expiresAt!;
-    expect(isPaymentDecisionCurrent(entry, entry.id, expiresAt, Date.parse(expiresAt) - 1)).toBe(true);
+    expect(isPaymentDecisionCurrent(entry, entry.id, expiresAt, Date.parse(expiresAt) - 1)).toBe(
+      true
+    );
     expect(isPaymentDecisionCurrent(entry, entry.id, expiresAt, Date.parse(expiresAt))).toBe(false);
     expect(isPaymentDecisionCurrent(entry, "different-decision", expiresAt, nowMs)).toBe(false);
   });
@@ -132,10 +134,10 @@ function buildSignedPaymentXdr(
         destination: QUOTE_DESTINATION,
         asset: Asset.native(),
         amount: "10",
-      }),
+      })
     );
   },
-  options: { memo?: Memo; signer?: Keypair } = {},
+  options: { memo?: Memo; signer?: Keypair } = {}
 ): string {
   const signer = options.signer ?? Keypair.random();
   const account = new Account(signer.publicKey(), "1");
@@ -159,10 +161,7 @@ describe("verifySignedPaymentAgainstQuote", () => {
   });
 
   it("accepts a signed payment that matches asset, amount, destination, and memo", () => {
-    const result = verifySignedPaymentAgainstQuote(
-      mockAuditEntry(),
-      buildSignedPaymentXdr(),
-    );
+    const result = verifySignedPaymentAgainstQuote(mockAuditEntry(), buildSignedPaymentXdr());
 
     expect(result.ok).toBe(true);
     if (result.ok) {
@@ -183,9 +182,9 @@ describe("verifySignedPaymentAgainstQuote", () => {
             destination: QUOTE_DESTINATION,
             asset: Asset.native(),
             amount: "10.0000000",
-          }),
+          })
         );
-      }),
+      })
     );
     expect(exact.ok).toBe(true);
 
@@ -198,9 +197,9 @@ describe("verifySignedPaymentAgainstQuote", () => {
             destination: QUOTE_DESTINATION,
             asset: Asset.native(),
             amount: "10.0000001",
-          }),
+          })
         );
-      }),
+      })
     );
 
     expect(off.ok).toBe(false);
@@ -219,16 +218,16 @@ describe("verifySignedPaymentAgainstQuote", () => {
             destination: QUOTE_DESTINATION,
             asset: Asset.native(),
             amount: "10",
-          }),
+          })
         );
         builder.addOperation(
           Operation.payment({
             destination: QUOTE_DESTINATION,
             asset: Asset.native(),
             amount: "1",
-          }),
+          })
         );
-      }),
+      })
     );
 
     expect(result.ok).toBe(false);
@@ -242,10 +241,8 @@ describe("verifySignedPaymentAgainstQuote", () => {
     const result = verifySignedPaymentAgainstQuote(
       mockAuditEntry(),
       buildSignedPaymentXdr((builder) => {
-        builder.addOperation(
-          Operation.manageData({ name: "drained", value: "elsewhere" }),
-        );
-      }),
+        builder.addOperation(Operation.manageData({ name: "drained", value: "elsewhere" }));
+      })
     );
 
     expect(result.ok).toBe(false);
@@ -279,9 +276,9 @@ describe("verifySignedPaymentAgainstQuote", () => {
             destination: Keypair.random().publicKey(),
             asset: Asset.native(),
             amount: "10",
-          }),
+          })
         );
-      }),
+      })
     );
 
     expect(result.ok).toBe(false);
@@ -301,9 +298,9 @@ describe("verifySignedPaymentAgainstQuote", () => {
             destination: QUOTE_DESTINATION,
             asset: new Asset("USD", issuer),
             amount: "10",
-          }),
+          })
         );
-      }),
+      })
     );
 
     expect(result.ok).toBe(false);
@@ -316,7 +313,7 @@ describe("verifySignedPaymentAgainstQuote", () => {
   it("rejects a non-text memo even when the value looks the same", () => {
     const result = verifySignedPaymentAgainstQuote(
       mockAuditEntry(),
-      buildSignedPaymentXdr(undefined, { memo: Memo.id("1") }),
+      buildSignedPaymentXdr(undefined, { memo: Memo.id("1") })
     );
 
     expect(result.ok).toBe(false);
@@ -331,7 +328,7 @@ describe("verifySignedPaymentAgainstQuote", () => {
       mockAuditEntry(),
       buildSignedPaymentXdr(undefined, {
         memo: Memo.text("fortexa:someone-else"),
-      }),
+      })
     );
 
     expect(result.ok).toBe(false);
@@ -342,10 +339,7 @@ describe("verifySignedPaymentAgainstQuote", () => {
   });
 
   it("rejects malformed XDR without throwing", () => {
-    const result = verifySignedPaymentAgainstQuote(
-      mockAuditEntry(),
-      "not-a-valid-xdr",
-    );
+    const result = verifySignedPaymentAgainstQuote(mockAuditEntry(), "not-a-valid-xdr");
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -363,7 +357,7 @@ describe("verifySignedPaymentAgainstQuote", () => {
 
     const blocked = verifySignedPaymentAgainstQuote(
       mockAuditEntry({ decision: "BLOCK", paymentQuote: undefined }),
-      buildSignedPaymentXdr(),
+      buildSignedPaymentXdr()
     );
     expect(blocked.ok).toBe(false);
     if (!blocked.ok) {
@@ -385,7 +379,7 @@ describe("verifySignedPaymentAgainstQuote", () => {
           destination: QUOTE_DESTINATION,
           asset: Asset.native(),
           amount: "10",
-        }),
+        })
       )
       .addMemo(Memo.text(QUOTE_MEMO))
       .setTimeout(180)
@@ -396,14 +390,11 @@ describe("verifySignedPaymentAgainstQuote", () => {
       feePayer,
       "200",
       innerTx,
-      Networks.TESTNET,
+      Networks.TESTNET
     );
     feeBumpTx.sign(feePayer);
 
-    const result = verifySignedPaymentAgainstQuote(
-      mockAuditEntry(),
-      feeBumpTx.toXDR(),
-    );
+    const result = verifySignedPaymentAgainstQuote(mockAuditEntry(), feeBumpTx.toXDR());
 
     expect(result.ok).toBe(true);
   });

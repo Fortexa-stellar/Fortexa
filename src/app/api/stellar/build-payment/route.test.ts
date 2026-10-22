@@ -169,7 +169,7 @@ async function authorizePaymentDecision() {
         memo: authorizedMemo,
         network: "testnet",
       },
-    }),
+    })
   );
   expect(decisionRes.status).toBe(200);
 
@@ -188,7 +188,7 @@ beforeAll(async () => {
       ...policy,
       allowedHours: { start: 0, end: 23 },
     },
-    "build-payment-test-setup",
+    "build-payment-test-setup"
   );
 
   await upsertUserWallet(OPERATOR_USER_ID, {
@@ -219,11 +219,13 @@ beforeEach(async () => {
 
 describe("POST /api/stellar/build-payment quote verification", () => {
   it("rejects operator-only wallets", async () => {
-    const response = await buildPaymentPost(jsonRequest(
-      "http://localhost/api/stellar/build-payment",
-      authorizedBuildBody(),
-      operatorCookie(),
-    ));
+    const response = await buildPaymentPost(
+      jsonRequest(
+        "http://localhost/api/stellar/build-payment",
+        authorizedBuildBody(),
+        operatorCookie()
+      )
+    );
 
     expect(response.status).toBe(403);
   });
@@ -237,8 +239,8 @@ describe("POST /api/stellar/build-payment quote verification", () => {
           authorizedBuildBody({
             auditEntryId: "00000000-0000-4000-8000-000000000000",
             amountXLM: amount,
-          }),
-        ),
+          })
+        )
       );
 
       expect(buildRes.status).toBe(400);
@@ -248,10 +250,10 @@ describe("POST /api/stellar/build-payment quote verification", () => {
       };
       expect(payload.error).toBe("Invalid payment build request.");
       expect(payload.details?.fieldErrors?.amountXLM).toContain(
-        "amountXLM must be a positive finite XLM amount with up to 7 decimals.",
+        "amountXLM must be a positive finite XLM amount with up to 7 decimals."
       );
       expect(horizonMocks.loadAccount).not.toHaveBeenCalled();
-    },
+    }
   );
 
   it("builds XDR when request matches the authorized payment quote", async () => {
@@ -260,8 +262,8 @@ describe("POST /api/stellar/build-payment quote verification", () => {
     const buildRes = await buildPaymentPost(
       jsonRequest(
         "http://localhost/api/stellar/build-payment",
-        authorizedBuildBody({ auditEntryId: lastAuditEntryId }),
-      ),
+        authorizedBuildBody({ auditEntryId: lastAuditEntryId })
+      )
     );
 
     expect(buildRes.status).toBe(200);
@@ -281,8 +283,8 @@ describe("POST /api/stellar/build-payment quote verification", () => {
         authorizedBuildBody({
           auditEntryId: lastAuditEntryId,
           destination: tamperedDestination,
-        }),
-      ),
+        })
+      )
     );
 
     expect(buildRes.status).toBe(403);
@@ -300,8 +302,8 @@ describe("POST /api/stellar/build-payment quote verification", () => {
         authorizedBuildBody({
           auditEntryId: lastAuditEntryId,
           amountXLM: "99.0000000",
-        }),
-      ),
+        })
+      )
     );
 
     expect(buildRes.status).toBe(403);
@@ -319,8 +321,8 @@ describe("POST /api/stellar/build-payment quote verification", () => {
         authorizedBuildBody({
           auditEntryId: lastAuditEntryId,
           memo: "tampered-memo",
-        }),
-      ),
+        })
+      )
     );
 
     expect(buildRes.status).toBe(403);
@@ -338,8 +340,8 @@ describe("POST /api/stellar/build-payment quote verification", () => {
         authorizedBuildBody({
           auditEntryId: lastAuditEntryId,
           asset: "usdc",
-        }),
-      ),
+        })
+      )
     );
 
     expect(buildRes.status).toBe(400);
@@ -356,8 +358,8 @@ describe("POST /api/stellar/build-payment quote verification", () => {
         authorizedBuildBody({
           auditEntryId: lastAuditEntryId,
           network: "mainnet",
-        }),
-      ),
+        })
+      )
     );
 
     expect(buildRes.status).toBe(400);
@@ -367,10 +369,7 @@ describe("POST /api/stellar/build-payment quote verification", () => {
 
   it("builds a payment equal to the allowing cap", async () => {
     const { policy } = await getPolicyConfig();
-    await updatePolicyConfig(
-      { ...policy, perTxCapXLM: 18, dailyCapXLM: 300 },
-      "stroop-cap-equal",
-    );
+    await updatePolicyConfig({ ...policy, perTxCapXLM: 18, dailyCapXLM: 300 }, "stroop-cap-equal");
 
     try {
       await seedAuthorizedPayment(18);
@@ -380,12 +379,16 @@ describe("POST /api/stellar/build-payment quote verification", () => {
       const buildRes = await buildPaymentPost(
         jsonRequest(
           "http://localhost/api/stellar/build-payment",
-          authorizedBuildBody({ auditEntryId: lastAuditEntryId }),
-        ),
+          authorizedBuildBody({ auditEntryId: lastAuditEntryId })
+        )
       );
 
       expect(buildRes.status).toBe(200);
-      const payload = (await buildRes.json()) as { ok: boolean; xdr: string; paymentQuote?: { amountStroops?: string } };
+      const payload = (await buildRes.json()) as {
+        ok: boolean;
+        xdr: string;
+        paymentQuote?: { amountStroops?: string };
+      };
       expect(payload.ok).toBe(true);
       expect(payload.xdr.length).toBeGreaterThan(20);
       expect(payload.paymentQuote?.amountStroops).toBe("180000000");
@@ -397,7 +400,7 @@ describe("POST /api/stellar/build-payment quote verification", () => {
           perTxCapXLM: policy.perTxCapXLM,
           dailyCapXLM: policy.dailyCapXLM,
         },
-        "stroop-cap-restore",
+        "stroop-cap-restore"
       );
     }
   });
@@ -406,7 +409,7 @@ describe("POST /api/stellar/build-payment quote verification", () => {
     const { policy } = await getPolicyConfig();
     await updatePolicyConfig(
       { ...policy, perTxCapXLM: 17.9999999, dailyCapXLM: 300 },
-      "stroop-cap-lower",
+      "stroop-cap-lower"
     );
 
     try {
@@ -417,8 +420,8 @@ describe("POST /api/stellar/build-payment quote verification", () => {
       const buildRes = await buildPaymentPost(
         jsonRequest(
           "http://localhost/api/stellar/build-payment",
-          authorizedBuildBody({ auditEntryId: lastAuditEntryId }),
-        ),
+          authorizedBuildBody({ auditEntryId: lastAuditEntryId })
+        )
       );
 
       expect(buildRes.status).toBe(403);
@@ -434,7 +437,7 @@ describe("POST /api/stellar/build-payment quote verification", () => {
           perTxCapXLM: policy.perTxCapXLM,
           dailyCapXLM: policy.dailyCapXLM,
         },
-        "stroop-cap-restore",
+        "stroop-cap-restore"
       );
     }
   });
@@ -448,8 +451,8 @@ describe("POST /api/stellar/build-payment quote verification", () => {
         authorizedBuildBody({
           auditEntryId: "00000000-0000-4000-8000-000000000000",
           amountXLM: "18.00000001",
-        }),
-      ),
+        })
+      )
     );
 
     expect(buildRes.status).toBe(400);

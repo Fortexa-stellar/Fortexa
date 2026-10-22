@@ -14,6 +14,6 @@ export function GET() {
       fingerprint: getStellarNetworkFingerprint(),
       valid: resolveStellarNetworkConfig().ok,
     },
-    { headers: { "Cache-Control": "no-store" } },
+    { headers: { "Cache-Control": "no-store" } }
   );
 }

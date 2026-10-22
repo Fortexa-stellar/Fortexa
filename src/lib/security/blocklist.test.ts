@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { checkBlocklist, fetchBlocklist, getBlocklistHealth, resetBlocklistCache } from "@/lib/security/blocklist";
+import {
+  checkBlocklist,
+  fetchBlocklist,
+  getBlocklistHealth,
+  resetBlocklistCache,
+} from "@/lib/security/blocklist";
 
 describe("blocklist health", () => {
   beforeEach(() => {
@@ -85,7 +90,7 @@ describe("blocklist health", () => {
   it("rejects a feed response larger than 1 MiB", async () => {
     process.env.FORTEXA_BLOCKLIST_URL = "https://example.com/blocklist.json";
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response("x".repeat(1024 * 1024 + 1), { status: 200 }),
+      new Response("x".repeat(1024 * 1024 + 1), { status: 200 })
     );
 
     await expect(fetchBlocklist()).rejects.toThrow("Blocklist response exceeds 1048576 bytes");
@@ -107,14 +112,17 @@ describe("checkBlocklist", () => {
 
   it("allows a domain that is not listed", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify(["bad.example"]), { status: 200 }),
+      new Response(JSON.stringify(["bad.example"]), { status: 200 })
     );
-    await expect(checkBlocklist("good.example")).resolves.toEqual({ allow: true, reasonCode: null });
+    await expect(checkBlocklist("good.example")).resolves.toEqual({
+      allow: true,
+      reasonCode: null,
+    });
   });
 
   it("denies a listed domain with BLOCKLIST_MATCH", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify(["bad.example"]), { status: 200 }),
+      new Response(JSON.stringify(["bad.example"]), { status: 200 })
     );
     await expect(checkBlocklist("Bad.Example")).resolves.toEqual({
       allow: false,
@@ -124,7 +132,10 @@ describe("checkBlocklist", () => {
 
   it("does not throw when the feed is unreachable", async () => {
     vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("down"));
-    await expect(checkBlocklist("good.example")).resolves.toEqual({ allow: true, reasonCode: null });
+    await expect(checkBlocklist("good.example")).resolves.toEqual({
+      allow: true,
+      reasonCode: null,
+    });
   });
 });
 
@@ -139,9 +150,9 @@ describe("production blocklist URL", () => {
   it("fetches an HTTPS blocklist URL in production", async () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("FORTEXA_BLOCKLIST_URL", "https://blocklist.example.com/list.json");
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify(["bad.example"]), { status: 200 })
-    );
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(JSON.stringify(["bad.example"]), { status: 200 }));
 
     await expect(fetchBlocklist()).resolves.toEqual(["bad.example"]);
     expect(fetchSpy).toHaveBeenCalledWith(

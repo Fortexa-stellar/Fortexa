@@ -24,9 +24,12 @@ vi.mock("react", async () => {
       const index = stateIndex;
       stateIndex += 1;
       if (states.length <= index) {
-        states.push(typeof initialValue === "function" ? (initialValue as () => unknown)() : initialValue);
+        states.push(
+          typeof initialValue === "function" ? (initialValue as () => unknown)() : initialValue
+        );
         setters.push((next: unknown) => {
-          states[index] = typeof next === "function" ? (next as (prev: unknown) => unknown)(states[index]) : next;
+          states[index] =
+            typeof next === "function" ? (next as (prev: unknown) => unknown)(states[index]) : next;
         });
       }
       return [states[index], setters[index]];
@@ -48,7 +51,12 @@ vi.mock("react", async () => {
 
 import Link from "next/link";
 
-import { DASHBOARD_ACTIONS, DashboardActions, READINESS_POLL_MS, readinessFromHealthBody } from "./dashboard-actions";
+import {
+  DASHBOARD_ACTIONS,
+  DashboardActions,
+  READINESS_POLL_MS,
+  readinessFromHealthBody,
+} from "./dashboard-actions";
 
 type HealthBody = { ready: boolean; failingChecks: string[] };
 
@@ -80,7 +88,11 @@ function isElement(node: unknown): node is Element {
   return typeof node === "object" && node !== null && "props" in node && "type" in node;
 }
 
-function walk(node: unknown, visit: (element: Element, parent: Element | null) => void, parent: Element | null = null) {
+function walk(
+  node: unknown,
+  visit: (element: Element, parent: Element | null) => void,
+  parent: Element | null = null
+) {
   if (Array.isArray(node)) {
     node.forEach((child) => walk(child, visit, parent));
     return;
@@ -135,7 +147,10 @@ function expectAllActions(expected: "enabled" | "disabled") {
   expect([...actions.keys()].sort()).toEqual(DASHBOARD_ACTIONS.map((action) => action.id).sort());
   for (const [id, action] of actions) {
     if (expected === "enabled") {
-      expect(action, id).toEqual({ enabled: true, href: DASHBOARD_ACTIONS.find((a) => a.id === id)!.href });
+      expect(action, id).toEqual({
+        enabled: true,
+        href: DASHBOARD_ACTIONS.find((a) => a.id === id)!.href,
+      });
     } else {
       expect(action, id).toEqual({ enabled: false, href: null });
     }
@@ -290,7 +305,9 @@ describe("DashboardActions readiness gate", () => {
 
 describe("readinessFromHealthBody", () => {
   it("treats only an explicit ready: true as ready", () => {
-    expect(readinessFromHealthBody({ ready: true, failingChecks: [] })).toEqual({ status: "ready" });
+    expect(readinessFromHealthBody({ ready: true, failingChecks: [] })).toEqual({
+      status: "ready",
+    });
     expect(readinessFromHealthBody({ ok: true })).toEqual({
       status: "not_ready",
       failingChecks: ["health_unavailable"],
@@ -299,11 +316,16 @@ describe("readinessFromHealthBody", () => {
       status: "not_ready",
       failingChecks: ["health_unavailable"],
     });
-    expect(readinessFromHealthBody(null)).toEqual({ status: "not_ready", failingChecks: ["health_unavailable"] });
+    expect(readinessFromHealthBody(null)).toEqual({
+      status: "not_ready",
+      failingChecks: ["health_unavailable"],
+    });
   });
 
   it("keeps the failing check names from the health body", () => {
-    expect(readinessFromHealthBody({ ready: false, failingChecks: ["production_config", 7] })).toEqual({
+    expect(
+      readinessFromHealthBody({ ready: false, failingChecks: ["production_config", 7] })
+    ).toEqual({
       status: "not_ready",
       failingChecks: ["production_config"],
     });

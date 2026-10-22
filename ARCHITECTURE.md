@@ -9,6 +9,7 @@ Fortexa is a policy-controlled payment firewall for agent-triggered actions on S
 It inserts a decision layer between agent intent and transaction submission.
 
 Core intent:
+
 - authenticate users via wallet-bound session
 - evaluate requested actions against policy + risk heuristics
 - allow signed XDR submission only through authenticated operator flows
@@ -17,6 +18,7 @@ Core intent:
 ## 2) 📌 Scope and Non-Goals (Current)
 
 ### In scope
+
 - Wallet challenge-signature login (`/api/auth/challenge` + `/api/auth/login`)
 - Role-based route protection (`operator`, `viewer`)
 - Policy + security-based decisioning
@@ -25,6 +27,7 @@ Core intent:
 - Basic health/metrics endpoints for ops visibility
 
 ### Explicit non-goals (current code)
+
 - Server-side signing
 - Private-key custody
 - Mainnet-first transaction flow
@@ -305,6 +308,7 @@ The `entry_hash` column on `FORTEXA_AUDIT_ENTRIES` (migration `002_audit_hash_ch
 6. Returns `{ valid: false, reason, entryId }` on the first violation found.
 
 This detects:
+
 - **Modified entries** — any field change invalidates `entryHash`.
 - **Deleted entries** — the next entry's `previousHash` no longer matches; explicit export boundaries also detect deletion of the first or last exported record.
 - **Reordered entries** — the chain order breaks even if timestamps are adjusted.
@@ -332,7 +336,7 @@ This fallback is intentional for local resilience, but introduces consistency tr
 Stored policy JSON (current state + history) can outlive the active schema. To prevent silent corruption when `policyConfigSchema` evolves:
 
 - Valid current payloads parse unchanged.
-- Older payloads missing *only* documented optional fields are migrated by `parseStoredPolicy` (`src/lib/policy/migrations.ts`), which fills the safe defaults listed in `OPTIONAL_DEFAULTS` and reports the exact set of migrations applied.
+- Older payloads missing _only_ documented optional fields are migrated by `parseStoredPolicy` (`src/lib/policy/migrations.ts`), which fills the safe defaults listed in `OPTIONAL_DEFAULTS` and reports the exact set of migrations applied.
 - Malformed payloads (wrong types, unsafe values, mixes of missing-optional and non-rectifiable issues) fail closed with a structured `{ ok: false, error, issues }` result. Every Zod issue is surfaced with its path and message — no defaults are silently substituted for non-optional fields.
 - The strict schema is never weakened for backwards compatibility. Migrating a new optional field is an explicit one-line change to `OPTIONAL_DEFAULTS` plus a corresponding fixture under `src/lib/policy/__fixtures__/`.
 - `parseStoredPolicy` is a pure helper: it does not read or rewrite `.fortexa/` policy files. Callers decide whether to persist a migrated policy, reject one, or surface the error.
@@ -410,6 +414,7 @@ stateDiagram-v2
 ## 11) 🛣️ Practical Evolution Path
 
 Near-term, high-impact improvements:
+
 - move limiter/lockout shared state to Redis for true multi-instance consistency
 - add deeper post-submit reconciliation and payment state tracking
 - expand full-path integration/e2e coverage across decision + signing + submission + audit

@@ -8,9 +8,8 @@ package-lock.json
 .env*
 *.min.js
 
-# Temporary ignore for pre-existing parse errors on main awaiting unmerged fixes (#375)
-scripts/verify-audit-export.ts
-src/app/api/auth/login/route.ts
-src/app/api/auth/login/route.test.ts
+# Pre-existing syntax errors tracked in separate open issues
 src/app/api/auth/refresh/route.test.ts
+src/components/policy-editor.tsx
+src/lib/auth/use-auth-session.ts
 src/lib/stellar/verify-payment-quote.ts

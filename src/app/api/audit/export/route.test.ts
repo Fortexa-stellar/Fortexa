@@ -55,10 +55,7 @@ function viewerCookie() {
   return `${AUTH_COOKIE_KEY}=${token}`;
 }
 
-function makeAuditEntry(
-  userId: string,
-  overrides?: Partial<AuditEntry>
-): AuditEntry {
+function makeAuditEntry(userId: string, overrides?: Partial<AuditEntry>): AuditEntry {
   const id = `${userId}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   return {
     id,
@@ -105,9 +102,7 @@ describe("/api/audit/export route", () => {
   });
 
   it("returns 401 when unauthenticated with csv format", async () => {
-    const response = await GET(
-      request("http://localhost/api/audit/export?format=csv")
-    );
+    const response = await GET(request("http://localhost/api/audit/export?format=csv"));
     expect(response.status).toBe(401);
   });
 
@@ -165,18 +160,13 @@ describe("/api/audit/export route", () => {
   });
 
   it("redacts entriesByUser on all-scope JSON exports for operators", async () => {
-    const req = new NextRequest(
-      "http://localhost/api/audit/export?format=json&scope=all",
-      {
-        method: "GET",
-        headers: {
-          cookie: operatorCookie(),
-        },
-      }
-    );
+    const req = new NextRequest("http://localhost/api/audit/export?format=json&scope=all", {
+      method: "GET",
+      headers: {
+        cookie: operatorCookie(),
+      },
+    });
     const response = await GET(req);
-
-    
 
     expect(response.status).toBe(200);
 
@@ -203,7 +193,10 @@ describe("/api/audit/export route", () => {
 
   it("returns 400 for invalid from date", async () => {
     const response = await GET(
-      request("http://localhost/api/audit/export?format=json&scope=mine&from=not-a-date", operatorCookie())
+      request(
+        "http://localhost/api/audit/export?format=json&scope=mine&from=not-a-date",
+        operatorCookie()
+      )
     );
 
     expect(response.status).toBe(400);
@@ -214,7 +207,10 @@ describe("/api/audit/export route", () => {
 
   it("returns 400 for invalid decision", async () => {
     const response = await GET(
-      request("http://localhost/api/audit/export?format=json&scope=mine&decision=INVALID_DECISION", operatorCookie())
+      request(
+        "http://localhost/api/audit/export?format=json&scope=mine&decision=INVALID_DECISION",
+        operatorCookie()
+      )
     );
 
     expect(response.status).toBe(400);
@@ -311,9 +307,7 @@ describe("/api/audit/export route", () => {
       };
 
       expect(payload.scope).toBe("all");
-      expect(Object.keys(payload.entriesByUser).sort()).toEqual(
-        [OTHER_USER, VIEWER_USER].sort()
-      );
+      expect(Object.keys(payload.entriesByUser).sort()).toEqual([OTHER_USER, VIEWER_USER].sort());
       const explanations = Object.values(payload.entriesByUser)
         .flat()
         .map((e) => e.explanation)
@@ -458,9 +452,7 @@ describe("/api/audit/export route", () => {
       const actionNameIdx = header.indexOf("actionName");
       const decisionIdx = header.indexOf("decision");
 
-      const rowsById = new Map(
-        rows.slice(1).map((row) => [row[idIdx], row] as const)
-      );
+      const rowsById = new Map(rows.slice(1).map((row) => [row[idIdx], row] as const));
       fixtureEntries.forEach((entry) => {
         const row = rowsById.get(entry.id);
         expect(row).toBeDefined();

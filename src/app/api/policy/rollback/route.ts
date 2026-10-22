@@ -9,7 +9,10 @@ import { getPolicyVersionByNumber, rollbackPolicyVersion } from "@/lib/storage/p
 import { policyRollbackSchema } from "@/lib/validation/schemas";
 import { logValidationFailure, toPublicValidationDetails } from "@/lib/validation/errors";
 import { hasSensitiveField } from "@/lib/settings/save-safety";
-import { getStellarNetworkFingerprint, resolveStellarNetworkConfig } from "@/lib/stellar/network-config";
+import {
+  getStellarNetworkFingerprint,
+  resolveStellarNetworkConfig,
+} from "@/lib/stellar/network-config";
 
 export async function POST(request: NextRequest) {
   const startedAtMs = Date.now();
@@ -51,19 +54,30 @@ export async function POST(request: NextRequest) {
         route: "/api/policy/rollback",
         startedAtMs,
         status: 409,
-        body: { error: "Server network configuration is mismatched; saving is disabled.", code: "NETWORK_MISMATCH" },
+        body: {
+          error: "Server network configuration is mismatched; saving is disabled.",
+          code: "NETWORK_MISMATCH",
+        },
       });
     }
 
     const parsed = policyRollbackSchema.safeParse(bodyResult.data);
 
     if (!parsed.success) {
-      logValidationFailure("Policy rollback validation failed", { ...context, userId: auth.session.userId }, parsed.error, bodyResult.data);
+      logValidationFailure(
+        "Policy rollback validation failed",
+        { ...context, userId: auth.session.userId },
+        parsed.error,
+        bodyResult.data
+      );
       return jsonWithRequestContext(request, {
         route: "/api/policy/rollback",
         startedAtMs,
         status: 400,
-        body: { error: "Invalid rollback payload.", details: toPublicValidationDetails(parsed.error) },
+        body: {
+          error: "Invalid rollback payload.",
+          details: toPublicValidationDetails(parsed.error),
+        },
       });
     }
 
@@ -84,7 +98,7 @@ export async function POST(request: NextRequest) {
       const proposed = await evaluateDecision(entry.action, targetPolicy, usage);
       const proposedAllowed = proposed.decision === "APPROVE" || proposed.decision === "WARN";
 
-      // Also reject if destination, amount, or memo changes. In Fortexa those are dictated by the action/quote, 
+      // Also reject if destination, amount, or memo changes. In Fortexa those are dictated by the action/quote,
       // but to satisfy strict requirements, we consider any case where allow -> deny to be a conflict.
       if (!proposedAllowed) {
         conflictingIds.push(record.idempotencyKey);

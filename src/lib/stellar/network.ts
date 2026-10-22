@@ -15,28 +15,15 @@ function normalizeEnvValue(value: string | undefined) {
  */
 export type StellarEnv = Readonly<Record<string, string | undefined>>;
 
-export function getStellarNetworkPassphrase(
-  env: StellarEnv = process.env
-) {
-  return (
-    normalizeEnvValue(env.STELLAR_NETWORK_PASSPHRASE) ??
-    STELLAR_TESTNET_NETWORK_PASSPHRASE
-  );
+export function getStellarNetworkPassphrase(env: StellarEnv = process.env) {
+  return normalizeEnvValue(env.STELLAR_NETWORK_PASSPHRASE) ?? STELLAR_TESTNET_NETWORK_PASSPHRASE;
 }
 
-export function getStellarHorizonUrl(
-  env: StellarEnv = process.env
-) {
-  return (
-    normalizeEnvValue(env.STELLAR_HORIZON_URL) ??
-    "https://horizon-testnet.stellar.org"
-  );
+export function getStellarHorizonUrl(env: StellarEnv = process.env) {
+  return normalizeEnvValue(env.STELLAR_HORIZON_URL) ?? "https://horizon-testnet.stellar.org";
 }
 
-export function inferStellarNetworkFromHorizonUrl(url: string):
-  | "public"
-  | "testnet"
-  | "unknown" {
+export function inferStellarNetworkFromHorizonUrl(url: string): "public" | "testnet" | "unknown" {
   try {
     const parsed = new URL(url);
     const normalized = `${parsed.hostname}${parsed.pathname}`.toLowerCase();
@@ -45,10 +32,7 @@ export function inferStellarNetworkFromHorizonUrl(url: string):
       return "testnet";
     }
 
-    if (
-      normalized.includes("horizon.stellar.org") ||
-      normalized.includes("mainnet")
-    ) {
+    if (normalized.includes("horizon.stellar.org") || normalized.includes("mainnet")) {
       return "public";
     }
 
@@ -62,10 +46,7 @@ export function getStellarExplorerTransactionUrl(
   hash: string,
   passphrase = getStellarNetworkPassphrase()
 ) {
-  const networkSegment =
-    passphrase === STELLAR_PUBLIC_NETWORK_PASSPHRASE
-      ? "public"
-      : "testnet";
+  const networkSegment = passphrase === STELLAR_PUBLIC_NETWORK_PASSPHRASE ? "public" : "testnet";
 
   return `https://stellar.expert/explorer/${networkSegment}/tx/${hash}`;
 }

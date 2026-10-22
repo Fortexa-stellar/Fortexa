@@ -4,20 +4,9 @@
     "tools.verified-data.dev",
     "workers.fortexa-demo.stellar"
   ],
-  "blockedDomains": [
-    "wallet-drainer.evil",
-    "prompt-pwn.io",
-    "untrusted-mirror.xyz"
-  ],
-  "allowedTools": [
-    "research-pro",
-    "market-feed",
-    "settlement-worker"
-  ],
-  "blockedTools": [
-    "shadow-shell",
-    "autonomous-payout-bypass"
-  ],
+  "blockedDomains": ["wallet-drainer.evil", "prompt-pwn.io", "untrusted-mirror.xyz"],
+  "allowedTools": ["research-pro", "market-feed", "settlement-worker"],
+  "blockedTools": ["shadow-shell", "autonomous-payout-bypass"],
   "perTxCapXLM": 120,
   "dailyCapXLM": 300,
   "maxToolCallsPerDay": 8,

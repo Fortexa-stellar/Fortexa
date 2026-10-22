@@ -76,8 +76,7 @@ describe("generateAgentActionWithGroq — failure catalog", () => {
       delete process.env.GROQ_API_KEY;
 
       await expect(generateAgentActionWithGroq(VALID_INPUT)).rejects.toSatisfy(
-        (err: unknown) =>
-          err instanceof PlanError && err.code === PLAN_ERRORS.PROVIDER_UNAVAILABLE
+        (err: unknown) => err instanceof PlanError && err.code === PLAN_ERRORS.PROVIDER_UNAVAILABLE
       );
     });
 
@@ -85,8 +84,7 @@ describe("generateAgentActionWithGroq — failure catalog", () => {
       mockGroqResponse("error body", 503);
 
       await expect(generateAgentActionWithGroq(VALID_INPUT)).rejects.toSatisfy(
-        (err: unknown) =>
-          err instanceof PlanError && err.code === PLAN_ERRORS.PROVIDER_UNAVAILABLE
+        (err: unknown) => err instanceof PlanError && err.code === PLAN_ERRORS.PROVIDER_UNAVAILABLE
       );
     });
 
@@ -94,8 +92,7 @@ describe("generateAgentActionWithGroq — failure catalog", () => {
       mockGroqResponse("Unauthorized", 401);
 
       await expect(generateAgentActionWithGroq(VALID_INPUT)).rejects.toSatisfy(
-        (err: unknown) =>
-          err instanceof PlanError && err.code === PLAN_ERRORS.PROVIDER_UNAVAILABLE
+        (err: unknown) => err instanceof PlanError && err.code === PLAN_ERRORS.PROVIDER_UNAVAILABLE
       );
     });
 
@@ -113,8 +110,7 @@ describe("generateAgentActionWithGroq — failure catalog", () => {
       mockGroqEmptyContent();
 
       await expect(generateAgentActionWithGroq(VALID_INPUT)).rejects.toSatisfy(
-        (err: unknown) =>
-          err instanceof PlanError && err.code === PLAN_ERRORS.EMPTY_RESPONSE
+        (err: unknown) => err instanceof PlanError && err.code === PLAN_ERRORS.EMPTY_RESPONSE
       );
     });
 
@@ -122,8 +118,7 @@ describe("generateAgentActionWithGroq — failure catalog", () => {
       mockGroqMissingChoices();
 
       await expect(generateAgentActionWithGroq(VALID_INPUT)).rejects.toSatisfy(
-        (err: unknown) =>
-          err instanceof PlanError && err.code === PLAN_ERRORS.EMPTY_RESPONSE
+        (err: unknown) => err instanceof PlanError && err.code === PLAN_ERRORS.EMPTY_RESPONSE
       );
     });
   });
@@ -133,8 +128,7 @@ describe("generateAgentActionWithGroq — failure catalog", () => {
       mockGroqResponse("Sorry, I cannot generate a plan right now.");
 
       await expect(generateAgentActionWithGroq(VALID_INPUT)).rejects.toSatisfy(
-        (err: unknown) =>
-          err instanceof PlanError && err.code === PLAN_ERRORS.MALFORMED_JSON
+        (err: unknown) => err instanceof PlanError && err.code === PLAN_ERRORS.MALFORMED_JSON
       );
     });
 
@@ -142,8 +136,7 @@ describe("generateAgentActionWithGroq — failure catalog", () => {
       mockGroqResponse('{"id":"act-001","name":"Truncated plan"');
 
       await expect(generateAgentActionWithGroq(VALID_INPUT)).rejects.toSatisfy(
-        (err: unknown) =>
-          err instanceof PlanError && err.code === PLAN_ERRORS.MALFORMED_JSON
+        (err: unknown) => err instanceof PlanError && err.code === PLAN_ERRORS.MALFORMED_JSON
       );
     });
 
@@ -151,8 +144,7 @@ describe("generateAgentActionWithGroq — failure catalog", () => {
       mockGroqResponse("```json\nnot valid json at all\n```");
 
       await expect(generateAgentActionWithGroq(VALID_INPUT)).rejects.toSatisfy(
-        (err: unknown) =>
-          err instanceof PlanError && err.code === PLAN_ERRORS.MALFORMED_JSON
+        (err: unknown) => err instanceof PlanError && err.code === PLAN_ERRORS.MALFORMED_JSON
       );
     });
   });
@@ -162,65 +154,49 @@ describe("generateAgentActionWithGroq — failure catalog", () => {
       mockGroqResponse(JSON.stringify({ id: "act-001", name: "Missing fields" }));
 
       await expect(generateAgentActionWithGroq(VALID_INPUT)).rejects.toSatisfy(
-        (err: unknown) =>
-          err instanceof PlanError && err.code === PLAN_ERRORS.SCHEMA_MISMATCH
+        (err: unknown) => err instanceof PlanError && err.code === PLAN_ERRORS.SCHEMA_MISMATCH
       );
     });
 
     it("throws when amountXLM is negative", async () => {
-      mockGroqResponse(
-        JSON.stringify({ ...VALID_ACTION, amountXLM: -10 })
-      );
+      mockGroqResponse(JSON.stringify({ ...VALID_ACTION, amountXLM: -10 }));
 
       await expect(generateAgentActionWithGroq(VALID_INPUT)).rejects.toSatisfy(
-        (err: unknown) =>
-          err instanceof PlanError && err.code === PLAN_ERRORS.SCHEMA_MISMATCH
+        (err: unknown) => err instanceof PlanError && err.code === PLAN_ERRORS.SCHEMA_MISMATCH
       );
     });
 
     it("throws when kind is not a valid enum value", async () => {
-      mockGroqResponse(
-        JSON.stringify({ ...VALID_ACTION, kind: "delete_account" })
-      );
+      mockGroqResponse(JSON.stringify({ ...VALID_ACTION, kind: "delete_account" }));
 
       await expect(generateAgentActionWithGroq(VALID_INPUT)).rejects.toSatisfy(
-        (err: unknown) =>
-          err instanceof PlanError && err.code === PLAN_ERRORS.SCHEMA_MISMATCH
+        (err: unknown) => err instanceof PlanError && err.code === PLAN_ERRORS.SCHEMA_MISMATCH
       );
     });
 
     it("throws when amountXLM exceeds the maximum allowed value", async () => {
-      mockGroqResponse(
-        JSON.stringify({ ...VALID_ACTION, amountXLM: 999999 })
-      );
+      mockGroqResponse(JSON.stringify({ ...VALID_ACTION, amountXLM: 999999 }));
 
       await expect(generateAgentActionWithGroq(VALID_INPUT)).rejects.toSatisfy(
-        (err: unknown) =>
-          err instanceof PlanError && err.code === PLAN_ERRORS.SCHEMA_MISMATCH
+        (err: unknown) => err instanceof PlanError && err.code === PLAN_ERRORS.SCHEMA_MISMATCH
       );
     });
   });
 
   describe("PLAN_UNSAFE_TOOL", () => {
     it("throws when model returns a plan using a blocked tool", async () => {
-      mockGroqResponse(
-        JSON.stringify({ ...VALID_ACTION, tool: "shadow-shell" })
-      );
+      mockGroqResponse(JSON.stringify({ ...VALID_ACTION, tool: "shadow-shell" }));
 
       await expect(generateAgentActionWithGroq(VALID_INPUT)).rejects.toSatisfy(
-        (err: unknown) =>
-          err instanceof PlanError && err.code === PLAN_ERRORS.UNSAFE_TOOL
+        (err: unknown) => err instanceof PlanError && err.code === PLAN_ERRORS.UNSAFE_TOOL
       );
     });
 
     it("throws when model returns a plan using another blocked tool", async () => {
-      mockGroqResponse(
-        JSON.stringify({ ...VALID_ACTION, tool: "autonomous-payout-bypass" })
-      );
+      mockGroqResponse(JSON.stringify({ ...VALID_ACTION, tool: "autonomous-payout-bypass" }));
 
       await expect(generateAgentActionWithGroq(VALID_INPUT)).rejects.toSatisfy(
-        (err: unknown) =>
-          err instanceof PlanError && err.code === PLAN_ERRORS.UNSAFE_TOOL
+        (err: unknown) => err instanceof PlanError && err.code === PLAN_ERRORS.UNSAFE_TOOL
       );
     });
   });
@@ -232,8 +208,7 @@ describe("generateAgentActionWithGroq — failure catalog", () => {
       );
 
       await expect(generateAgentActionWithGroq(VALID_INPUT)).rejects.toSatisfy(
-        (err: unknown) =>
-          err instanceof PlanError && err.code === PLAN_ERRORS.UNSAFE_DOMAIN
+        (err: unknown) => err instanceof PlanError && err.code === PLAN_ERRORS.UNSAFE_DOMAIN
       );
     });
 
@@ -243,8 +218,7 @@ describe("generateAgentActionWithGroq — failure catalog", () => {
       );
 
       await expect(generateAgentActionWithGroq(VALID_INPUT)).rejects.toSatisfy(
-        (err: unknown) =>
-          err instanceof PlanError && err.code === PLAN_ERRORS.UNSAFE_DOMAIN
+        (err: unknown) => err instanceof PlanError && err.code === PLAN_ERRORS.UNSAFE_DOMAIN
       );
     });
   });

@@ -1,12 +1,7 @@
 import { evaluatePolicy, readAmountStroops } from "@/lib/policy/engine";
 import { evaluateSecurity } from "@/lib/security/analyzer";
 import { checkBlocklist } from "@/lib/security/blocklist";
-import type {
-  AgentAction,
-  DailyUsage,
-  DecisionResult,
-  PolicyConfig,
-} from "@/lib/types/domain";
+import type { AgentAction, DailyUsage, DecisionResult, PolicyConfig } from "@/lib/types/domain";
 
 function decideExplanation(result: DecisionResult): string {
   if (result.decision === "BLOCK") {
@@ -33,7 +28,7 @@ export function decisionAmountStroops(amountXLM: number): string | null {
 export async function evaluateDecision(
   action: AgentAction,
   policy: PolicyConfig,
-  usage: DailyUsage,
+  usage: DailyUsage
 ): Promise<DecisionResult> {
   const policyResult = evaluatePolicy(action, policy, usage);
   // The analyzer and the blocklist are independent checks: an allow is only
@@ -43,23 +38,16 @@ export async function evaluateDecision(
     checkBlocklist(action.domain),
   ]);
 
-  const analyzerDeny = security.findings.find(
-    (finding) => finding.severity === "high",
-  );
+  const analyzerDeny = security.findings.find((finding) => finding.severity === "high");
   const denyReasonCode = analyzerDeny?.code ?? blocklist.reasonCode ?? undefined;
   const securityDeny = Boolean(analyzerDeny) || !blocklist.allow;
-  const mediumSecurityFinding = security.findings.some(
-    (finding) => finding.severity === "medium",
-  );
+  const mediumSecurityFinding = security.findings.some((finding) => finding.severity === "medium");
 
   let decision: DecisionResult["decision"] = "APPROVE";
 
   if (policyResult.hardBlock || securityDeny) {
     decision = "BLOCK";
-  } else if (
-    policyResult.requireApproval ||
-    security.riskScore >= policy.riskThreshold
-  ) {
+  } else if (policyResult.requireApproval || security.riskScore >= policy.riskThreshold) {
     decision = "REQUIRE_APPROVAL";
   } else if (policyResult.warning || mediumSecurityFinding) {
     decision = "WARN";

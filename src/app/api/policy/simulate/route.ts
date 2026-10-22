@@ -62,12 +62,20 @@ export async function POST(request: NextRequest) {
     const parsed = policySimulateRequestSchema.safeParse(bodyResult.data);
 
     if (!parsed.success) {
-      logValidationFailure("Policy simulate validation failed", { ...context, userId }, parsed.error, bodyResult.data);
+      logValidationFailure(
+        "Policy simulate validation failed",
+        { ...context, userId },
+        parsed.error,
+        bodyResult.data
+      );
       return jsonWithRequestContext(request, {
         route: "/api/policy/simulate",
         startedAtMs,
         status: 400,
-        body: { error: "Invalid simulation payload.", details: toPublicValidationDetails(parsed.error) },
+        body: {
+          error: "Invalid simulation payload.",
+          details: toPublicValidationDetails(parsed.error),
+        },
         headers: rateLimitHeaders(rate),
       });
     }

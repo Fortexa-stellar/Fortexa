@@ -52,10 +52,12 @@ function formatResult(result: ChainVerificationResult, label: string): string {
   if (result.valid) {
     return `${label}: – valid (${result.checkedCount} checked, ${result.legacyCount} legacy)`;
   }
-  return `${label}: ✗ INVALID — ${result.reason}` +
+  return (
+    `${label}: ✗ INVALID — ${result.reason}` +
     (result.entryId ? ` at entry "${result.entryId}"` : "") +
     (result.index !== undefined ? ` (index ${result.index})` : "") +
-    ` [${result.checkedCount} checked, ${result.legacyCount} legacy]`;
+    ` [${result.checkedCount} checked, ${result.legacyCount} legacy]`
+  );
 }
 
 function main(filePath: string): never {
@@ -91,12 +93,17 @@ function main(filePath: string): never {
   if (extracted.entries) {
     const result = verifyHashChain(extracted.entries);
     if (result.valid) {
-      console.log(`✓ Audit export valid — ${result.checkedCount} entries checked, ${result.legacyCount} legacy`);
+      console.log(
+        `✓ Audit export valid — ${result.checkedCount} entries checked, ${result.legacyCount} legacy`
+      );
       process.exit(0);
     } else {
-      console.log('✗', `Audit export INVALID — ${result.reason}` +
-        (result.entryId ? ` at entry "${result.entryId}"` : "") +
-        (result.index !== undefined ? ` (index ${result.index})` : ""));
+      console.log(
+        "✗",
+        `Audit export INVALID — ${result.reason}` +
+          (result.entryId ? ` at entry "${result.entryId}"` : "") +
+          (result.index !== undefined ? ` (index ${result.index})` : "")
+      );
       console.log(`  checked: ${result.checkedCount}, legacy: ${result.legacyCount}`);
       process.exit(1);
     }

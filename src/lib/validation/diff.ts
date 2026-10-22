@@ -30,10 +30,7 @@ export interface PolicyDiff {
  * Generate a human-readable diff between two policies.
  * Returns detailed changes organized by field.
  */
-export function generatePolicyDiff(
-  oldPolicy: PolicyConfig,
-  newPolicy: PolicyConfig
-): PolicyDiff {
+export function generatePolicyDiff(oldPolicy: PolicyConfig, newPolicy: PolicyConfig): PolicyDiff {
   const changes: DiffChange[] = [];
 
   // Compare numeric fields
@@ -62,10 +59,7 @@ export function generatePolicyDiff(
   const oldHours = oldPolicy.allowedHours;
   const newHours = newPolicy.allowedHours;
 
-  if (
-    oldHours?.start !== newHours?.start ||
-    oldHours?.end !== newHours?.end
-  ) {
+  if (oldHours?.start !== newHours?.start || oldHours?.end !== newHours?.end) {
     changes.push({
       type: "modified",
       path: "allowedHours",
@@ -177,9 +171,7 @@ export function groupDiffChanges(diff: PolicyDiff): Record<string, DiffChange[]>
   }
 
   // Remove empty categories
-  return Object.fromEntries(
-    Object.entries(grouped).filter(([, changes]) => changes.length > 0)
-  );
+  return Object.fromEntries(Object.entries(grouped).filter(([, changes]) => changes.length > 0));
 }
 
 /** Decisions that let a payment proceed. */
@@ -281,10 +273,7 @@ function applyRuleChange(policy: PolicyConfig, change: DiffChange): PolicyConfig
  * action: a later decision supersedes the earlier one, and a payment whose
  * latest result is a denial is not an open allow.
  */
-export function openAllowDecisions(
-  entries: AuditEntry[],
-  usage: DailyUsage,
-): OpenAllowDecision[] {
+export function openAllowDecisions(entries: AuditEntry[], usage: DailyUsage): OpenAllowDecision[] {
   const seen = new Set<string>();
   const open: OpenAllowDecision[] = [];
 

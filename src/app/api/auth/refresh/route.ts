@@ -24,7 +24,11 @@ export async function POST(request: NextRequest) {
   if (sessionWallet) {
     const lockState = await isLoginLocked(sessionWallet, clientIp);
     if (lockState.locked) {
-      logWarn("Auth refresh blocked by lockout", { ...context, wallet: sessionWallet, ip: clientIp });
+      logWarn("Auth refresh blocked by lockout", {
+        ...context,
+        wallet: sessionWallet,
+        ip: clientIp,
+      });
       return jsonWithRequestContext(request, {
         route: "/api/auth/refresh",
         startedAtMs,

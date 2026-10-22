@@ -106,21 +106,27 @@ export function DecisionConsole() {
   const [signedXdrInput, setSignedXdrInput] = useState("");
   const [sourcePublicKey, setSourcePublicKey] = useState("");
   const [networkPassphrase, setNetworkPassphrase] = useState("TESTNET");
-  const [agentGoal, setAgentGoal] = useState("Find safe market data provider and pay for premium query results.");
-  const [agentContext, setAgentContext] = useState("Need reliable source with low risk and clear policy-compliant endpoint.");
+  const [agentGoal, setAgentGoal] = useState(
+    "Find safe market data provider and pay for premium query results."
+  );
+  const [agentContext, setAgentContext] = useState(
+    "Need reliable source with low risk and clear policy-compliant endpoint."
+  );
   const [generatedAction, setGeneratedAction] = useState<AgentAction | null>(null);
   const [generatingAction, setGeneratingAction] = useState(false);
   const [preparingXdr, setPreparingXdr] = useState(false);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
-  const [signError, setSignError] = useState<{ code: FreighterSignErrorCode; message: string } | null>(null);
+  const [signError, setSignError] = useState<{
+    code: FreighterSignErrorCode;
+    message: string;
+  } | null>(null);
 
-  
   const [submitErrorDetails, setSubmitErrorDetails] = useState<{
     explanation?: string;
     nextStep?: string;
     resultCode?: string;
     operationCodes?: string[];
-    } | null>(null);
+  } | null>(null);
 
   const selectedScenario = useMemo(
     () => demoScenarios.find((s) => s.id === selectedScenarioId),
@@ -134,7 +140,9 @@ export function DecisionConsole() {
   const evaluatedAmount = activeAction?.amountXLM;
   const parsedExecuteAmount = Number(executeAmount);
   const sendAmount =
-    Number.isFinite(parsedExecuteAmount) && parsedExecuteAmount > 0 ? parsedExecuteAmount : evaluatedAmount;
+    Number.isFinite(parsedExecuteAmount) && parsedExecuteAmount > 0
+      ? parsedExecuteAmount
+      : evaluatedAmount;
   const destinationPreview = destination.trim().toUpperCase();
 
   useEffect(() => {
@@ -191,9 +199,10 @@ export function DecisionConsole() {
               ? {
                   paymentQuoteInput: {
                     destination: destinationPreview,
-                    memo: (actionOverride ?? activeAction)
-                      ? `fortexa:${(actionOverride ?? activeAction)!.id}`.slice(0, 28)
-                      : undefined,
+                    memo:
+                      (actionOverride ?? activeAction)
+                        ? `fortexa:${(actionOverride ?? activeAction)!.id}`.slice(0, 28)
+                        : undefined,
                     network: "testnet" as const,
                   },
                 }
@@ -246,7 +255,13 @@ export function DecisionConsole() {
       setAuthorizedAuditEntryId(payload.auditEntry.id);
       setMessage("Decision recorded in audit trail.");
       pushToast("success", "Evaluation complete.");
-      setStep(payload.result.decision === "REQUIRE_APPROVAL" ? 3 : payload.result.decision === "BLOCK" ? 2 : 4);
+      setStep(
+        payload.result.decision === "REQUIRE_APPROVAL"
+          ? 3
+          : payload.result.decision === "BLOCK"
+            ? 2
+            : 4
+      );
     } catch (error) {
       const err = error instanceof Error ? error.message : "Unexpected failure.";
       setMessage(err);
@@ -345,9 +360,14 @@ export function DecisionConsole() {
       });
 
       const buildPayload = (await buildResponse.json()) as BuildPaymentResponse;
-      if (!buildResponse.ok || buildPayload.error || !buildPayload.xdr ||
-          buildPayload.decisionId !== authorizedAuditEntryId ||
-          !buildPayload.quoteExpiresAt || !buildPayload.buildAuthorization) {
+      if (
+        !buildResponse.ok ||
+        buildPayload.error ||
+        !buildPayload.xdr ||
+        buildPayload.decisionId !== authorizedAuditEntryId ||
+        !buildPayload.quoteExpiresAt ||
+        !buildPayload.buildAuthorization
+      ) {
         setMessage(buildPayload.error ?? "Failed to build XDR.");
         return;
       }
@@ -532,21 +552,36 @@ export function DecisionConsole() {
                         <DecisionBadge decision={scenario.expectedDecision} />
                       </div>
                     </div>
-                    <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">{scenario.description}</p>
+                    <p className="mt-1 text-xs text-[hsl(var(--muted-foreground))]">
+                      {scenario.description}
+                    </p>
                   </button>
                 ))}
               </div>
             ) : (
               <div className="space-y-3">
-                <Input value={agentGoal} onChange={(e) => setAgentGoal(e.target.value)} placeholder="Agent goal" />
+                <Input
+                  value={agentGoal}
+                  onChange={(e) => setAgentGoal(e.target.value)}
+                  placeholder="Agent goal"
+                />
                 <textarea
                   className="min-h-24 w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.4)] px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring)/0.4)]"
                   value={agentContext}
                   onChange={(e) => setAgentContext(e.target.value)}
                   placeholder="Additional context"
                 />
-                <Button variant="outline" onClick={generateActionWithAi} disabled={writeDisabled || generatingAction} className="gap-2">
-                  {generatingAction ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : <Sparkles aria-hidden="true" className="h-4 w-4" />}
+                <Button
+                  variant="outline"
+                  onClick={generateActionWithAi}
+                  disabled={writeDisabled || generatingAction}
+                  className="gap-2"
+                >
+                  {generatingAction ? (
+                    <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles aria-hidden="true" className="h-4 w-4" />
+                  )}
                   Generate action
                 </Button>
                 {generatedAction ? (
@@ -590,8 +625,16 @@ export function DecisionConsole() {
               </div>
             ) : null}
 
-            <Button onClick={() => runDecision(false)} disabled={writeDisabled} className="w-full gap-2">
-              {loading ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : <Play aria-hidden="true" className="h-4 w-4" />}
+            <Button
+              onClick={() => runDecision(false)}
+              disabled={writeDisabled}
+              className="w-full gap-2"
+            >
+              {loading ? (
+                <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+              ) : (
+                <Play aria-hidden="true" className="h-4 w-4" />
+              )}
               Run evaluation
             </Button>
 
@@ -620,7 +663,11 @@ export function DecisionConsole() {
             {decisionData ? (
               <>
                 <DecisionResultView result={decisionData.result} />
-                <Button onClick={() => runDecision(true)} disabled={writeDisabled || !canHumanApprove} className="w-full">
+                <Button
+                  onClick={() => runDecision(true)}
+                  disabled={writeDisabled || !canHumanApprove}
+                  className="w-full"
+                >
                   Approve & continue
                 </Button>
               </>
@@ -637,7 +684,9 @@ export function DecisionConsole() {
         <Card>
           <CardHeader>
             <CardTitle>Execute payment</CardTitle>
-            <CardDescription>Build XDR, sign with Freighter, submit to Stellar testnet.</CardDescription>
+            <CardDescription>
+              Build XDR, sign with Freighter, submit to Stellar testnet.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {decisionData && activeAction ? (
@@ -648,7 +697,9 @@ export function DecisionConsole() {
                 <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                   <p className="text-2xl font-semibold tracking-tight sm:text-3xl">
                     {sendAmount ?? "—"}{" "}
-                    <span className="text-lg font-normal text-[hsl(var(--muted-foreground))]">XLM</span>
+                    <span className="text-lg font-normal text-[hsl(var(--muted-foreground))]">
+                      XLM
+                    </span>
                   </p>
                   <div className="flex">
                     <span className="rounded-full border border-[hsl(var(--border))] px-2.5 py-0.5 text-[10px] uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
@@ -678,7 +729,9 @@ export function DecisionConsole() {
             {decisionData ? (
               <div className="flex items-center gap-3 rounded-xl bg-[hsl(var(--muted)/0.35)] p-4">
                 <DecisionBadge decision={decisionData.result.decision} />
-                <p className="text-sm text-[hsl(var(--muted-foreground))]">Cleared for wallet signing</p>
+                <p className="text-sm text-[hsl(var(--muted-foreground))]">
+                  Cleared for wallet signing
+                </p>
               </div>
             ) : null}
 
@@ -724,8 +777,8 @@ export function DecisionConsole() {
                 <AlertTitle>XDR prepared</AlertTitle>
                 <AlertDescription>
                   {sendAmount} XLM will be sent to{" "}
-                  <span className="font-mono">{truncateMiddle(destinationPreview, 10, 10)}</span>. Use{" "}
-                  <strong>Sign & submit</strong> to open Freighter.
+                  <span className="font-mono">{truncateMiddle(destinationPreview, 10, 10)}</span>.
+                  Use <strong>Sign & submit</strong> to open Freighter.
                 </AlertDescription>
               </Alert>
             ) : null}
@@ -755,17 +808,31 @@ export function DecisionConsole() {
                 disabled={writeDisabled || !decisionData || !destinationPreview || !executeAmount}
                 className="w-full gap-2 sm:w-auto"
               >
-                {preparingXdr ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : null}
+                {preparingXdr ? (
+                  <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                ) : null}
                 {preparingXdr ? "Preparing XDR..." : "Prepare XDR"}
               </Button>
               {signError && unsignedXdr ? (
-                <Button onClick={signWithFreighter} disabled={writeDisabled} className="w-full gap-2 sm:w-auto">
-                  {loading ? <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" /> : <RefreshCcw aria-hidden="true" className="h-4 w-4" />}
+                <Button
+                  onClick={signWithFreighter}
+                  disabled={writeDisabled}
+                  className="w-full gap-2 sm:w-auto"
+                >
+                  {loading ? (
+                    <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCcw aria-hidden="true" className="h-4 w-4" />
+                  )}
                   Retry sign
                 </Button>
               ) : (
                 <Button
-                  onClick={() => (signedXdrInput.trim() && signedXdrInput.trim() !== unsignedXdr.trim() ? submitSignedXdr() : signWithFreighter())}
+                  onClick={() =>
+                    signedXdrInput.trim() && signedXdrInput.trim() !== unsignedXdr.trim()
+                      ? submitSignedXdr()
+                      : signWithFreighter()
+                  }
                   disabled={writeDisabled || (!signedXdrInput.trim() && !unsignedXdr)}
                   className="w-full gap-2 sm:w-auto"
                 >
@@ -779,14 +846,23 @@ export function DecisionConsole() {
               <Alert>
                 <AlertTitle>Transaction submitted</AlertTitle>
                 <AlertDescription>
-                  <a href={lastTxExplorerUrl} target="_blank" rel="noreferrer" className="break-all underline">
+                  <a
+                    href={lastTxExplorerUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="break-all underline"
+                  >
                     {lastTxExplorerUrl}
                   </a>
                 </AlertDescription>
               </Alert>
             ) : null}
 
-            <Button variant="ghost" onClick={() => setStep(decisionData?.result.decision === "REQUIRE_APPROVAL" ? 3 : 2)} className="gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => setStep(decisionData?.result.decision === "REQUIRE_APPROVAL" ? 3 : 2)}
+              className="gap-2"
+            >
               <ChevronLeft aria-hidden="true" className="h-4 w-4" /> Back
             </Button>
           </CardContent>
@@ -813,7 +889,9 @@ export function DecisionConsole() {
                     <p className="text-sm">{submitErrorDetails.explanation}</p>
                   ) : null}
                   {submitErrorDetails.nextStep ? (
-                    <p className="text-sm font-medium text-rose-100">{submitErrorDetails.nextStep}</p>
+                    <p className="text-sm font-medium text-rose-100">
+                      {submitErrorDetails.nextStep}
+                    </p>
                   ) : null}
                   <p className="mt-2 font-mono text-[10px] opacity-70">
                     Raw codes: tx {submitErrorDetails.resultCode}

@@ -91,10 +91,7 @@ const POLICY: PolicyConfig = {
 type MockResponse = { ok: boolean; status: number; body: unknown };
 type FetchInit = { method?: string; body?: string };
 
-function setupFetch(options: {
-  validate?: MockResponse;
-  policyPost?: MockResponse;
-}) {
+function setupFetch(options: { validate?: MockResponse; policyPost?: MockResponse }) {
   fetchMock.mockImplementation(async (url: string, init?: FetchInit) => {
     const method = init?.method ?? "GET";
 
@@ -181,8 +178,7 @@ function treeText(node: unknown): string {
 function policyPostCalls(): Array<{ url: string; init: FetchInit }> {
   return fetchMock.mock.calls
     .filter(
-      ([url, init]) =>
-        url === "/api/policy" && (init as FetchInit | undefined)?.method === "POST",
+      ([url, init]) => url === "/api/policy" && (init as FetchInit | undefined)?.method === "POST"
     )
     .map(([url, init]) => ({ url: url as string, init: init as FetchInit }));
 }
@@ -270,7 +266,7 @@ describe("PolicyEditor activation gate", () => {
 
     // The duplicate-rule API error is shown unmodified.
     expect(treeText(findByTestId(renderEditor(), "policy-validation-status"))).toContain(
-      'Duplicate rule identifier "dup.example.com" found in allowedDomains.',
+      'Duplicate rule identifier "dup.example.com" found in allowedDomains.'
     );
   });
 

@@ -8,8 +8,7 @@ import {
   getProtectedPaymentFlowReadinessReport,
 } from "@/lib/readiness/production";
 
-const VALID_OPERATOR_WALLET =
-  "GBXFXNDLV4LSWA4VB7YIL5GBD7BVNR22SGBTDKMO2SBZZHDXSKZYCP7L";
+const VALID_OPERATOR_WALLET = "GBXFXNDLV4LSWA4VB7YIL5GBD7BVNR22SGBTDKMO2SBZZHDXSKZYCP7L";
 
 describe("production readiness", () => {
   it("passes for a valid production configuration", () => {
@@ -152,7 +151,8 @@ describe("production readiness", () => {
   });
 
   it("passes for a consistent production fixture", () => {
-    const report = checkProductionReadiness({
+    const report = checkProductionReadiness(
+      {
         NODE_ENV: "production",
         DATABASE_URL: "postgres://fortexa:secret@db.example.com:5432/fortexa",
         FORTEXA_AUTH_SECRET: "0123456789abcdef0123456789abcdef",
@@ -170,7 +170,8 @@ describe("production readiness", () => {
   });
 
   it("rejects testnet passphrase in production mode", () => {
-    const report = checkProductionReadiness({
+    const report = checkProductionReadiness(
+      {
         NODE_ENV: "production",
         DATABASE_URL: "postgres://fortexa:secret@db.example.com:5432/fortexa",
         FORTEXA_AUTH_SECRET: "0123456789abcdef0123456789abcdef",
@@ -193,7 +194,8 @@ describe("production readiness", () => {
   });
 
   it("rejects stale migration in production mode", () => {
-    const report = checkProductionReadiness({
+    const report = checkProductionReadiness(
+      {
         NODE_ENV: "production",
         DATABASE_URL: "postgres://fortexa:secret@db.example.com:5432/fortexa",
         FORTEXA_AUTH_SECRET: "0123456789abcdef0123456789abcdef",
@@ -285,20 +287,30 @@ describe("service readiness", () => {
   });
 
   it("fails production_config exactly when the payment routes would refuse", () => {
-    const unsafeEnv = { ...productionEnv, STELLAR_NETWORK_PASSPHRASE: Networks.TESTNET } as NodeJS.ProcessEnv;
+    const unsafeEnv = {
+      ...productionEnv,
+      STELLAR_NETWORK_PASSPHRASE: Networks.TESTNET,
+    } as NodeJS.ProcessEnv;
 
-    expect(getProtectedPaymentFlowReadinessReport(unsafeEnv, { cwd: "/srv/fortexa" })).not.toBeNull();
     expect(
-      evaluateServiceReadiness({ env: unsafeEnv, cwd: "/srv/fortexa", databaseAvailable: true, horizonStatus: "healthy" })
-        .failingChecks
+      getProtectedPaymentFlowReadinessReport(unsafeEnv, { cwd: "/srv/fortexa" })
+    ).not.toBeNull();
+    expect(
+      evaluateServiceReadiness({
+        env: unsafeEnv,
+        cwd: "/srv/fortexa",
+        databaseAvailable: true,
+        horizonStatus: "healthy",
+      }).failingChecks
     ).toEqual(["production_config"]);
 
     // Outside production the payment routes do not enforce config, so neither does readiness.
     const devEnv = { ...unsafeEnv, NODE_ENV: "development" } as NodeJS.ProcessEnv;
     expect(getProtectedPaymentFlowReadinessReport(devEnv)).toBeNull();
-    expect(evaluateServiceReadiness({ env: devEnv, databaseAvailable: true, horizonStatus: "healthy" }).ready).toBe(
-      true
-    );
+    expect(
+      evaluateServiceReadiness({ env: devEnv, databaseAvailable: true, horizonStatus: "healthy" })
+        .ready
+    ).toBe(true);
   });
 
   it("fails storage only when a configured database does not answer", () => {
@@ -321,8 +333,11 @@ describe("service readiness", () => {
     const env = { NODE_ENV: "test" } as NodeJS.ProcessEnv;
 
     expect(
-      evaluateServiceReadiness({ env, databaseAvailable: false, horizonStatus: "degraded" }).failingChecks
+      evaluateServiceReadiness({ env, databaseAvailable: false, horizonStatus: "degraded" })
+        .failingChecks
     ).toEqual(["horizon"]);
-    expect(evaluateServiceReadiness({ env, databaseAvailable: false, horizonStatus: "unknown" }).ready).toBe(true);
+    expect(
+      evaluateServiceReadiness({ env, databaseAvailable: false, horizonStatus: "unknown" }).ready
+    ).toBe(true);
   });
 });

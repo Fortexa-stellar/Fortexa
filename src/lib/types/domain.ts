@@ -66,11 +66,7 @@ export interface SecurityFinding {
 }
 
 /** Analyzer component status - tracks timeout, failure, or success states. */
-export type AnalyzerComponentStatus =
-  | "success"
-  | "timeout"
-  | "error"
-  | "degraded";
+export type AnalyzerComponentStatus = "success" | "timeout" | "error" | "degraded";
 
 /** Tracks health and availability of security checks. */
 export interface AnalyzerStatus {

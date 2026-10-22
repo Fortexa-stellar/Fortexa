@@ -32,7 +32,9 @@ describe("POST /api/stellar/fund network guard", () => {
     const body = await response.text();
 
     expect(response.status).toBe(403);
-    expect(body).toBe(JSON.stringify({ error: "Stellar funding is disabled on the public network." }));
+    expect(body).toBe(
+      JSON.stringify({ error: "Stellar funding is disabled on the public network." })
+    );
     expect(logWarn).toHaveBeenCalledWith(
       "Stellar funding refused on public network",
       expect.objectContaining({ route: "/api/stellar/fund" })

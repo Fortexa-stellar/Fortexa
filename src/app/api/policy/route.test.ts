@@ -75,10 +75,12 @@ const POLICY_PAYLOAD = {
 
 describe("/api/policy route", () => {
   it("rejects secret-shaped payload fields before saving", async () => {
-    const response = await POST(makePolicyPostRequest(operatorCookie(), {
-      ...POLICY_PAYLOAD,
-      auth: { sessionToken: "fixture-token" },
-    }));
+    const response = await POST(
+      makePolicyPostRequest(operatorCookie(), {
+        ...POLICY_PAYLOAD,
+        auth: { sessionToken: "fixture-token" },
+      })
+    );
 
     expect(response.status).toBe(400);
     expect((await response.json()).error).toContain("sensitive field");
@@ -109,15 +111,17 @@ describe("/api/policy route", () => {
     process.env.STELLAR_HORIZON_URL = "https://horizon.stellar.org";
     process.env.STELLAR_NETWORK_PASSPHRASE = Networks.PUBLIC;
     try {
-      const response = await POST(new NextRequest("http://localhost/api/policy", {
-        method: "POST",
-        headers: {
-          cookie: operatorCookie(),
-          "content-type": "application/json",
-          "x-fortexa-network-fingerprint": displayedFingerprint,
-        },
-        body: JSON.stringify(POLICY_PAYLOAD),
-      }));
+      const response = await POST(
+        new NextRequest("http://localhost/api/policy", {
+          method: "POST",
+          headers: {
+            cookie: operatorCookie(),
+            "content-type": "application/json",
+            "x-fortexa-network-fingerprint": displayedFingerprint,
+          },
+          body: JSON.stringify(POLICY_PAYLOAD),
+        })
+      );
       expect(response.status).toBe(409);
     } finally {
       if (previousHorizon === undefined) delete process.env.STELLAR_HORIZON_URL;
@@ -207,7 +211,7 @@ describe("/api/policy route", () => {
         ...POLICY_PAYLOAD,
         perTxCapXLM: 175,
         expectedVersion: initialPayload.version,
-      }),
+      })
     );
 
     expect(response.status).toBe(200);
@@ -234,7 +238,7 @@ describe("/api/policy route", () => {
         ...POLICY_PAYLOAD,
         perTxCapXLM: 200,
         expectedVersion: seedBody.version,
-      }),
+      })
     );
     expect(firstSave.status).toBe(200);
     const firstSaveBody = (await firstSave.json()) as { version: number };
@@ -246,7 +250,7 @@ describe("/api/policy route", () => {
         ...POLICY_PAYLOAD,
         perTxCapXLM: 999,
         expectedVersion: seedBody.version,
-      }),
+      })
     );
 
     expect(staleSave.status).toBe(409);
@@ -281,7 +285,7 @@ describe("/api/policy route", () => {
       makePolicyPostRequest(cookie, {
         ...POLICY_PAYLOAD,
         perTxCapXLM: 222,
-      }),
+      })
     );
 
     expect(response.status).toBe(200);
@@ -300,7 +304,7 @@ describe("/api/policy route", () => {
       makePolicyPostRequest(cookie, {
         ...POLICY_PAYLOAD,
         expectedVersion: -1,
-      }),
+      })
     );
 
     expect(response.status).toBe(400);
@@ -349,7 +353,7 @@ describe("/api/policy route", () => {
       makePolicyPostRequest(cookie, {
         ...POLICY_PAYLOAD,
         perTxCapXLM: 1.12345678,
-      }),
+      })
     );
 
     expect(response.status).toBe(400);
@@ -359,7 +363,7 @@ describe("/api/policy route", () => {
     };
     expect(payload.error).toBe("Invalid policy payload.");
     expect(payload.details?.fieldErrors?.perTxCapXLM).toContain(
-      "Amount has more decimal places than the asset allows.",
+      "Amount has more decimal places than the asset allows."
     );
   });
 });

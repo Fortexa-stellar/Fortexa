@@ -148,7 +148,11 @@ afterEach(() => {
 async function runOperatorFlow(
   decisionBody: Record<string, unknown>,
   paymentAmount: string,
-  options: { beforeSubmit?: () => void | string | Promise<void | string>; decisionId?: string; expectedStatus?: number } = {},
+  options: {
+    beforeSubmit?: () => void | string | Promise<void | string>;
+    decisionId?: string;
+    expectedStatus?: number;
+  } = {}
 ) {
   const decisionRes = await decisionPost(
     jsonRequest("http://localhost/api/decision", {
@@ -290,7 +294,12 @@ describe("E2E: decision → build XDR → submit (Horizon mocked)", () => {
     const { submitPayload } = await runOperatorFlow(
       { scenarioId: "safe-research-payment" },
       "18.0000000",
-      { beforeSubmit: () => { vi.setSystemTime(new Date("2026-09-30T12:00:01.000Z")); }, expectedStatus: 403 },
+      {
+        beforeSubmit: () => {
+          vi.setSystemTime(new Date("2026-09-30T12:00:01.000Z"));
+        },
+        expectedStatus: 403,
+      }
     );
     expect(submitPayload.error).toMatch(/quote|decision/i);
     expect(horizonMocks.submitTransaction).not.toHaveBeenCalled();
@@ -304,20 +313,22 @@ describe("E2E: decision → build XDR → submit (Horizon mocked)", () => {
       "18.0000000",
       {
         beforeSubmit: async () => {
-          const secondDecision = await decisionPost(jsonRequest("http://localhost/api/decision", {
-            scenarioId: "safe-research-payment",
-            paymentQuoteInput: {
-              destination: destinationKeypair.publicKey(),
-              memo: "e2e-test",
-              network: "testnet",
-            },
-          }));
+          const secondDecision = await decisionPost(
+            jsonRequest("http://localhost/api/decision", {
+              scenarioId: "safe-research-payment",
+              paymentQuoteInput: {
+                destination: destinationKeypair.publicKey(),
+                memo: "e2e-test",
+                network: "testnet",
+              },
+            })
+          );
           expect(secondDecision.status).toBe(200);
           const payload = (await secondDecision.json()) as { auditEntry: { id: string } };
           return payload.auditEntry.id;
         },
         expectedStatus: 403,
-      },
+      }
     );
     expect(submitPayload.error).toMatch(/authorized payment build/i);
     expect(horizonMocks.submitTransaction).not.toHaveBeenCalled();

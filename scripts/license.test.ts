@@ -26,9 +26,7 @@ function read(path: string): string {
 
 describe("repository license", () => {
   it("ships a LICENSE file at the repository root", () => {
-    expect(existsSync(LICENSE_PATH), "LICENSE file missing at repo root").toBe(
-      true
-    );
+    expect(existsSync(LICENSE_PATH), "LICENSE file missing at repo root").toBe(true);
   });
 
   it("LICENSE contains the canonical MIT text", () => {

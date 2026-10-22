@@ -43,11 +43,7 @@ export async function connectFreighterWallet(): Promise<FreighterConnectResult> 
 }
 
 export type FreighterSignErrorCode =
-  | "missing"
-  | "rejected"
-  | "passphrase_mismatch"
-  | "invalid_key"
-  | "unknown";
+  "missing" | "rejected" | "passphrase_mismatch" | "invalid_key" | "unknown";
 
 export type FreighterSignResult =
   | { ok: true; signedXdr: string; signerAddress: string }
@@ -73,7 +69,9 @@ type FreighterSignClient = {
 };
 
 function isMissingExtensionMessage(message: string) {
-  return /not installed|no extension|cannot find|freighter is not|userAgent|undefined.*api/i.test(message);
+  return /not installed|no extension|cannot find|freighter is not|userAgent|undefined.*api/i.test(
+    message
+  );
 }
 
 function isUserRejectMessage(message: string) {
@@ -99,7 +97,9 @@ export async function signFreighterXdr(input: {
 }): Promise<FreighterSignResult> {
   let freighter: FreighterSignClient;
   try {
-    freighter = input.freighter ?? ((await import("@stellar/freighter-api")) as unknown as FreighterSignClient);
+    freighter =
+      input.freighter ??
+      ((await import("@stellar/freighter-api")) as unknown as FreighterSignClient);
   } catch {
     return {
       ok: false,
@@ -132,7 +132,11 @@ export async function signFreighterXdr(input: {
 
   try {
     const network = await freighter.getNetwork();
-    if (!network.error && network.networkPassphrase && network.networkPassphrase !== input.expectedNetworkPassphrase) {
+    if (
+      !network.error &&
+      network.networkPassphrase &&
+      network.networkPassphrase !== input.expectedNetworkPassphrase
+    ) {
       return {
         ok: false,
         code: "passphrase_mismatch",
@@ -161,7 +165,11 @@ export async function signFreighterXdr(input: {
 
   const signedXdr = signResponse.signedTxXdr;
   if (!signedXdr) {
-    return { ok: false, code: "rejected", message: "Signing rejected in Freighter. No signed XDR returned." };
+    return {
+      ok: false,
+      code: "rejected",
+      message: "Signing rejected in Freighter. No signed XDR returned.",
+    };
   }
 
   if (
@@ -216,7 +224,9 @@ export async function signFreighterMessage(input: {
 }): Promise<FreighterSignMessageResult> {
   let freighter: FreighterMessageClient;
   try {
-    freighter = input.freighter ?? ((await import("@stellar/freighter-api")) as unknown as FreighterMessageClient);
+    freighter =
+      input.freighter ??
+      ((await import("@stellar/freighter-api")) as unknown as FreighterMessageClient);
   } catch {
     return {
       ok: false,
@@ -290,11 +300,7 @@ export async function signFreighterMessage(input: {
   };
 }
 
-export type LoginWithFreighterStep =
-  | "connecting"
-  | "challenge"
-  | "signing"
-  | "verifying";
+export type LoginWithFreighterStep = "connecting" | "challenge" | "signing" | "verifying";
 
 /**
  * A challenge issued by `/api/auth/challenge`. The API consumes a challenge on
@@ -338,10 +344,16 @@ function withoutSignedPayload(message: string | undefined, signedPayload: string
   if (!message) {
     return GENERIC_LOGIN_ERROR;
   }
-  return signedPayload.some((part) => part && message.includes(part)) ? GENERIC_LOGIN_ERROR : message;
+  return signedPayload.some((part) => part && message.includes(part))
+    ? GENERIC_LOGIN_ERROR
+    : message;
 }
 
-export function formatLoginError(result: { code: string; message: string; retryAfterSeconds?: number }) {
+export function formatLoginError(result: {
+  code: string;
+  message: string;
+  retryAfterSeconds?: number;
+}) {
   const retry = result.retryAfterSeconds ? ` Try again in ${result.retryAfterSeconds}s.` : "";
   return `${result.message}${retry} (code: ${result.code})`;
 }
@@ -380,7 +392,9 @@ export async function loginWithFreighter(options?: {
       expiresAt: string;
     }>(challengeResponse);
 
-    const expiresAtMs = challengePayload.expiresAt ? Date.parse(challengePayload.expiresAt) : Number.NaN;
+    const expiresAtMs = challengePayload.expiresAt
+      ? Date.parse(challengePayload.expiresAt)
+      : Number.NaN;
 
     if (
       !challengeResponse.ok ||
@@ -419,7 +433,8 @@ export async function loginWithFreighter(options?: {
       return {
         ok: false,
         code: "expired",
-        message: "Login challenge expired before it was submitted. Sign in again to request a new challenge.",
+        message:
+          "Login challenge expired before it was submitted. Sign in again to request a new challenge.",
       };
     }
 
@@ -458,7 +473,11 @@ export async function loginWithFreighter(options?: {
       wallet: payload.wallet ?? connected.publicKey,
     };
   } catch {
-    return { ok: false, code: "network_error", message: "Could not reach the login service. Try again." };
+    return {
+      ok: false,
+      code: "network_error",
+      message: "Could not reach the login service. Try again.",
+    };
   } finally {
     // The API consumed the challenge (or it expired, or the attempt was
     // abandoned). Either way it must not be submitted again.

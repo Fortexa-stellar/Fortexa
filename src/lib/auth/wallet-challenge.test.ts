@@ -30,7 +30,6 @@ describe("wallet challenge", () => {
   });
 
   it("creates a challenge message bound to wallet and expiry", async () => {
-
     const challenge = await createWalletChallenge(TEST_PUBLIC_KEY);
 
     expect(challenge.message).toContain(`Wallet: ${TEST_PUBLIC_KEY}`);
@@ -39,17 +38,18 @@ describe("wallet challenge", () => {
     expect(challenge.message).toContain(`Origin: ${challenge.origin}`);
     expect(challenge.message).toContain(`Nonce: ${challenge.nonce}`);
     expect(challenge.message).toContain("Expires: ");
-    expect(buildChallengeMessage({
-      challengeId: challenge.id,
-      publicKey: challenge.publicKey,
-      expiresAtMs: challenge.expiresAtMs,
-      origin: challenge.origin,
-      nonce: challenge.nonce,
-    })).toBe(challenge.message);
+    expect(
+      buildChallengeMessage({
+        challengeId: challenge.id,
+        publicKey: challenge.publicKey,
+        expiresAtMs: challenge.expiresAtMs,
+        origin: challenge.origin,
+        nonce: challenge.nonce,
+      })
+    ).toBe(challenge.message);
   });
 
   it("verifies a valid SEP-53 signature and consumes the challenge", async () => {
-
     const challenge = await createWalletChallenge(TEST_PUBLIC_KEY);
     const signature = signSep53Message(TEST_SECRET, challenge.message);
 
@@ -82,40 +82,53 @@ describe("wallet challenge", () => {
 
     now += 61_000;
 
-    const result = await verifyWalletChallenge({
-      challengeId: challenge.id,
-      publicKey: TEST_PUBLIC_KEY,
-      signature,
-    }, clock);
+    const result = await verifyWalletChallenge(
+      {
+        challengeId: challenge.id,
+        publicKey: TEST_PUBLIC_KEY,
+        signature,
+      },
+      clock
+    );
 
     expect(result).toEqual({ ok: false, code: "expired" });
-    expect(await verifyWalletChallenge({
-      challengeId: challenge.id,
-      publicKey: TEST_PUBLIC_KEY,
-      signature,
-    }, clock)).toEqual({ ok: false, code: "missing" });
+    expect(
+      await verifyWalletChallenge(
+        {
+          challengeId: challenge.id,
+          publicKey: TEST_PUBLIC_KEY,
+          signature,
+        },
+        clock
+      )
+    ).toEqual({ ok: false, code: "missing" });
   });
 
   it("consumes a challenge when a different wallet key signs it", async () => {
     const challenge = await createWalletChallenge(TEST_PUBLIC_KEY);
     const otherKeypair = Keypair.random();
-    const otherSignature = otherKeypair.sign(hashSep53Message(challenge.message)).toString("base64");
+    const otherSignature = otherKeypair
+      .sign(hashSep53Message(challenge.message))
+      .toString("base64");
 
-    expect(await verifyWalletChallenge({
-      challengeId: challenge.id,
-      publicKey: otherKeypair.publicKey(),
-      signature: otherSignature,
-    })).toEqual({ ok: false, code: "wallet_mismatch" });
+    expect(
+      await verifyWalletChallenge({
+        challengeId: challenge.id,
+        publicKey: otherKeypair.publicKey(),
+        signature: otherSignature,
+      })
+    ).toEqual({ ok: false, code: "wallet_mismatch" });
 
-    expect(await verifyWalletChallenge({
-      challengeId: challenge.id,
-      publicKey: TEST_PUBLIC_KEY,
-      signature: signSep53Message(TEST_SECRET, challenge.message),
-    })).toEqual({ ok: false, code: "missing" });
+    expect(
+      await verifyWalletChallenge({
+        challengeId: challenge.id,
+        publicKey: TEST_PUBLIC_KEY,
+        signature: signSep53Message(TEST_SECRET, challenge.message),
+      })
+    ).toEqual({ ok: false, code: "missing" });
   });
 
   it("rejects invalid signatures without allowing replay", async () => {
-
     const challenge = await createWalletChallenge(TEST_PUBLIC_KEY);
     const otherKeypair = Keypair.random();
     const badSignature = otherKeypair.sign(hashSep53Message(challenge.message)).toString("base64");

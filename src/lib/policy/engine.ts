@@ -1,7 +1,13 @@
 import { isWithinInterval } from "date-fns";
 import { normalizeDomain } from "@/lib/policy/domain";
 
-import type { AgentAction, DailyUsage, PolicyConfig, PolicyEvaluation, PolicyTrigger } from "@/lib/types/domain";
+import type {
+  AgentAction,
+  DailyUsage,
+  PolicyConfig,
+  PolicyEvaluation,
+  PolicyTrigger,
+} from "@/lib/types/domain";
 import { amountToStroops } from "@/lib/stellar/stroops";
 
 /** Raised when one policy rule list contains the same identifier twice. */
@@ -11,7 +17,7 @@ export class DuplicateRuleError extends Error {
 
   constructor(field: string, value: string) {
     super(
-      `Duplicate rule identifier "${value}" found in ${field}. Remove the duplicate before saving or evaluating the policy.`,
+      `Duplicate rule identifier "${value}" found in ${field}. Remove the duplicate before saving or evaluating the policy.`
     );
     this.name = "DuplicateRuleError";
     this.field = field;
@@ -19,10 +25,9 @@ export class DuplicateRuleError extends Error {
   }
 }
 
-const RULE_LISTS: Array<keyof Pick<
-  PolicyConfig,
-  "allowedDomains" | "blockedDomains" | "allowedTools" | "blockedTools"
->> = ["allowedDomains", "blockedDomains", "allowedTools", "blockedTools"];
+const RULE_LISTS: Array<
+  keyof Pick<PolicyConfig, "allowedDomains" | "blockedDomains" | "allowedTools" | "blockedTools">
+> = ["allowedDomains", "blockedDomains", "allowedTools", "blockedTools"];
 
 /** Reads a display amount as an exact stroop count, or null when it is not one. */
 export function readAmountStroops(value: number | string): bigint | null {
@@ -66,7 +71,11 @@ export function validateNoDuplicateRules(policy: PolicyConfig): void {
 }
 
 export const defaultPolicyConfig: PolicyConfig = {
-  allowedDomains: ["api.safe-research.ai", "tools.verified-data.dev", "workers.fortexa-demo.stellar"],
+  allowedDomains: [
+    "api.safe-research.ai",
+    "tools.verified-data.dev",
+    "workers.fortexa-demo.stellar",
+  ],
   blockedDomains: ["wallet-drainer.evil", "prompt-pwn.io", "untrusted-mirror.xyz"],
   allowedTools: ["research-pro", "market-feed", "settlement-worker"],
   blockedTools: ["shadow-shell", "autonomous-payout-bypass"],
@@ -83,7 +92,11 @@ export const defaultPolicyConfig: PolicyConfig = {
   memoRequiredDestinations: ["GMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM"],
 };
 
-export function evaluatePolicy(action: AgentAction, policy: PolicyConfig, usage: DailyUsage): PolicyEvaluation {
+export function evaluatePolicy(
+  action: AgentAction,
+  policy: PolicyConfig,
+  usage: DailyUsage
+): PolicyEvaluation {
   validateNoDuplicateRules(policy);
   const triggers: PolicyTrigger[] = [];
   const normalizedDomain = normalizeDomain(action.domain);
@@ -180,8 +193,14 @@ export function evaluatePolicy(action: AgentAction, policy: PolicyConfig, usage:
     }
   }
 
-  const hardBlock = triggers.some((t) => t.severity === "high" && ["BLOCKED_DOMAIN", "BLOCKED_TOOL", "MALFORMED_DOMAIN"].includes(t.code));
-  const requireApproval = triggers.some((t) => t.code === "PER_TX_CAP_EXCEEDED" || t.code === "DAILY_CAP_EXCEEDED");
+  const hardBlock = triggers.some(
+    (t) =>
+      t.severity === "high" &&
+      ["BLOCKED_DOMAIN", "BLOCKED_TOOL", "MALFORMED_DOMAIN"].includes(t.code)
+  );
+  const requireApproval = triggers.some(
+    (t) => t.code === "PER_TX_CAP_EXCEEDED" || t.code === "DAILY_CAP_EXCEEDED"
+  );
   const warning = triggers.some((t) => t.severity === "medium");
 
   return {

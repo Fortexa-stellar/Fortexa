@@ -29,7 +29,10 @@ export class WalletAlreadyBoundError extends Error {
 
 function withFallbackWriteLock<T>(operation: () => Promise<T>): Promise<T> {
   const result = fallbackWriteQueue.then(operation, operation);
-  fallbackWriteQueue = result.then(() => undefined, () => undefined);
+  fallbackWriteQueue = result.then(
+    () => undefined,
+    () => undefined
+  );
   return result;
 }
 
@@ -101,7 +104,9 @@ async function writeStore(store: WalletStoreFile) {
   await fs.writeFile(storePath, JSON.stringify(store, null, 2), "utf8");
 }
 
-export async function getUserWallet(userId: string): Promise<UserWallet | { expired: true } | null> {
+export async function getUserWallet(
+  userId: string
+): Promise<UserWallet | { expired: true } | null> {
   const db = await runWithDatabase("getUserWallet", async (pool) => {
     const result = await pool.query<{
       user_id: string;
@@ -197,7 +202,8 @@ export async function upsertUserWallet(
       const createdAt = existing.rows[0]?.created_at
         ? new Date(existing.rows[0].created_at).toISOString()
         : nowIso;
-      const expiresAt = payload.expiresAt ?? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      const expiresAt =
+        payload.expiresAt ?? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
       await client.query(
         `
@@ -243,12 +249,18 @@ export async function upsertUserWallet(
     const store = await readStore();
     const now = new Date().toISOString();
     const current = store.wallets[userId] as UserWallet | undefined;
-    const currentIsActive = Boolean(current) && (!current.expiresAt || new Date(current.expiresAt).getTime() >= Date.now());
+    const currentIsActive =
+      Boolean(current) &&
+      (!current.expiresAt || new Date(current.expiresAt).getTime() >= Date.now());
     const owner = Object.values(store.wallets).find((wallet) => {
       if (!wallet || typeof wallet !== "object" || !("publicKey" in wallet)) return false;
       const candidate = wallet as UserWallet;
       const active = !candidate.expiresAt || new Date(candidate.expiresAt).getTime() >= Date.now();
-      return candidate.userId !== userId && candidate.publicKey.trim().toUpperCase() === publicKey && active;
+      return (
+        candidate.userId !== userId &&
+        candidate.publicKey.trim().toUpperCase() === publicKey &&
+        active
+      );
     });
     if (owner) {
       throw new WalletAlreadyBoundError();

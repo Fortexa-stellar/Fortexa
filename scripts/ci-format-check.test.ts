@@ -1,10 +1,12 @@
 import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { execSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import * as prettier from "prettier";
 
 describe("Deterministic formatting check configuration (#346)", () => {
-  const rootDir = resolve(__dirname, "..");
+  const rootDir = resolve(fileURLToPath(new URL(".", import.meta.url)), "..");
 
   it("defines a valid .prettierrc configuration with deterministic rules", () => {
     const configPath = resolve(rootDir, ".prettierrc");
@@ -53,6 +55,15 @@ describe("Deterministic formatting check configuration (#346)", () => {
     const ciContent = readFileSync(ciWorkflowPath, "utf-8");
     expect(ciContent).toMatch(/run:\s*npm run format:check/);
   });
+
+  it("executes repository-wide format:check subprocess successfully with exit status 0", () => {
+    const output = execSync("npm run format:check", {
+      cwd: rootDir,
+      encoding: "utf-8",
+      stdio: "pipe",
+    });
+    expect(output).toContain("All matched files use Prettier code style!");
+  }, 30000);
 
   it("verifies Prettier check works deterministically without mutating files", async () => {
     const configPath = resolve(rootDir, ".prettierrc");

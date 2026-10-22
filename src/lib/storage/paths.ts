@@ -34,7 +34,8 @@ const REJECTION_DESCRIPTIONS: Record<StoragePathRejectionReason, string> = {
   parent_traversal: "the path uses '..' to leave the data directory",
   absolute_path_outside_data_dir: "the absolute path is outside the data directory",
   not_a_file_in_data_dir: "the path does not name a file inside the data directory",
-  symlink_outside_data_dir: "the path goes through a symlink that resolves outside the data directory",
+  symlink_outside_data_dir:
+    "the path goes through a symlink that resolves outside the data directory",
 };
 
 /**
@@ -47,7 +48,9 @@ export class StoragePathError extends Error {
   readonly requestedPath: string;
 
   constructor(reason: StoragePathRejectionReason, requestedPath: string) {
-    super(`Refusing storage path "${requestedPath}": ${REJECTION_DESCRIPTIONS[reason]} (${reason}).`);
+    super(
+      `Refusing storage path "${requestedPath}": ${REJECTION_DESCRIPTIONS[reason]} (${reason}).`
+    );
     this.name = "StoragePathError";
     this.reason = reason;
     this.requestedPath = requestedPath;
@@ -149,7 +152,12 @@ export async function resolveContainedStorePath(
   const realDataDir = await resolveRealPath(dataDir);
   const realCandidate = await resolveRealPath(candidate);
 
-  if (!realDataDir || !realCandidate || !isWithin(realDataDir, realCandidate) || realCandidate === realDataDir) {
+  if (
+    !realDataDir ||
+    !realCandidate ||
+    !isWithin(realDataDir, realCandidate) ||
+    realCandidate === realDataDir
+  ) {
     throw new StoragePathError("symlink_outside_data_dir", requestedPath);
   }
 

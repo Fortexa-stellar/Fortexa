@@ -181,7 +181,10 @@ function fileKey(userId: string, idempotencyKey: string) {
   return `${userId}:${idempotencyKey}`;
 }
 
-function toIso(value: Date | string | null | undefined, fallback: string | null = null): string | null {
+function toIso(
+  value: Date | string | null | undefined,
+  fallback: string | null = null
+): string | null {
   if (value === null || value === undefined) return fallback;
   const date = value instanceof Date ? value : new Date(value);
   return Number.isNaN(date.getTime()) ? fallback : date.toISOString();
@@ -241,7 +244,8 @@ function normalizeFileRecord(
   idempotencyKey: string
 ): SubmitIdempotencyRecord {
   const source = (raw ?? {}) as Partial<SubmitIdempotencyRecord> & { xdrHash?: string };
-  const createdAt = typeof source.createdAt === "string" ? source.createdAt : new Date().toISOString();
+  const createdAt =
+    typeof source.createdAt === "string" ? source.createdAt : new Date().toISOString();
 
   return {
     userId: typeof source.userId === "string" ? source.userId : userId,
@@ -742,9 +746,7 @@ export async function resetSubmitIdempotencyState(userId: string) {
   });
 }
 
-export async function cleanupOldIdempotencyRecords(
-  retentionDays?: number
-): Promise<number> {
+export async function cleanupOldIdempotencyRecords(retentionDays?: number): Promise<number> {
   const days = retentionDays ?? getIdempotencyRetentionDays();
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);

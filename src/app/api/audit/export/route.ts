@@ -3,7 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { jsonWithRequestContext } from "@/lib/observability/http";
 import { getRequestLogContext, logError, logInfo, logWarn } from "@/lib/observability/logger";
-import { listAllAuditEntriesByUser, listAuditEntries, validateAuditFilter } from "@/lib/storage/audit-store";
+import {
+  listAllAuditEntriesByUser,
+  listAuditEntries,
+  validateAuditFilter,
+} from "@/lib/storage/audit-store";
 import { toCsv } from "@/utils/csv.utils";
 import type { CsvRow } from "@/utils/csv.utils";
 import type { AuditFilter } from "@/lib/storage/audit-store";
@@ -20,11 +24,7 @@ const AUDIT_CHAIN_VERIFICATION_FAILED = "audit_chain_verification_failed";
  * format. The row-cap violation is a client error (413); a broken chain is an
  * unprocessable export (422).
  */
-function chainErrorResponse(
-  request: NextRequest,
-  startedAtMs: number,
-  error: AuditChainError,
-) {
+function chainErrorResponse(request: NextRequest, startedAtMs: number, error: AuditChainError) {
   const status = error.code === "audit_chain_row_cap_exceeded" ? 413 : 422;
   return jsonWithRequestContext(request, {
     route: "/api/audit/export",
@@ -113,11 +113,11 @@ export async function GET(request: NextRequest) {
             throw new AuditChainError(
               AUDIT_CHAIN_VERIFICATION_FAILED,
               `Audit chain for user "${userId}" failed verification: ${verified.result.reason}`,
-              { userId, ...chainFailureDetails(verified.result) },
+              { userId, ...chainFailureDetails(verified.result) }
             );
           }
           return [userId, verified] as const;
-        }),
+        })
       );
 
       if (format === "json") {
@@ -134,7 +134,7 @@ export async function GET(request: NextRequest) {
               Object.entries(verifiedByUser).map(([userId, verified]) => [
                 userId,
                 verified.boundaries,
-              ]),
+              ])
             ),
           },
         });
@@ -179,7 +179,7 @@ export async function GET(request: NextRequest) {
       throw new AuditChainError(
         AUDIT_CHAIN_VERIFICATION_FAILED,
         `Audit chain failed verification: ${verified.result.reason}`,
-        chainFailureDetails(verified.result),
+        chainFailureDetails(verified.result)
       );
     }
 

@@ -2,16 +2,16 @@
  * List of fields that should be redacted in audit rows
  */
 const SECRET_FIELDS = new Set([
-  'secret',
-  'privateKey',
-  'apiKey',
-  'password',
-  'token',
-  'authorization',
-  'accessToken',
-  'refreshToken',
-  'seed',
-  'mnemonic'
+  "secret",
+  "privateKey",
+  "apiKey",
+  "password",
+  "token",
+  "authorization",
+  "accessToken",
+  "refreshToken",
+  "seed",
+  "mnemonic",
 ]);
 
 /**
@@ -20,7 +20,7 @@ const SECRET_FIELDS = new Set([
  * @returns A new object with secrets replaced by '[REDACTED]'
  */
 function redactObject(obj: unknown): unknown {
-  if (obj === null || typeof obj !== 'object') {
+  if (obj === null || typeof obj !== "object") {
     return obj;
   }
 
@@ -31,8 +31,8 @@ function redactObject(obj: unknown): unknown {
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
     if (SECRET_FIELDS.has(key.toLowerCase())) {
-      result[key] = '[REDACTED]';
-    } else if (typeof value === 'object' && value !== null) {
+      result[key] = "[REDACTED]";
+    } else if (typeof value === "object" && value !== null) {
       result[key] = redactObject(value);
     } else {
       result[key] = value;
@@ -50,6 +50,6 @@ function redactObject(obj: unknown): unknown {
 export function redactSecrets<T extends { details: unknown }>(row: T): T {
   return {
     ...row,
-    details: redactObject(row.details)
+    details: redactObject(row.details),
   };
 }

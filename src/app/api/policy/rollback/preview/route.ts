@@ -49,12 +49,20 @@ export async function POST(request: NextRequest) {
     const parsed = policyRollbackPreviewSchema.safeParse(rawBody);
 
     if (!parsed.success) {
-      logValidationFailure("Policy rollback preview validation failed", { ...context, userId }, parsed.error, rawBody);
+      logValidationFailure(
+        "Policy rollback preview validation failed",
+        { ...context, userId },
+        parsed.error,
+        rawBody
+      );
       return jsonWithRequestContext(request, {
         route: "/api/policy/rollback/preview",
         startedAtMs,
         status: 400,
-        body: { error: "Invalid rollback preview payload.", details: toPublicValidationDetails(parsed.error) },
+        body: {
+          error: "Invalid rollback preview payload.",
+          details: toPublicValidationDetails(parsed.error),
+        },
         headers: rateLimitHeaders(rate),
       });
     }

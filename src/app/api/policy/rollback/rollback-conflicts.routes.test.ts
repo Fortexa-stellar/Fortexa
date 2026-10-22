@@ -5,13 +5,21 @@ import { defaultPolicyConfig } from "@/lib/policy/engine";
 import type { AuditEntry, PolicyConfig } from "@/lib/types/domain";
 
 // ---- shared fixture used by both routes ----
-const activePolicy: PolicyConfig = { ...defaultPolicyConfig, allowedHours: undefined, perTxCapXLM: 250 };
+const activePolicy: PolicyConfig = {
+  ...defaultPolicyConfig,
+  allowedHours: undefined,
+  perTxCapXLM: 250,
+};
 const conflictingCandidate: PolicyConfig = { ...activePolicy, perTxCapXLM: 20 };
 const cleanCandidate: PolicyConfig = { ...activePolicy, perTxCapXLM: 200 };
 
 const DESTINATION = "GDESTINATIONSHOULDNEVERAPPEARINTHECONFLICTLIST0000000000";
 
-function inFlightAllow(id: string, amountXLM: number, overrides: Partial<AuditEntry> = {}): AuditEntry {
+function inFlightAllow(
+  id: string,
+  amountXLM: number,
+  overrides: Partial<AuditEntry> = {}
+): AuditEntry {
   return {
     id,
     timestamp: "2026-09-01T00:00:00.000Z",
@@ -69,7 +77,11 @@ vi.mock("@/lib/storage/policy-store", () => ({
 vi.mock("@/lib/storage/audit-store", () => ({
   listAllAuditEntriesByUser: vi.fn(async () => auditFixture),
   listAuditEntries: vi.fn(async () => []),
-  getDailyUsage: vi.fn(async () => ({ spentXLM: 0, toolCalls: 0, lastUpdated: "2026-09-01T00:00:00.000Z" })),
+  getDailyUsage: vi.fn(async () => ({
+    spentXLM: 0,
+    toolCalls: 0,
+    lastUpdated: "2026-09-01T00:00:00.000Z",
+  })),
 }));
 
 vi.mock("@/lib/security/analyzer", () => ({
@@ -106,12 +118,18 @@ function post(path: string, targetVersion: number) {
 
 async function preview(targetVersion: number) {
   const response = await previewPOST(post("/api/policy/rollback/preview", targetVersion));
-  return { status: response.status, body: (await response.json()) as { conflicts: RollbackConflict[] } };
+  return {
+    status: response.status,
+    body: (await response.json()) as { conflicts: RollbackConflict[] },
+  };
 }
 
 async function rollback(targetVersion: number) {
   const response = await rollbackPOST(post("/api/policy/rollback", targetVersion));
-  return { status: response.status, body: (await response.json()) as { conflicts?: RollbackConflict[]; version?: number } };
+  return {
+    status: response.status,
+    body: (await response.json()) as { conflicts?: RollbackConflict[]; version?: number },
+  };
 }
 
 describe("rollback preview and rollback share one conflict check", () => {
@@ -124,7 +142,11 @@ describe("rollback preview and rollback share one conflict check", () => {
     const previewed = await preview(1);
     expect(previewed.status).toBe(200);
     expect(previewed.body.conflicts).toEqual([
-      { paymentId: "pay-large", ruleIds: ["PER_TX_CAP_EXCEEDED"], reasonCode: "ROLLBACK_WOULD_REQUIRE_APPROVAL" },
+      {
+        paymentId: "pay-large",
+        ruleIds: ["PER_TX_CAP_EXCEEDED"],
+        reasonCode: "ROLLBACK_WOULD_REQUIRE_APPROVAL",
+      },
     ]);
 
     const rejected = await rollback(1);
@@ -157,7 +179,11 @@ describe("rollback preview and rollback share one conflict check", () => {
     const serialized = JSON.stringify(previewed.body.conflicts);
     expect(serialized).not.toContain(DESTINATION);
     expect(serialized).not.toContain("api.safe-research.ai");
-    expect(Object.keys(previewed.body.conflicts[0]).sort()).toEqual(["paymentId", "reasonCode", "ruleIds"]);
+    expect(Object.keys(previewed.body.conflicts[0]).sort()).toEqual([
+      "paymentId",
+      "reasonCode",
+      "ruleIds",
+    ]);
   });
 
   it("route output matches the shared function for the same fixture", async () => {

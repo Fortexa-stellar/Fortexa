@@ -51,10 +51,7 @@ export function serializePolicyDraft(policy: unknown): string {
  * Activation is allowed only when the validate route accepted this exact
  * draft. A pass for a stale draft (or no pass at all) keeps the gate closed.
  */
-export function canActivateDraft(
-  gate: PolicyValidationGate,
-  draftKey: string | null,
-): boolean {
+export function canActivateDraft(gate: PolicyValidationGate, draftKey: string | null): boolean {
   return (
     draftKey !== null &&
     gate.status === "valid" &&
@@ -69,13 +66,9 @@ export function canActivateDraft(
  */
 export function draftIsBlockedByFailedValidation(
   gate: PolicyValidationGate,
-  draftKey: string | null,
+  draftKey: string | null
 ): boolean {
-  return (
-    draftKey !== null &&
-    gate.status === "invalid" &&
-    gate.draftKey === draftKey
-  );
+  return draftKey !== null && gate.status === "invalid" && gate.draftKey === draftKey;
 }
 
 function isStringArray(value: unknown): value is string[] {
@@ -97,7 +90,7 @@ function isFieldErrorMap(value: unknown): value is PolicyFieldErrors {
 export function applyValidateResponse(
   draftKey: string | null,
   responseOk: boolean,
-  payload: unknown,
+  payload: unknown
 ): PolicyValidationGate {
   const body = (payload ?? {}) as ValidateRouteResponse;
   const fieldErrors = isFieldErrorMap(body.fieldErrors) ? body.fieldErrors : {};
@@ -128,11 +121,9 @@ export function applyValidateResponse(
 }
 
 /** Flatten API field errors to `path: message` lines, preserving order. */
-export function fieldErrorsToDisplayList(
-  fieldErrors: PolicyFieldErrors,
-): string[] {
+export function fieldErrorsToDisplayList(fieldErrors: PolicyFieldErrors): string[] {
   return Object.entries(fieldErrors).flatMap(([field, messages]) =>
-    messages.map((message) => `${field}: ${message}`),
+    messages.map((message) => `${field}: ${message}`)
   );
 }
 
@@ -140,9 +131,7 @@ export function fieldErrorsToDisplayList(
  * Display lines for a failed gate. Field errors come straight from the API;
  * the API's own error strings are the fallback when no field map exists.
  */
-export function buildValidationDisplayErrors(
-  gate: PolicyValidationGate,
-): string[] {
+export function buildValidationDisplayErrors(gate: PolicyValidationGate): string[] {
   const fromFields = fieldErrorsToDisplayList(gate.fieldErrors);
   return fromFields.length > 0 ? fromFields : gate.errors;
 }

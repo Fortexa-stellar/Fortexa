@@ -36,7 +36,7 @@ import {
   writeSharedRateLimit,
   clearSharedRateLimits,
   isSharedSecurityStateEnabled,
-  resetRedisClient
+  resetRedisClient,
 } from "./shared-security-state";
 
 const testFilePath = path.join(process.cwd(), ".fortexa", "shared-state-test.json");
@@ -71,12 +71,12 @@ describe("shared-security-state with Redis & File Fallback", () => {
 
   it("uses Redis when available", async () => {
     process.env.REDIS_URL = "redis://localhost:6379";
-    
+
     // Test write rate limit
     const val = { count: 5, resetAt: Date.now() + 10000 };
     mockSet.mockResolvedValue("OK");
     await writeSharedRateLimit("test-key", val);
-    
+
     expect(mockSet).toHaveBeenCalledWith(
       "fortexa:rate-limit:test-key",
       JSON.stringify(val),

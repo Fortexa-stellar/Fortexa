@@ -1,4 +1,11 @@
-import { Account, Asset, Keypair, Networks, Operation, TransactionBuilder } from "@stellar/stellar-sdk";
+import {
+  Account,
+  Asset,
+  Keypair,
+  Networks,
+  Operation,
+  TransactionBuilder,
+} from "@stellar/stellar-sdk";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/stellar/network-config", () => ({
@@ -16,7 +23,11 @@ function buildSignedXdr(signerKp: Keypair, sourcePublicKey: string) {
   const destination = Keypair.random();
   const tx = new TransactionBuilder(account, { fee: "100", networkPassphrase: Networks.TESTNET })
     .addOperation(
-      Operation.payment({ destination: destination.publicKey(), asset: Asset.native(), amount: "1" })
+      Operation.payment({
+        destination: destination.publicKey(),
+        asset: Asset.native(),
+        amount: "1",
+      })
     )
     .setTimeout(180)
     .build();
@@ -72,15 +83,27 @@ describe("decodeSignedXdrSourceAccount", () => {
     const innerAccount = new Account(innerSourceKp.publicKey(), "1");
     const destination = Keypair.random();
 
-    const innerTx = new TransactionBuilder(innerAccount, { fee: "100", networkPassphrase: Networks.TESTNET })
+    const innerTx = new TransactionBuilder(innerAccount, {
+      fee: "100",
+      networkPassphrase: Networks.TESTNET,
+    })
       .addOperation(
-        Operation.payment({ destination: destination.publicKey(), asset: Asset.native(), amount: "1" })
+        Operation.payment({
+          destination: destination.publicKey(),
+          asset: Asset.native(),
+          amount: "1",
+        })
       )
       .setTimeout(180)
       .build();
     innerTx.sign(innerSourceKp);
 
-    const feeBumpTx = TransactionBuilder.buildFeeBumpTransaction(feePayerKp, "200", innerTx, Networks.TESTNET);
+    const feeBumpTx = TransactionBuilder.buildFeeBumpTransaction(
+      feePayerKp,
+      "200",
+      innerTx,
+      Networks.TESTNET
+    );
     feeBumpTx.sign(feePayerKp);
 
     const result = decodeSignedXdrSourceAccount(feeBumpTx.toXDR());

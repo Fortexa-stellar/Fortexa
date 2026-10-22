@@ -1,10 +1,5 @@
 import { defaultPolicyConfig } from "@/lib/policy/engine";
-import type {
-  AgentAction,
-  DailyUsage,
-  DecisionType,
-  PolicyConfig,
-} from "@/lib/types/domain";
+import type { AgentAction, DailyUsage, DecisionType, PolicyConfig } from "@/lib/types/domain";
 import type { PaymentComparison } from "@/lib/decision/engine";
 
 /**
@@ -20,8 +15,7 @@ import type { PaymentComparison } from "@/lib/decision/engine";
  * only evaluate decisions.
  */
 
-export const PARITY_SAFE_DESTINATION =
-  "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+export const PARITY_SAFE_DESTINATION = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 
 export const PARITY_MEMO_REQUIRED_DESTINATION =
   "GMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM";

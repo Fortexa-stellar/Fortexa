@@ -13,8 +13,7 @@ function freighterMessageMock(overrides?: {
   signMessage: ReturnType<typeof vi.fn>;
 } {
   return {
-    isConnected:
-      overrides?.isConnected ?? vi.fn().mockResolvedValue({ isConnected: true }),
+    isConnected: overrides?.isConnected ?? vi.fn().mockResolvedValue({ isConnected: true }),
     signMessage:
       overrides?.signMessage ??
       vi.fn().mockResolvedValue({

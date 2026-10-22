@@ -48,8 +48,14 @@ describe("buildAuditExportFilename", () => {
   });
 
   it("never contains a newline or carriage return even with a hostile cast past the type system", () => {
-    const hostileScope = "all\r\nX-Injected: 1" as unknown as Parameters<typeof buildAuditExportFilename>[0];
-    const name = buildAuditExportFilename(hostileScope, "csv", new Date("2026-10-22T12:00:00.000Z"));
+    const hostileScope = "all\r\nX-Injected: 1" as unknown as Parameters<
+      typeof buildAuditExportFilename
+    >[0];
+    const name = buildAuditExportFilename(
+      hostileScope,
+      "csv",
+      new Date("2026-10-22T12:00:00.000Z")
+    );
     expect(name).not.toMatch(/[\r\n]/);
   });
 });

@@ -2,7 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { AlertTriangle, CheckCircle2, Clock3, Database, HelpCircle, Shield, ShieldAlert, ShieldCheck, ShieldOff } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Clock3,
+  Database,
+  HelpCircle,
+  Shield,
+  ShieldAlert,
+  ShieldCheck,
+  ShieldOff,
+} from "lucide-react";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -94,11 +104,13 @@ function DependencyBadge({ name, status }: { name: string; status: string }) {
   const colorClass = isHealthy
     ? "bg-emerald-900/30 text-emerald-300 border-emerald-800"
     : isDegraded
-    ? "bg-amber-900/30 text-amber-300 border-amber-800"
-    : "bg-neutral-900/30 text-neutral-400 border-neutral-800";
+      ? "bg-amber-900/30 text-amber-300 border-amber-800"
+      : "bg-neutral-900/30 text-neutral-400 border-neutral-800";
 
   return (
-    <div className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium ${colorClass}`}>
+    <div
+      className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium ${colorClass}`}
+    >
       {isHealthy ? (
         <CheckCircle2 aria-hidden="true" className="h-3 w-3" />
       ) : isDegraded ? (
@@ -127,7 +139,10 @@ function CounterTile({
   icon: ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.15)] p-3" data-testid={`ops-counter-${testId}-tile`}>
+    <div
+      className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.15)] p-3"
+      data-testid={`ops-counter-${testId}-tile`}
+    >
       <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
         {icon}
         {label}
@@ -161,7 +176,9 @@ export function OpsDashboard({ initialMetrics }: { initialMetrics?: MetricsRespo
       setTxLoading(true);
 
       try {
-        const auditResponse = await fetch("/api/audit/export?format=json&scope=all", { cache: "no-store" });
+        const auditResponse = await fetch("/api/audit/export?format=json&scope=all", {
+          cache: "no-store",
+        });
 
         if (!auditResponse.ok) {
           throw new Error("Failed to fetch signed transaction count.");
@@ -297,7 +314,10 @@ export function OpsDashboard({ initialMetrics }: { initialMetrics?: MetricsRespo
         </Card>
       ) : null}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" data-testid="ops-snapshot-counters">
+      <section
+        className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
+        data-testid="ops-snapshot-counters"
+      >
         <CounterTile
           label="Allowed"
           value={counters.allow}
@@ -401,7 +421,7 @@ export function OpsDashboard({ initialMetrics }: { initialMetrics?: MetricsRespo
             <CardDescription>Signed TX Count</CardDescription>
             <CardTitle className="flex items-center gap-2 text-2xl">
               <Clock3 aria-hidden="true" className="h-5 w-5 text-fuchsia-300" />
-              {txLoading ? "Loading" : txCount ?? "-"}
+              {txLoading ? "Loading" : (txCount ?? "-")}
             </CardTitle>
           </CardHeader>
           <CardContent className="text-sm text-[hsl(var(--muted-foreground))]">
@@ -468,7 +488,13 @@ export function OpsDashboard({ initialMetrics }: { initialMetrics?: MetricsRespo
               ) : (
                 <ShieldOff aria-hidden="true" className="h-5 w-5 text-amber-400" />
               )}
-              {health ? (health.blocklist.configured ? "Active" : "Unconfigured") : loading ? "Loading" : "-"}
+              {health
+                ? health.blocklist.configured
+                  ? "Active"
+                  : "Unconfigured"
+                : loading
+                  ? "Loading"
+                  : "-"}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-1 text-sm text-[hsl(var(--muted-foreground))]">
@@ -509,9 +535,30 @@ export function OpsDashboard({ initialMetrics }: { initialMetrics?: MetricsRespo
                     <YAxis yAxisId="left" tick={{ fontSize: 12 }} />
                     <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} />
                     <Tooltip />
-                    <Line yAxisId="left" type="monotone" dataKey="requests" stroke="#22d3ee" strokeWidth={2} dot={false} />
-                    <Line yAxisId="left" type="monotone" dataKey="errors" stroke="#f59e0b" strokeWidth={2} dot={false} />
-                    <Line yAxisId="right" type="monotone" dataKey="errorRatePct" stroke="#ef4444" strokeWidth={2} dot={false} />
+                    <Line
+                      yAxisId="left"
+                      type="monotone"
+                      dataKey="requests"
+                      stroke="#22d3ee"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Line
+                      yAxisId="left"
+                      type="monotone"
+                      dataKey="errors"
+                      stroke="#f59e0b"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                    <Line
+                      yAxisId="right"
+                      type="monotone"
+                      dataKey="errorRatePct"
+                      stroke="#ef4444"
+                      strokeWidth={2}
+                      dot={false}
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               )}
@@ -529,11 +576,17 @@ export function OpsDashboard({ initialMetrics }: { initialMetrics?: MetricsRespo
               <p className="text-[hsl(var(--muted-foreground))]">No route metrics yet.</p>
             ) : (
               hotRoutes.map((route) => (
-                <div key={`${route.method}:${route.route}`} className="rounded-lg border border-[hsl(var(--border))] p-2 text-[hsl(var(--muted-foreground))]">
+                <div
+                  key={`${route.method}:${route.route}`}
+                  className="rounded-lg border border-[hsl(var(--border))] p-2 text-[hsl(var(--muted-foreground))]"
+                >
                   <p className="font-medium text-white">
                     {route.method} {route.route}
                   </p>
-                  <p>requests: {route.totalCount} · errors: {route.errorCount} · p95: {route.p95DurationMs.toFixed(1)} ms</p>
+                  <p>
+                    requests: {route.totalCount} · errors: {route.errorCount} · p95:{" "}
+                    {route.p95DurationMs.toFixed(1)} ms
+                  </p>
                 </div>
               ))
             )}

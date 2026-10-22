@@ -89,7 +89,14 @@ describe("/api/metrics route", () => {
 
     const response = await GET(request);
     const body = (await response.json()) as {
-      routes: Array<{ route: string; method: string; totalCount: number; errorCount: number; errorRate: number; p95DurationMs: number }>;
+      routes: Array<{
+        route: string;
+        method: string;
+        totalCount: number;
+        errorCount: number;
+        errorRate: number;
+        p95DurationMs: number;
+      }>;
     };
 
     const selfRoute = body.routes.find((r) => r.route === "/api/metrics");
@@ -120,7 +127,9 @@ describe("/api/metrics route", () => {
     expect(text).toContain("# TYPE fortexa_request_errors_total counter");
     expect(text).toContain("fortexa_request_errors_total{");
 
-    expect(text).toContain("# HELP fortexa_request_duration_ms_p95 P95 request duration in milliseconds");
+    expect(text).toContain(
+      "# HELP fortexa_request_duration_ms_p95 P95 request duration in milliseconds"
+    );
     expect(text).toContain("# TYPE fortexa_request_duration_ms_p95 gauge");
     expect(text).toContain("fortexa_request_duration_ms_p95{");
 

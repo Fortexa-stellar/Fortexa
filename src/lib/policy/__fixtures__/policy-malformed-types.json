@@ -1,11 +1,7 @@
 {
-  "allowedDomains": [
-    "only-one-ok"
-  ],
+  "allowedDomains": ["only-one-ok"],
   "blockedDomains": "should-be-an-array",
-  "allowedTools": [
-    "ok-tool"
-  ],
+  "allowedTools": ["ok-tool"],
   "blockedTools": [],
   "perTxCapXLM": "120",
   "dailyCapXLM": -50,

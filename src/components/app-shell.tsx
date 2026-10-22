@@ -1,21 +1,14 @@
-import { type ReactNode } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { getSessionRole } from '@/lib/auth/wallet-role';
-import { getSession } from '@/lib/auth/session';
+import { type ReactNode } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { getSessionRole } from "@/lib/auth/wallet-role";
+import { getSession } from "@/lib/auth/session";
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  LayoutDashboard,
-  Terminal,
-  Settings,
-  LogOut,
-  Radio,
-  Loader2,
-} from "lucide-react";
+import { LayoutDashboard, Terminal, Settings, LogOut, Radio, Loader2 } from "lucide-react";
 
 import { AppWorkspaceBackground } from "@/components/app-workspace-background";
 import { Button } from "@/components/ui/button";
@@ -119,10 +112,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           href="/"
           className="flex items-center gap-3 border-b border-[hsl(var(--border)/0.5)] px-5 py-5 transition-opacity hover:opacity-80"
         >
-          <Image src="/fortexa-logo.jpeg" alt="Fortexa" width={36} height={36} className="rounded-lg" priority />
+          <Image
+            src="/fortexa-logo.jpeg"
+            alt="Fortexa"
+            width={36}
+            height={36}
+            className="rounded-lg"
+            priority
+          />
           <div>
             <p className="text-sm font-semibold tracking-tight">Fortexa</p>
-            <p className="text-[10px] uppercase tracking-widest text-[hsl(var(--muted-foreground))]">Control Room</p>
+            <p className="text-[10px] uppercase tracking-widest text-[hsl(var(--muted-foreground))]">
+              Control Room
+            </p>
           </div>
         </Link>
 
@@ -159,11 +161,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="mb-3 rounded-xl bg-[hsl(var(--muted)/0.4)] px-3 py-2">
               <p className="truncate font-mono text-xs">{truncateMiddle(wallet, 8, 8)}</p>
               {role ? (
-                <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--muted-foreground))]">{role}</p>
+                <p className="text-[10px] uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
+                  {role}
+                </p>
               ) : null}
             </div>
           ) : null}
-          <Button variant="ghost" size="sm" className="w-full justify-start gap-2" disabled={loggingOut} onClick={logout}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start gap-2"
+            disabled={loggingOut}
+            onClick={logout}
+          >
             {loggingOut ? (
               <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
             ) : (

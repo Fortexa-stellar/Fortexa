@@ -19,5 +19,7 @@ export function AlertTitle({ className, ...props }: HTMLAttributes<HTMLHeadingEl
 }
 
 export function AlertDescription({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={cn("mt-1 text-sm text-[hsl(var(--muted-foreground))]", className)} {...props} />;
+  return (
+    <p className={cn("mt-1 text-sm text-[hsl(var(--muted-foreground))]", className)} {...props} />
+  );
 }

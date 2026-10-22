@@ -16,12 +16,11 @@ export function getJsonBodyMaxBytes(): number {
 }
 
 export type ReadJsonBodyResult =
-  | { ok: true; data: unknown }
-  | { ok: false; status: 413; error: string };
+  { ok: true; data: unknown } | { ok: false; status: 413; error: string };
 
 export async function readJsonBody(
   request: Request,
-  options?: { maxBytes?: number },
+  options?: { maxBytes?: number }
 ): Promise<ReadJsonBodyResult> {
   const maxBytes = options?.maxBytes ?? getJsonBodyMaxBytes();
   const readResult = await readBodyTextWithLimit(request, maxBytes);
@@ -39,7 +38,7 @@ export async function readJsonBody(
 
 async function readBodyTextWithLimit(
   request: Request,
-  maxBytes: number,
+  maxBytes: number
 ): Promise<{ ok: true; text: string } | { ok: false }> {
   const contentLength = request.headers.get("content-length");
   if (contentLength) {

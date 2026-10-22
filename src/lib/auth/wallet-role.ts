@@ -52,5 +52,5 @@ export function resolveRolesByWallet(publicKey: string): AuthRole[] {
 
 export function resolveRoleByWallet(publicKey: string): AuthRole | null {
   const roles = resolveRolesByWallet(publicKey);
-  return roles.includes("operator") ? "operator" : roles[0] ?? null;
+  return roles.includes("operator") ? "operator" : (roles[0] ?? null);
 }

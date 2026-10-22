@@ -7,8 +7,7 @@ export type SessionRecord = {
 };
 
 export type SessionRotationResult =
-  | { ok: true; generation: number }
-  | { ok: false; reason: "revoked" | "stale" };
+  { ok: true; generation: number } | { ok: false; reason: "revoked" | "stale" };
 
 export type SessionIdentity = {
   userId: string;
@@ -90,7 +89,9 @@ export function rotateSessionGeneration(
   return { ok: true, generation };
 }
 
-export function isSessionGenerationCurrent(identity: SessionIdentity & { generation: number }): boolean {
+export function isSessionGenerationCurrent(
+  identity: SessionIdentity & { generation: number }
+): boolean {
   const record = records.get(sessionRecordKey(identity));
 
   if (!record) {

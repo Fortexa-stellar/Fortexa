@@ -82,7 +82,7 @@ describe("/api/decision observability redaction", () => {
 
   it("redacts secrets when the decision route throws an internal error", async () => {
     vi.mocked(evaluateDecision).mockRejectedValueOnce(
-      new Error(`ledger write failed for ${TEST_DESTINATION} (api_key=sk-live-zzz)`),
+      new Error(`ledger write failed for ${TEST_DESTINATION} (api_key=sk-live-zzz)`)
     );
 
     const response = await POST(postDecision({ scenarioId: "safe-research-payment" }));
@@ -105,9 +105,7 @@ describe("/api/decision observability redaction", () => {
   });
 
   it("still records the API error metric when an internal error is redacted", async () => {
-    vi.mocked(evaluateDecision).mockRejectedValueOnce(
-      new Error(`boom ${TEST_DESTINATION}`),
-    );
+    vi.mocked(evaluateDecision).mockRejectedValueOnce(new Error(`boom ${TEST_DESTINATION}`));
 
     const response = await POST(postDecision({ scenarioId: "safe-research-payment" }));
     expect(response.status).toBe(500);

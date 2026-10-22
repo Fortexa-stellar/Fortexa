@@ -53,10 +53,20 @@ describe("resolveWalletCardState", () => {
 
   it("disables actions when no account is connected or no wallet is bound", () => {
     expect(
-      resolveWalletCardState({ authenticated: true, role: "operator", sessionWallet: SESSION_WALLET, connectedAccount: null }),
+      resolveWalletCardState({
+        authenticated: true,
+        role: "operator",
+        sessionWallet: SESSION_WALLET,
+        connectedAccount: null,
+      })
     ).toMatchObject({ status: "not_connected", canPay: false, canEditPolicy: false });
     expect(
-      resolveWalletCardState({ authenticated: true, role: "operator", sessionWallet: null, connectedAccount: SESSION_WALLET }),
+      resolveWalletCardState({
+        authenticated: true,
+        role: "operator",
+        sessionWallet: null,
+        connectedAccount: SESSION_WALLET,
+      })
     ).toMatchObject({ status: "unbound", canPay: false, canEditPolicy: false });
   });
 
@@ -88,7 +98,7 @@ describe("WalletActionsPanel", () => {
           sessionWallet: SESSION_WALLET,
           connectedAccount: SESSION_WALLET,
         })}
-      />,
+      />
     );
     expect(html).toContain('data-status="match"');
     expect(buttonDisabled(html, "pay")).toBe(false);
@@ -104,7 +114,7 @@ describe("WalletActionsPanel", () => {
           sessionWallet: SESSION_WALLET,
           connectedAccount: OTHER_ACCOUNT,
         })}
-      />,
+      />
     );
     expect(html).toContain('data-status="mismatch"');
     expect(html).toContain('role="alert"');
@@ -122,7 +132,7 @@ describe("WalletActionsPanel", () => {
           sessionWallet: SESSION_WALLET,
           connectedAccount: SESSION_WALLET,
         })}
-      />,
+      />
     );
     expect(html).toContain('data-status="signed_out"');
     expect(html).toContain("Signed out");

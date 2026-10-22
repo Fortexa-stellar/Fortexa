@@ -62,7 +62,8 @@ vi.mock("react", async () => {
       const currentIndex = hookIndex;
       hookIndex++;
       if (states.length <= currentIndex) {
-        const value = typeof initialValue === "function" ? (initialValue as () => unknown)() : initialValue;
+        const value =
+          typeof initialValue === "function" ? (initialValue as () => unknown)() : initialValue;
         states.push(value);
         setters.push((newValue: unknown) => {
           if (typeof newValue === "function") {
@@ -90,8 +91,16 @@ async function flushPromises() {
   await vi.advanceTimersByTimeAsync(50);
 }
 
-type HealthState = { ok: boolean; timestamp: string; env: Record<string, boolean>; blocklist: Record<string, unknown> } | null;
-type MetricsState = { totals: { totalCount: number; errorCount: number; errorRate: number }; routes: unknown[] } | null;
+type HealthState = {
+  ok: boolean;
+  timestamp: string;
+  env: Record<string, boolean>;
+  blocklist: Record<string, unknown>;
+} | null;
+type MetricsState = {
+  totals: { totalCount: number; errorCount: number; errorRate: number };
+  routes: unknown[];
+} | null;
 
 describe("OpsDashboard lastRefreshed feature", () => {
   beforeEach(() => {
@@ -132,7 +141,12 @@ describe("OpsDashboard lastRefreshed feature", () => {
               service: "fortexa",
               timestamp: "2026-06-29T23:56:21Z",
               env: { hasGroqKey: true, hasAuthSecret: true, hasHorizonUrl: true },
-              blocklist: { configured: true, lastRefreshAt: "2026-06-29T23:00:00Z", domainCount: 42, lastError: null },
+              blocklist: {
+                configured: true,
+                lastRefreshAt: "2026-06-29T23:00:00Z",
+                domainCount: 42,
+                lastError: null,
+              },
             }),
         });
       }

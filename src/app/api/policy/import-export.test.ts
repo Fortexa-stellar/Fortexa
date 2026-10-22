@@ -74,13 +74,19 @@ describe("policy export import", () => {
     const document = await exportedFixture();
     const changed = {
       ...document,
-      policy: { ...document.policy, allowedTools: ["rewritten-id", ...document.policy.allowedTools.slice(1)] },
+      policy: {
+        ...document.policy,
+        allowedTools: ["rewritten-id", ...document.policy.allowedTools.slice(1)],
+      },
     };
 
     const response = await POST(request("POST", changed));
     expect(response.status).toBe(422);
     expect((await response.json()).error).toMatch(/rule identifiers or order/);
-    expect(await activePolicy()).toMatchObject({ policy: document.policy, version: document.version });
+    expect(await activePolicy()).toMatchObject({
+      policy: document.policy,
+      version: document.version,
+    });
     expect(store.update).not.toHaveBeenCalled();
   });
 
@@ -93,7 +99,10 @@ describe("policy export import", () => {
 
     const response = await POST(request("POST", changed));
     expect(response.status).toBe(422);
-    expect(await activePolicy()).toMatchObject({ policy: document.policy, version: document.version });
+    expect(await activePolicy()).toMatchObject({
+      policy: document.policy,
+      version: document.version,
+    });
     expect(store.update).not.toHaveBeenCalled();
   });
 
@@ -101,7 +110,10 @@ describe("policy export import", () => {
     const document = await exportedFixture();
     const response = await POST(request("POST", { ...document, version: document.version + 1 }));
     expect(response.status).toBe(409);
-    expect(await activePolicy()).toMatchObject({ policy: document.policy, version: document.version });
+    expect(await activePolicy()).toMatchObject({
+      policy: document.policy,
+      version: document.version,
+    });
     expect(store.update).not.toHaveBeenCalled();
   });
 
@@ -109,7 +121,10 @@ describe("policy export import", () => {
     const document = await exportedFixture();
     const response = await POST(request("POST", { ...document, active: false }));
     expect(response.status).toBe(422);
-    expect(await activePolicy()).toMatchObject({ policy: document.policy, version: document.version });
+    expect(await activePolicy()).toMatchObject({
+      policy: document.policy,
+      version: document.version,
+    });
     expect(store.update).not.toHaveBeenCalled();
   });
 
@@ -120,14 +135,22 @@ describe("policy export import", () => {
     const migrated = await POST(request("POST", { ...document, policy: olderPolicy }));
     expect(migrated.status).toBe(200);
     expect((await migrated.json()).policy).toEqual(document.policy);
-    expect(await activePolicy()).toMatchObject({ policy: document.policy, version: document.version });
+    expect(await activePolicy()).toMatchObject({
+      policy: document.policy,
+      version: document.version,
+    });
 
-    const malformed = await POST(request("POST", {
-      ...document,
-      policy: { ...document.policy, perTxCapXLM: "invalid" },
-    }));
+    const malformed = await POST(
+      request("POST", {
+        ...document,
+        policy: { ...document.policy, perTxCapXLM: "invalid" },
+      })
+    );
     expect(malformed.status).toBe(422);
-    expect(await activePolicy()).toMatchObject({ policy: document.policy, version: document.version });
+    expect(await activePolicy()).toMatchObject({
+      policy: document.policy,
+      version: document.version,
+    });
     expect(store.update).not.toHaveBeenCalled();
   });
 });

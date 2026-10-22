@@ -55,7 +55,9 @@ describe("POST /api/stellar/setup network guard", () => {
     const body = await response.text();
 
     expect(response.status).toBe(403);
-    expect(body).toBe(JSON.stringify({ error: "Stellar setup is disabled on the public network." }));
+    expect(body).toBe(
+      JSON.stringify({ error: "Stellar setup is disabled on the public network." })
+    );
     expect(upsertUserWallet).not.toHaveBeenCalled();
     expect(logWarn).toHaveBeenCalledWith(
       "Stellar setup refused on public network",
@@ -69,9 +71,12 @@ describe("POST /api/stellar/setup network guard", () => {
     const response = await POST(buildRequest());
 
     expect(response.status).toBe(200);
-    expect(upsertUserWallet).toHaveBeenCalledWith("operator-1", expect.objectContaining({
-      publicKey: "GTESTWALLET",
-    }));
+    expect(upsertUserWallet).toHaveBeenCalledWith(
+      "operator-1",
+      expect.objectContaining({
+        publicKey: "GTESTWALLET",
+      })
+    );
     expect(logWarn).not.toHaveBeenCalled();
   });
 });

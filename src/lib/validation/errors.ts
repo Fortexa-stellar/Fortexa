@@ -60,7 +60,7 @@ export function logValidationFailure(
   message: string,
   context: LogContext,
   error: ZodError,
-  rawBody?: unknown,
+  rawBody?: unknown
 ): void {
   logWarn(
     message,
@@ -68,6 +68,6 @@ export function logValidationFailure(
       ...context,
       validation: error.flatten(),
       body: rawBody,
-    }) as unknown as LogContext,
+    }) as unknown as LogContext
   );
 }

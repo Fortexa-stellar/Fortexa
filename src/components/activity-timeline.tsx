@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import type { AuditEntry } from "@/lib/types/domain";
 
@@ -38,12 +38,17 @@ export function ActivityTimeline({
             <div className="min-w-0 flex-1">
               <p className="font-medium break-words">{entry.action.name}</p>
               <p className="mt-0.5 text-xs text-[hsl(var(--muted-foreground))]">
-                <span className="hidden sm:inline">{new Date(entry.timestamp).toLocaleString()}</span>
+                <span className="hidden sm:inline">
+                  {new Date(entry.timestamp).toLocaleString()}
+                </span>
                 <span className="sm:hidden">
                   {new Date(entry.timestamp).toLocaleDateString()}{" "}
-                  {new Date(entry.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                </span>
-                {" "}· {entry.action.amountXLM} XLM
+                  {new Date(entry.timestamp).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>{" "}
+                · {entry.action.amountXLM} XLM
               </p>
             </div>
             <div className="flex shrink-0 sm:block">
@@ -52,13 +57,17 @@ export function ActivityTimeline({
           </div>
           {!compact ? (
             <div className="mt-3 space-y-2 text-sm text-[hsl(var(--muted-foreground))]">
-              <p className="rounded-lg bg-[hsl(var(--muted)/0.35)] px-3 py-2 break-words">{entry.explanation}</p>
+              <p className="rounded-lg bg-[hsl(var(--muted)/0.35)] px-3 py-2 break-words">
+                {entry.explanation}
+              </p>
               <p className="inline-flex items-center gap-1 text-xs break-all">
                 <ScrollText aria-hidden="true" className="h-3 w-3 shrink-0" /> {entry.id}
               </p>
             </div>
           ) : (
-            <p className="mt-2 truncate text-xs text-[hsl(var(--muted-foreground))]">{entry.explanation}</p>
+            <p className="mt-2 truncate text-xs text-[hsl(var(--muted-foreground))]">
+              {entry.explanation}
+            </p>
           )}
           {!compact ? (
             <div className="mt-2 grid gap-2 sm:grid-cols-3">
@@ -76,7 +85,10 @@ export function ActivityTimeline({
                 <p className="mb-0.5 inline-flex items-center gap-1 uppercase tracking-wider text-[hsl(var(--accent))]">
                   <Clock4 aria-hidden="true" className="h-3 w-3" /> Time
                 </p>
-                {new Date(entry.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                {new Date(entry.timestamp).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
               </div>
             </div>
           ) : null}

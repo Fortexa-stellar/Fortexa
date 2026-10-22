@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { DuplicateRuleError, evaluatePolicy, defaultPolicyConfig, readAmountStroops, validateNoDuplicateRules } from "@/lib/policy/engine";
+import {
+  DuplicateRuleError,
+  evaluatePolicy,
+  defaultPolicyConfig,
+  readAmountStroops,
+  validateNoDuplicateRules,
+} from "@/lib/policy/engine";
 import type { AgentAction, DailyUsage, PolicyConfig } from "@/lib/types/domain";
 
 const baseAction: AgentAction = {
@@ -27,17 +33,23 @@ const basePolicy: PolicyConfig = {
 function evaluate(
   actionOverrides: Partial<AgentAction> = {},
   policyOverrides: Partial<PolicyConfig> = {},
-  usageOverrides: Partial<DailyUsage> = {},
+  usageOverrides: Partial<DailyUsage> = {}
 ) {
   return evaluatePolicy(
     { ...baseAction, ...actionOverrides },
     { ...basePolicy, ...policyOverrides },
-    { ...baseUsage, ...usageOverrides },
+    { ...baseUsage, ...usageOverrides }
   );
 }
 
-function triggerCodes(actionOverrides?: Partial<AgentAction>, policyOverrides?: Partial<PolicyConfig>, usageOverrides?: Partial<DailyUsage>) {
-  return evaluate(actionOverrides, policyOverrides, usageOverrides).triggers.map((trigger) => trigger.code);
+function triggerCodes(
+  actionOverrides?: Partial<AgentAction>,
+  policyOverrides?: Partial<PolicyConfig>,
+  usageOverrides?: Partial<DailyUsage>
+) {
+  return evaluate(actionOverrides, policyOverrides, usageOverrides).triggers.map(
+    (trigger) => trigger.code
+  );
 }
 
 describe("policy engine", () => {
@@ -65,7 +77,7 @@ describe("policy engine", () => {
       expect.arrayContaining([
         expect.objectContaining({ code: "BLOCKED_DOMAIN", severity: "high" }),
         expect.objectContaining({ code: "UNLISTED_DOMAIN", severity: "medium" }),
-      ]),
+      ])
     );
   });
 
@@ -74,12 +86,16 @@ describe("policy engine", () => {
 
     expect(result.hardBlock).toBe(false);
     expect(result.warning).toBe(true);
-    expect(result.triggers).toEqual([expect.objectContaining({ code: "UNLISTED_DOMAIN", severity: "medium" })]);
+    expect(result.triggers).toEqual([
+      expect.objectContaining({ code: "UNLISTED_DOMAIN", severity: "medium" }),
+    ]);
   });
 
   it("normalizes domains before allowlist checks (whitespace, casing, trailing dot, URL)", () => {
     expect(triggerCodes({ domain: " API.safe-research.ai  " })).not.toContain("UNLISTED_DOMAIN");
-    expect(triggerCodes({ domain: "https://api.safe-research.ai/path?query=1" })).not.toContain("UNLISTED_DOMAIN");
+    expect(triggerCodes({ domain: "https://api.safe-research.ai/path?query=1" })).not.toContain(
+      "UNLISTED_DOMAIN"
+    );
     expect(triggerCodes({ domain: "api.safe-research.ai." })).not.toContain("UNLISTED_DOMAIN");
   });
 
@@ -90,7 +106,7 @@ describe("policy engine", () => {
     expect(result.triggers).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ code: "MALFORMED_DOMAIN", severity: "high" }),
-      ]),
+      ])
     );
   });
 
@@ -102,7 +118,7 @@ describe("policy engine", () => {
       expect.arrayContaining([
         expect.objectContaining({ code: "BLOCKED_TOOL", severity: "high" }),
         expect.objectContaining({ code: "UNAPPROVED_TOOL", severity: "medium" }),
-      ]),
+      ])
     );
   });
 
@@ -111,7 +127,9 @@ describe("policy engine", () => {
 
     expect(result.hardBlock).toBe(false);
     expect(result.warning).toBe(true);
-    expect(result.triggers).toEqual([expect.objectContaining({ code: "UNAPPROVED_TOOL", severity: "medium" })]);
+    expect(result.triggers).toEqual([
+      expect.objectContaining({ code: "UNAPPROVED_TOOL", severity: "medium" }),
+    ]);
   });
 
   it("does not evaluate tool allowlists when an action has no tool", () => {
@@ -122,50 +140,68 @@ describe("policy engine", () => {
     const result = evaluate({ amountXLM: basePolicy.perTxCapXLM + 1 });
 
     expect(result.requireApproval).toBe(true);
-    expect(result.triggers).toEqual([expect.objectContaining({ code: "PER_TX_CAP_EXCEEDED", severity: "high" })]);
+    expect(result.triggers).toEqual([
+      expect.objectContaining({ code: "PER_TX_CAP_EXCEEDED", severity: "high" }),
+    ]);
   });
 
   it("allows an amount exactly at the per-transaction cap", () => {
-    expect(triggerCodes({ amountXLM: basePolicy.perTxCapXLM })).not.toContain("PER_TX_CAP_EXCEEDED");
+    expect(triggerCodes({ amountXLM: basePolicy.perTxCapXLM })).not.toContain(
+      "PER_TX_CAP_EXCEEDED"
+    );
   });
 
   it("requires approval when the daily cap would be exceeded", () => {
     const result = evaluate({ amountXLM: 75 }, {}, { spentXLM: basePolicy.dailyCapXLM - 74 });
 
     expect(result.requireApproval).toBe(true);
-    expect(result.triggers).toEqual([expect.objectContaining({ code: "DAILY_CAP_EXCEEDED", severity: "high" })]);
+    expect(result.triggers).toEqual([
+      expect.objectContaining({ code: "DAILY_CAP_EXCEEDED", severity: "high" }),
+    ]);
   });
 
   it("allows usage exactly at the daily cap", () => {
-    expect(triggerCodes({ amountXLM: 75 }, {}, { spentXLM: basePolicy.dailyCapXLM - 75 })).not.toContain("DAILY_CAP_EXCEEDED");
+    expect(
+      triggerCodes({ amountXLM: 75 }, {}, { spentXLM: basePolicy.dailyCapXLM - 75 })
+    ).not.toContain("DAILY_CAP_EXCEEDED");
   });
 
   it("warns when the next tool call would exceed the daily tool-call limit", () => {
     const result = evaluate({}, {}, { toolCalls: basePolicy.maxToolCallsPerDay });
 
     expect(result.warning).toBe(true);
-    expect(result.triggers).toEqual([expect.objectContaining({ code: "TOOL_CALL_LIMIT_REACHED", severity: "medium" })]);
+    expect(result.triggers).toEqual([
+      expect.objectContaining({ code: "TOOL_CALL_LIMIT_REACHED", severity: "medium" }),
+    ]);
   });
 
   it("allows the final permitted tool call before the daily limit is reached", () => {
-    expect(triggerCodes({}, {}, { toolCalls: basePolicy.maxToolCallsPerDay - 1 })).not.toContain("TOOL_CALL_LIMIT_REACHED");
+    expect(triggerCodes({}, {}, { toolCalls: basePolicy.maxToolCallsPerDay - 1 })).not.toContain(
+      "TOOL_CALL_LIMIT_REACHED"
+    );
   });
 
   it("allows actions inside the configured allowed-hours window", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-05-26T12:00:00"));
 
-    expect(triggerCodes({}, { allowedHours: { start: 9, end: 17 } })).not.toContain("OUTSIDE_ALLOWED_TIME");
+    expect(triggerCodes({}, { allowedHours: { start: 9, end: 17 } })).not.toContain(
+      "OUTSIDE_ALLOWED_TIME"
+    );
   });
 
   it("allows actions on the allowed-hours start and end boundaries", () => {
     vi.useFakeTimers();
 
     vi.setSystemTime(new Date("2026-05-26T09:00:00"));
-    expect(triggerCodes({}, { allowedHours: { start: 9, end: 17 } })).not.toContain("OUTSIDE_ALLOWED_TIME");
+    expect(triggerCodes({}, { allowedHours: { start: 9, end: 17 } })).not.toContain(
+      "OUTSIDE_ALLOWED_TIME"
+    );
 
     vi.setSystemTime(new Date("2026-05-26T17:59:59.999"));
-    expect(triggerCodes({}, { allowedHours: { start: 9, end: 17 } })).not.toContain("OUTSIDE_ALLOWED_TIME");
+    expect(triggerCodes({}, { allowedHours: { start: 9, end: 17 } })).not.toContain(
+      "OUTSIDE_ALLOWED_TIME"
+    );
   });
 
   it("warns outside the configured allowed-hours window", () => {
@@ -175,7 +211,9 @@ describe("policy engine", () => {
     const result = evaluate({}, { allowedHours: { start: 9, end: 17 } });
 
     expect(result.warning).toBe(true);
-    expect(result.triggers).toEqual([expect.objectContaining({ code: "OUTSIDE_ALLOWED_TIME", severity: "medium" })]);
+    expect(result.triggers).toEqual([
+      expect.objectContaining({ code: "OUTSIDE_ALLOWED_TIME", severity: "medium" }),
+    ]);
   });
 
   it("treats empty allowlists as warnings rather than hard blocks", () => {
@@ -187,7 +225,7 @@ describe("policy engine", () => {
       expect.arrayContaining([
         expect.objectContaining({ code: "UNLISTED_DOMAIN" }),
         expect.objectContaining({ code: "UNAPPROVED_TOOL" }),
-      ]),
+      ])
     );
   });
   describe("cap arithmetic is exact", () => {
@@ -197,11 +235,11 @@ describe("policy engine", () => {
     // is not.
     it("allows a payment that lands exactly on the daily cap", () => {
       expect(
-        triggerCodes({ amountXLM: 0.2 }, { dailyCapXLM: 0.3, perTxCapXLM: 120 }, { spentXLM: 0.1 }),
+        triggerCodes({ amountXLM: 0.2 }, { dailyCapXLM: 0.3, perTxCapXLM: 120 }, { spentXLM: 0.1 })
       ).not.toContain("DAILY_CAP_EXCEEDED");
 
       expect(
-        triggerCodes({ amountXLM: 2.2 }, { dailyCapXLM: 3.3, perTxCapXLM: 120 }, { spentXLM: 1.1 }),
+        triggerCodes({ amountXLM: 2.2 }, { dailyCapXLM: 3.3, perTxCapXLM: 120 }, { spentXLM: 1.1 })
       ).not.toContain("DAILY_CAP_EXCEEDED");
     });
 
@@ -210,14 +248,14 @@ describe("policy engine", () => {
         triggerCodes(
           { amountXLM: 0.2000001 },
           { dailyCapXLM: 0.3, perTxCapXLM: 120 },
-          { spentXLM: 0.1 },
-        ),
+          { spentXLM: 0.1 }
+        )
       ).toContain("DAILY_CAP_EXCEEDED");
     });
 
     it("allows a payment that lands exactly on the per-transaction cap", () => {
       expect(
-        triggerCodes({ amountXLM: 3.3 }, { perTxCapXLM: 3.3, dailyCapXLM: 1000 }, { spentXLM: 0 }),
+        triggerCodes({ amountXLM: 3.3 }, { perTxCapXLM: 3.3, dailyCapXLM: 1000 }, { spentXLM: 0 })
       ).not.toContain("PER_TX_CAP_EXCEEDED");
     });
 
@@ -226,8 +264,8 @@ describe("policy engine", () => {
         triggerCodes(
           { amountXLM: 3.3000001 },
           { perTxCapXLM: 3.3, dailyCapXLM: 1000 },
-          { spentXLM: 0 },
-        ),
+          { spentXLM: 0 }
+        )
       ).toContain("PER_TX_CAP_EXCEEDED");
     });
 
@@ -239,16 +277,16 @@ describe("policy engine", () => {
         triggerCodes(
           { amountXLM: 1 },
           { perTxCapXLM: 1, perTxCapStroops: cap?.toString(), dailyCapXLM: 10 },
-          { spentXLM: 0 },
-        ),
+          { spentXLM: 0 }
+        )
       ).not.toContain("PER_TX_CAP_EXCEEDED");
 
       expect(
         triggerCodes(
           { amountXLM: 1.0000001 },
           { perTxCapXLM: 1, perTxCapStroops: cap?.toString(), dailyCapXLM: 10 },
-          { spentXLM: 0 },
-        ),
+          { spentXLM: 0 }
+        )
       ).toContain("PER_TX_CAP_EXCEEDED");
     });
 
@@ -256,7 +294,7 @@ describe("policy engine", () => {
       const atCap = triggerCodes(
         { amountXLM: 100000 },
         { perTxCapXLM: 100000, dailyCapXLM: 100000 },
-        { spentXLM: 0 },
+        { spentXLM: 0 }
       );
       expect(atCap).not.toContain("PER_TX_CAP_EXCEEDED");
       expect(atCap).not.toContain("DAILY_CAP_EXCEEDED");
@@ -264,7 +302,7 @@ describe("policy engine", () => {
       const overCap = triggerCodes(
         { amountXLM: 100000.0000001 },
         { perTxCapXLM: 100000, dailyCapXLM: 100000 },
-        { spentXLM: 0 },
+        { spentXLM: 0 }
       );
       expect(overCap).toContain("PER_TX_CAP_EXCEEDED");
     });

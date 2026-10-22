@@ -27,9 +27,13 @@ export function Stepper({
               <div
                 className={cn(
                   "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-semibold transition-all duration-300",
-                  isComplete && "border-[hsl(var(--accent))] bg-[hsl(var(--accent))] text-[hsl(var(--primary-foreground))]",
-                  isActive && "border-[hsl(var(--accent))] bg-[hsl(var(--accent)/0.15)] text-[hsl(var(--accent))] shadow-[0_0_20px_rgba(34,211,238,0.25)]",
-                  !isComplete && !isActive && "border-[hsl(var(--border))] bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]"
+                  isComplete &&
+                    "border-[hsl(var(--accent))] bg-[hsl(var(--accent))] text-[hsl(var(--primary-foreground))]",
+                  isActive &&
+                    "border-[hsl(var(--accent))] bg-[hsl(var(--accent)/0.15)] text-[hsl(var(--accent))] shadow-[0_0_20px_rgba(34,211,238,0.25)]",
+                  !isComplete &&
+                    !isActive &&
+                    "border-[hsl(var(--border))] bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]"
                 )}
               >
                 {isComplete ? <Check className="h-4 w-4" /> : step.id}

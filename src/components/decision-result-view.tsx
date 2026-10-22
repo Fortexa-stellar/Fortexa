@@ -28,9 +28,9 @@ export function redactVisibleReason(text: string): string {
       acc.replace(pattern, (match, key?: string) =>
         typeof key === "string" && match.toLowerCase().startsWith(key.toLowerCase())
           ? `${key}=${REDACTED}`
-          : REDACTED,
+          : REDACTED
       ),
-    text,
+    text
   );
 }
 
@@ -53,7 +53,11 @@ export function engineReasonCodes(result: EngineDecisionResult): string[] {
  * unchanged, only secret material in free text is redacted. A missing result
  * renders the empty state, never an allow.
  */
-export function DecisionResultView({ result }: { result: EngineDecisionResult | null | undefined }) {
+export function DecisionResultView({
+  result,
+}: {
+  result: EngineDecisionResult | null | undefined;
+}) {
   if (!result || !result.decision) {
     return (
       <p data-testid="decision-empty" className="text-sm text-[hsl(var(--muted-foreground))]">
@@ -93,18 +97,22 @@ export function DecisionResultView({ result }: { result: EngineDecisionResult | 
         <ul className="space-y-1 text-xs text-[hsl(var(--muted-foreground))]">
           {result.triggeredPolicies.map((trigger, index) => (
             <li key={`policy-${trigger.code}-${index}`}>
-              <span className="font-mono">{trigger.code}</span>: {redactVisibleReason(trigger.message)}
+              <span className="font-mono">{trigger.code}</span>:{" "}
+              {redactVisibleReason(trigger.message)}
             </li>
           ))}
           {result.riskFindings.map((finding, index) => (
             <li key={`finding-${finding.code}-${index}`}>
-              <span className="font-mono">{finding.code}</span>: {redactVisibleReason(finding.detail)}
+              <span className="font-mono">{finding.code}</span>:{" "}
+              {redactVisibleReason(finding.detail)}
             </li>
           ))}
         </ul>
       ) : null}
       {result.decision === "BLOCK" ? (
-        <p className="text-sm text-rose-300">Execution blocked. Select a different intent to continue.</p>
+        <p className="text-sm text-rose-300">
+          Execution blocked. Select a different intent to continue.
+        </p>
       ) : null}
     </div>
   );

@@ -38,7 +38,10 @@ function getClientIp(request: NextRequest) {
   return realIp?.trim() || "unknown";
 }
 
-export async function consumeRateLimit(request: NextRequest, config: BucketConfig): Promise<RateLimitResult> {
+export async function consumeRateLimit(
+  request: NextRequest,
+  config: BucketConfig
+): Promise<RateLimitResult> {
   const now = Date.now();
   const ip = getClientIp(request);
   const bucketKey = `${config.key}:${ip}`;

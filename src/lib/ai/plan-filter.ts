@@ -1,11 +1,7 @@
 import { evaluateDecision } from "@/lib/decision/engine";
 import { PLAN_ERRORS, type PlanErrorCode } from "@/lib/ai/plan-errors";
 import { logInfo, logWarn } from "@/lib/observability/logger";
-import {
-  appendAuditEntry,
-  consumeUsage,
-  getDailyUsage,
-} from "@/lib/storage/audit-store";
+import { appendAuditEntry, consumeUsage, getDailyUsage } from "@/lib/storage/audit-store";
 import { getPolicyConfig } from "@/lib/storage/policy-store";
 import type { AgentAction, AuditEntry, DecisionType } from "@/lib/types/domain";
 import type { AgentPlanInput } from "@/lib/validation/schemas";
@@ -86,9 +82,7 @@ export async function filterPlanAgainstLivePolicy(params: {
         planId: item.id,
         decision: decision.decision,
         reason: denialReasonForDecision(decision.decision),
-        triggeredPolicies: decision.triggeredPolicies
-          .map((trigger) => trigger.code)
-          .join(","),
+        triggeredPolicies: decision.triggeredPolicies.map((trigger) => trigger.code).join(","),
       });
 
       continue;
@@ -147,11 +141,9 @@ async function persistEngineDecision(params: {
     decision: decision.decision,
     explanation: decision.explanation,
     triggeredPolicies: decision.triggeredPolicies.map(
-      (trigger) => `${trigger.code}: ${trigger.message}`,
+      (trigger) => `${trigger.code}: ${trigger.message}`
     ),
-    riskFindings: decision.riskFindings.map(
-      (finding) => `${finding.code}: ${finding.detail}`,
-    ),
+    riskFindings: decision.riskFindings.map((finding) => `${finding.code}: ${finding.detail}`),
   };
 
   await appendAuditEntry(userId, entry);

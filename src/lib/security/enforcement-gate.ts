@@ -32,9 +32,7 @@ export type EnforcementGateDenied = {
   rate: RateLimitResult | null;
 };
 
-export type EnforcementGateResult =
-  | EnforcementGateAllowed
-  | EnforcementGateDenied;
+export type EnforcementGateResult = EnforcementGateAllowed | EnforcementGateDenied;
 
 /**
  * Destinations that are payment-relevant for blocklist enforcement. The
@@ -67,7 +65,7 @@ export function extractDestinationDomain(destination: string): string {
  * rate-limit consumption below.
  */
 async function checkDestinationAgainstBlocklist(
-  destinationDomain: string,
+  destinationDomain: string
 ): Promise<{ blocked: boolean }> {
   if (!destinationDomain) {
     return { blocked: false };
@@ -116,7 +114,7 @@ export async function enforceRequestGate(
      * and the domain it is reached through are both blocklist-relevant.
      */
     actionDomain?: string;
-  },
+  }
 ): Promise<EnforcementGateResult> {
   const rate = await consumeRateLimit(request, {
     key: config.rateLimitKey,

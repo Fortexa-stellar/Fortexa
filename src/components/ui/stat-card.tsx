@@ -16,9 +16,16 @@ export function StatCard({
   className?: string;
 }) {
   return (
-    <div className={cn("surface-elevated p-5 transition hover:border-[hsl(var(--accent)/0.2)]", className)}>
+    <div
+      className={cn(
+        "surface-elevated p-5 transition hover:border-[hsl(var(--accent)/0.2)]",
+        className
+      )}
+    >
       <div className="mb-3 flex items-start justify-between gap-3">
-        <p className="text-xs font-medium uppercase tracking-wider text-[hsl(var(--muted-foreground))]">{label}</p>
+        <p className="text-xs font-medium uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
+          {label}
+        </p>
         {Icon ? <Icon aria-hidden="true" className="h-4 w-4 text-[hsl(var(--accent))]" /> : null}
       </div>
       <p className="text-2xl font-semibold tracking-tight">{value}</p>

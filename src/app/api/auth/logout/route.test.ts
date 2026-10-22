@@ -8,7 +8,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST as logout } from "@/app/api/auth/logout/route";
 import { POST as refresh } from "@/app/api/auth/refresh/route";
 import { GET as getSession } from "@/app/api/auth/session/route";
-import { AUTH_COOKIE_KEY, SESSION_MAX_AGE_SECONDS, createSessionToken, verifySessionToken } from "@/lib/auth/session";
+import {
+  AUTH_COOKIE_KEY,
+  SESSION_MAX_AGE_SECONDS,
+  createSessionToken,
+  verifySessionToken,
+} from "@/lib/auth/session";
 import { isSessionRevoked, resetSessionRevocationStore } from "@/lib/auth/session-revocation";
 
 // Route-level tests only: requests are built directly and every cookie is sent
@@ -127,7 +132,12 @@ describe("logout invalidates the session server-side", () => {
   });
 
   it("keeps a newer generation revoked after the generation used to log out has expired", async () => {
-    const gen1 = createSessionToken({ email: "u", role: "operator", userId: "u", expiresInSeconds: 60 });
+    const gen1 = createSessionToken({
+      email: "u",
+      role: "operator",
+      userId: "u",
+      expiresInSeconds: 60,
+    });
     vi.setSystemTime(START + 30_000);
     const gen2 = (await refreshWith(gen1)).cookies.get(AUTH_COOKIE_KEY)?.value ?? "";
 
@@ -151,7 +161,9 @@ describe("logout invalidates the session server-side", () => {
   });
 
   it("clears the cookie without error when logout has no valid session", async () => {
-    const response = await logout(new NextRequest("http://localhost/api/auth/logout", { method: "POST" }));
+    const response = await logout(
+      new NextRequest("http://localhost/api/auth/logout", { method: "POST" })
+    );
 
     expect(response.status).toBe(200);
     expect(response.cookies.get(AUTH_COOKIE_KEY)?.value).toBe("");
@@ -181,7 +193,9 @@ describe("logout revocation in the shared security state", () => {
     // second server process. Only the shared store can reject the cookie.
     vi.resetModules();
     const otherInstance = await import("@/app/api/auth/session/route");
-    const response = await otherInstance.GET(withCookie("http://localhost/api/auth/session", "GET", token));
+    const response = await otherInstance.GET(
+      withCookie("http://localhost/api/auth/session", "GET", token)
+    );
 
     expect(await response.json()).toEqual({ authenticated: false });
   });

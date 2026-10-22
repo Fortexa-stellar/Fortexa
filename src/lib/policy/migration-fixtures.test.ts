@@ -52,8 +52,16 @@ describe("policy migration fixtures — normalizePolicy", () => {
 
     it("returns a complete PolicyConfig with no undefined required fields", () => {
       const result = load(missingOptionalFields);
-      for (const key of ["allowedDomains", "blockedDomains", "allowedTools", "blockedTools",
-        "perTxCapXLM", "dailyCapXLM", "maxToolCallsPerDay", "riskThreshold"] as const) {
+      for (const key of [
+        "allowedDomains",
+        "blockedDomains",
+        "allowedTools",
+        "blockedTools",
+        "perTxCapXLM",
+        "dailyCapXLM",
+        "maxToolCallsPerDay",
+        "riskThreshold",
+      ] as const) {
         expect(result[key], `field "${key}" should not be undefined`).toBeDefined();
       }
     });
@@ -146,7 +154,11 @@ describe("policy migration fixtures — normalizePolicy", () => {
     });
 
     it("rejects a broken rule shape without producing a partial policy", () => {
-      const result = migratePolicy({ ...defaultPolicyConfig, version: 1, allowedDomains: "not-an-array" });
+      const result = migratePolicy({
+        ...defaultPolicyConfig,
+        version: 1,
+        allowedDomains: "not-an-array",
+      });
       expect(result.ok).toBe(false);
     });
 
@@ -157,7 +169,9 @@ describe("policy migration fixtures — normalizePolicy", () => {
 
     it("normalizes the migrated output of the legacy fixtures", () => {
       expect(loadMigrated(legacyMissingArrays).perTxCapXLM).toBe(75);
-      expect(loadMigrated(missingOptionalFields).riskThreshold).toBe(defaultPolicyConfig.riskThreshold);
+      expect(loadMigrated(missingOptionalFields).riskThreshold).toBe(
+        defaultPolicyConfig.riskThreshold
+      );
     });
   });
 

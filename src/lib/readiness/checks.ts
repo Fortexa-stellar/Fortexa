@@ -1,10 +1,6 @@
 import { promises as fs } from "node:fs";
 
-import {
-  checkReadiness,
-  type ReadinessDeps,
-  type ReadinessResult,
-} from "@/lib/readiness/gate";
+import { checkReadiness, type ReadinessDeps, type ReadinessResult } from "@/lib/readiness/gate";
 import { runWithDatabaseNoMigrate } from "@/lib/storage/db";
 import { STORAGE_MIGRATIONS } from "@/lib/storage/migrations";
 import { getFortexaStorePath } from "@/lib/storage/paths";
@@ -36,16 +32,14 @@ export function getExpectedMigrationId(): string {
  * File-store mode has no schema, so there is nothing to migrate.
  */
 export async function getAppliedMigrationId(
-  env: NodeJS.ProcessEnv = process.env,
+  env: NodeJS.ProcessEnv = process.env
 ): Promise<string | null> {
   if (!usesDatabase(env)) {
     return getExpectedMigrationId();
   }
 
   const db = await runWithDatabaseNoMigrate(async (pool) => {
-    const result = await pool.query<{ id: string }>(
-      "SELECT id FROM fortexa_schema_migrations",
-    );
+    const result = await pool.query<{ id: string }>("SELECT id FROM fortexa_schema_migrations");
     return result.rows.map((row) => row.id);
   });
 
@@ -66,13 +60,11 @@ export async function getAppliedMigrationId(
  * empty, so it can never tell us the store is missing. This reads the
  * persisted state without creating anything.
  */
-export async function loadPolicyStore(
-  env: NodeJS.ProcessEnv = process.env,
-): Promise<boolean> {
+export async function loadPolicyStore(env: NodeJS.ProcessEnv = process.env): Promise<boolean> {
   if (usesDatabase(env)) {
     const db = await runWithDatabaseNoMigrate(async (pool) => {
       const result = await pool.query<{ version: number }>(
-        "SELECT version FROM fortexa_policy_state WHERE id = 1",
+        "SELECT version FROM fortexa_policy_state WHERE id = 1"
       );
       return result.rows.length > 0;
     });
@@ -90,9 +82,7 @@ export async function loadPolicyStore(
   }
 }
 
-export function getConfiguredPassphrase(
-  env: NodeJS.ProcessEnv = process.env,
-): string | null {
+export function getConfiguredPassphrase(env: NodeJS.ProcessEnv = process.env): string | null {
   return clean(env.STELLAR_NETWORK_PASSPHRASE);
 }
 
@@ -101,9 +91,7 @@ export function getConfiguredPassphrase(
  * FORTEXA_EXPECTED_NETWORK_PASSPHRASE wins when set; otherwise production
  * expects the public network and everything else expects testnet.
  */
-export function getExpectedPassphrase(
-  env: NodeJS.ProcessEnv = process.env,
-): string {
+export function getExpectedPassphrase(env: NodeJS.ProcessEnv = process.env): string {
   return (
     clean(env.FORTEXA_EXPECTED_NETWORK_PASSPHRASE) ??
     (env.NODE_ENV === "production"
@@ -112,9 +100,7 @@ export function getExpectedPassphrase(
   );
 }
 
-export function defaultReadinessDeps(
-  env: NodeJS.ProcessEnv = process.env,
-): ReadinessDeps {
+export function defaultReadinessDeps(env: NodeJS.ProcessEnv = process.env): ReadinessDeps {
   return {
     getAppliedMigrationId: () => getAppliedMigrationId(env),
     expectedMigrationId: getExpectedMigrationId(),
@@ -127,7 +113,7 @@ export function defaultReadinessDeps(
 /** One readiness result for health and for the pay/decision routes. */
 export function getReadiness(
   env: NodeJS.ProcessEnv = process.env,
-  overrides: Partial<ReadinessDeps> = {},
+  overrides: Partial<ReadinessDeps> = {}
 ): Promise<ReadinessResult> {
   return checkReadiness({ ...defaultReadinessDeps(env), ...overrides });
 }

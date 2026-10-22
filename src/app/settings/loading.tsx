@@ -14,9 +14,7 @@ export default function SettingsLoading() {
 
       <div className="surface-elevated flex items-center justify-center gap-3 py-24">
         <div className="h-5 w-5 animate-spin rounded-full border-2 border-[hsl(var(--muted-foreground)/0.3)] border-t-[hsl(var(--accent))]" />
-        <p className="text-sm text-[hsl(var(--muted-foreground))]">
-          Loading settings…
-        </p>
+        <p className="text-sm text-[hsl(var(--muted-foreground))]">Loading settings…</p>
       </div>
     </div>
   );

@@ -62,36 +62,40 @@ function viewerCookie() {
 }
 
 describe("/api/decision route", () => {
-  it.each([0, -1, 1.00000001, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1] as const)(
-    "rejects invalid amount %s before evaluation",
-    async (amount) => {
-      const request = new NextRequest("http://localhost/api/decision", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          cookie: operatorCookie(),
+  it.each([
+    0,
+    -1,
+    1.00000001,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+    Number.MAX_SAFE_INTEGER + 1,
+  ] as const)("rejects invalid amount %s before evaluation", async (amount) => {
+    const request = new NextRequest("http://localhost/api/decision", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        cookie: operatorCookie(),
+      },
+      body: JSON.stringify({
+        action: {
+          id: "action-invalid-amount",
+          name: "Invalid payment",
+          kind: "api_payment",
+          target: "svc:endpoint",
+          domain: "api.example.com",
+          amountXLM: amount,
         },
-        body: JSON.stringify({
-          action: {
-            id: "action-invalid-amount",
-            name: "Invalid payment",
-            kind: "api_payment",
-            target: "svc:endpoint",
-            domain: "api.example.com",
-            amountXLM: amount,
-          },
-        }),
-      });
+      }),
+    });
 
-      const response = await POST(request);
-      expect(response.status).toBe(400);
-      for (const [key, value] of Object.entries(buildSecurityHeaders())) {
-        expect(response.headers.get(key)).toBe(value);
-      }
-      const payload = (await response.json()) as { error: string };
-      expect(payload.error).toBe("Invalid decision request body.");
-    },
-  );
+    const response = await POST(request);
+    expect(response.status).toBe(400);
+    for (const [key, value] of Object.entries(buildSecurityHeaders())) {
+      expect(response.headers.get(key)).toBe(value);
+    }
+    const payload = (await response.json()) as { error: string };
+    expect(payload.error).toBe("Invalid decision request body.");
+  });
 
   it("returns 401 when unauthenticated", async () => {
     const request = new NextRequest("http://localhost/api/decision", {

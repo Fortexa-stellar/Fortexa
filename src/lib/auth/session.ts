@@ -44,7 +44,13 @@ function sign(payloadPart: string) {
   return createHmac("sha256", getAuthSecret()).update(payloadPart).digest("base64url");
 }
 
-export function createSessionToken(input: { email: string; role: AuthRole; userId?: string; expiresInSeconds?: number; publicKey?: string }) {
+export function createSessionToken(input: {
+  email: string;
+  role: AuthRole;
+  userId?: string;
+  expiresInSeconds?: number;
+  publicKey?: string;
+}) {
   const now = Math.floor(Date.now() / 1000);
   const payload: AuthSession = {
     userId: input.userId ?? randomUUID(),
@@ -60,7 +66,10 @@ export function createSessionToken(input: { email: string; role: AuthRole; userI
   return `${payloadPart}.${signaturePart}`;
 }
 
-export function verifySessionToken(token: string, options?: VerifySessionTokenOptions): AuthSession | null {
+export function verifySessionToken(
+  token: string,
+  options?: VerifySessionTokenOptions
+): AuthSession | null {
   const parts = token.split(".");
   if (parts.length !== 2) {
     return null;
@@ -103,11 +112,19 @@ export function verifySessionToken(token: string, options?: VerifySessionTokenOp
       return null;
     }
 
-    if (parsed.roles !== undefined && (!Array.isArray(parsed.roles) || parsed.roles.some((role) => role !== "operator" && role !== "signer" && role !== "viewer"))) {
+    if (
+      parsed.roles !== undefined &&
+      (!Array.isArray(parsed.roles) ||
+        parsed.roles.some((role) => role !== "operator" && role !== "signer" && role !== "viewer"))
+    ) {
       return null;
     }
 
-    if (parsed.roles !== undefined && (!Array.isArray(parsed.roles) || parsed.roles.some((role) => role !== "operator" && role !== "signer" && role !== "viewer"))) {
+    if (
+      parsed.roles !== undefined &&
+      (!Array.isArray(parsed.roles) ||
+        parsed.roles.some((role) => role !== "operator" && role !== "signer" && role !== "viewer"))
+    ) {
       return null;
     }
 

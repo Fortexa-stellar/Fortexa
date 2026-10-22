@@ -8,11 +8,11 @@ Fortexa exposes lightweight, Prometheus-compatible metrics for every API route. 
 
 ## Endpoints
 
-| Endpoint | Purpose | Auth |
-| --- | --- | --- |
-| `GET /api/health` | Liveness check | None |
-| `GET /api/metrics` | JSON snapshot of all route buckets plus the `counters` block | Operator session cookie |
-| `GET /api/metrics?format=prometheus` | Prometheus text exposition (v0.0.4) | Operator session cookie |
+| Endpoint                             | Purpose                                                      | Auth                    |
+| ------------------------------------ | ------------------------------------------------------------ | ----------------------- |
+| `GET /api/health`                    | Liveness check                                               | None                    |
+| `GET /api/metrics`                   | JSON snapshot of all route buckets plus the `counters` block | Operator session cookie |
+| `GET /api/metrics?format=prometheus` | Prometheus text exposition (v0.0.4)                          | Operator session cookie |
 
 The `/ops` page in the app renders the same snapshot for human operators.
 
@@ -30,17 +30,17 @@ All series are labeled by `route` (Next.js route path, e.g. `/api/decision`) and
 
 Metric names and label keys are enforced by an allowlist at export time (`ALLOWED_METRIC_NAMES` / `ALLOWED_LABEL_KEYS` in [`src/lib/observability/metrics.ts`](../src/lib/observability/metrics.ts)): series carrying any other label (e.g. `destination`, `memo`) or an undocumented name are dropped, and help text is passed through `redactMetricText` before rendering.
 
-| Metric | Type | Description |
-| --- | --- | --- |
-| `fortexa_requests_total` | counter | Total API requests by route/method |
-| `fortexa_request_errors_total` | counter | Requests that returned HTTP >= 400 |
-| `fortexa_request_duration_ms_p95` | gauge | Rolling p95 latency in milliseconds (last 500 samples per bucket) |
-| `fortexa_decision_outcomes_total` | counter | Decision evaluations labelled by `outcome` (APPROVE \| WARN \| REQUIRE_APPROVAL \| BLOCK) |
-| `fortexa_stellar_submit_results_total` | counter | Stellar submission attempts labelled by `result` (success \| horizon_failure \| validation_failure \| idempotency_replay \| idempotency_conflict) |
-| `fortexa_decisions_allowed_total` | counter | Rolled up: decisions that let the action proceed (`APPROVE` + `WARN`) |
-| `fortexa_decisions_denied_total` | counter | Rolled up: decisions that stopped the action (`REQUIRE_APPROVAL` + `BLOCK`) |
-| `fortexa_rate_limit_rejections_total` | counter | Requests the rate limiter rejected with HTTP 429 |
-| `fortexa_stellar_submit_failures_total` | counter | Rolled up: submissions that did not settle on-chain (everything except `success` and `idempotency_replay`) |
+| Metric                                  | Type    | Description                                                                                                                                       |
+| --------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fortexa_requests_total`                | counter | Total API requests by route/method                                                                                                                |
+| `fortexa_request_errors_total`          | counter | Requests that returned HTTP >= 400                                                                                                                |
+| `fortexa_request_duration_ms_p95`       | gauge   | Rolling p95 latency in milliseconds (last 500 samples per bucket)                                                                                 |
+| `fortexa_decision_outcomes_total`       | counter | Decision evaluations labelled by `outcome` (APPROVE \| WARN \| REQUIRE_APPROVAL \| BLOCK)                                                         |
+| `fortexa_stellar_submit_results_total`  | counter | Stellar submission attempts labelled by `result` (success \| horizon_failure \| validation_failure \| idempotency_replay \| idempotency_conflict) |
+| `fortexa_decisions_allowed_total`       | counter | Rolled up: decisions that let the action proceed (`APPROVE` + `WARN`)                                                                             |
+| `fortexa_decisions_denied_total`        | counter | Rolled up: decisions that stopped the action (`REQUIRE_APPROVAL` + `BLOCK`)                                                                       |
+| `fortexa_rate_limit_rejections_total`   | counter | Requests the rate limiter rejected with HTTP 429                                                                                                  |
+| `fortexa_stellar_submit_failures_total` | counter | Rolled up: submissions that did not settle on-chain (everything except `success` and `idempotency_replay`)                                        |
 
 The four rolled-up counters are the same numbers the ops dashboard renders. They are
 derived from in-process counters only (never from a scan of the audit table) and are
@@ -84,7 +84,7 @@ fortexa_stellar_submit_failures_total 0
   "timestamp": "2026-09-30T08:00:00.000Z",
   "totals": { "totalCount": 12, "errorCount": 1, "errorRate": 0.083 },
   "counters": { "allow": 2, "deny": 1, "rateLimit": 0, "submitFailures": 0 },
-  "routes": [ /* route/method buckets */ ]
+  "routes": [/* route/method buckets */],
 }
 ```
 
@@ -318,7 +318,6 @@ parity).
 - **Local vs deployed auth.** Locally, no allowlist means any pubkey works. In production, set `FORTEXA_OPERATOR_WALLETS` to restrict.
 - **Ops UI is single-instance.** The dashboard reads the snapshot of the instance that served the page, so a load-balanced setup shows the replica the operator happened to hit. Prometheus is the source of truth for fleet-wide numbers.
 
-
 ---
 
 ## Audit Export Verifier
@@ -337,29 +336,29 @@ Or via the package script:
 
 ### Export formats supported
 
-| Format | Example shape |
-|--------|--------------|
-| Plain array | [{"id": "...", "entryHash": "...", ...}] |
-| scope=mine | {"scope": "mine", "entries": [...]} |
-| scope=all | {"scope": "all", "entriesByUser": {"userId": [...]}} |
+| Format      | Example shape                                        |
+| ----------- | ---------------------------------------------------- |
+| Plain array | [{"id": "...", "entryHash": "...", ...}]             |
+| scope=mine  | {"scope": "mine", "entries": [...]}                  |
+| scope=all   | {"scope": "all", "entriesByUser": {"userId": [...]}} |
 
 ### Exit codes
 
-| Code | Meaning |
-|------|---------|
-| 0 | Chain valid |
-| 1 | Chain invalid (tampered, deleted, or reordered entries) |
-| 2 | File not found, unreadable, or unrecognized format |
+| Code | Meaning                                                 |
+| ---- | ------------------------------------------------------- |
+| 0    | Chain valid                                             |
+| 1    | Chain invalid (tampered, deleted, or reordered entries) |
+| 2    | File not found, unreadable, or unrecognized format      |
 
 ### Test fixtures
 
 Reference fixtures live in scripts/fixtures/:
 
-| File | Purpose |
-|------|---------|
-| valid-chain.json | 3-entry valid chain (plain array) |
-| valid-mine-export.json | 2-entry valid chain (scope=mine) |
-| valid-all-export.json | Valid multi-user export (scope=all) |
-| tampered-field.json | Entry with modified explanation (tamper detection) |
-| deleted-entry.json | Middle entry removed (gap detection) |
-| reordered-entries.json | Timestamps swapped to disguise reordering |
+| File                   | Purpose                                            |
+| ---------------------- | -------------------------------------------------- |
+| valid-chain.json       | 3-entry valid chain (plain array)                  |
+| valid-mine-export.json | 2-entry valid chain (scope=mine)                   |
+| valid-all-export.json  | Valid multi-user export (scope=all)                |
+| tampered-field.json    | Entry with modified explanation (tamper detection) |
+| deleted-entry.json     | Middle entry removed (gap detection)               |
+| reordered-entries.json | Timestamps swapped to disguise reordering          |

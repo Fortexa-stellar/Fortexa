@@ -26,24 +26,24 @@
  * - Links that begin with mailto:, data:, or javascript: are also skipped.
  */
 
-import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
-import { resolve, dirname, join, extname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readFileSync, existsSync, readdirSync, statSync } from "node:fs";
+import { resolve, dirname, join, extname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = resolve(__dirname, '..');
+const REPO_ROOT = resolve(__dirname, "..");
 
 /** Files and glob-style patterns to scan. Resolved relative to REPO_ROOT. */
 const SCAN_TARGETS = [
-  'README.md',
-  'ARCHITECTURE.md',
-  'docs', // directory — all *.md files inside are included recursively
+  "README.md",
+  "ARCHITECTURE.md",
+  "docs", // directory — all *.md files inside are included recursively
 ];
 
 /** Honour --external flag to optionally check remote URLs. */
-const CHECK_EXTERNAL = process.argv.includes('--external');
+const CHECK_EXTERNAL = process.argv.includes("--external");
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -60,7 +60,7 @@ function collectMarkdownFiles(dir) {
     const stat = statSync(full);
     if (stat.isDirectory()) {
       results.push(...collectMarkdownFiles(full));
-    } else if (stat.isFile() && extname(full).toLowerCase() === '.md') {
+    } else if (stat.isFile() && extname(full).toLowerCase() === ".md") {
       results.push(full);
     }
   }
@@ -104,22 +104,22 @@ function resolveTargets() {
 function extractLinks(text) {
   const links = [];
   // Strip HTML comment blocks to avoid false positives
-  const stripped = text.replace(/<!--[\s\S]*?-->/g, (m) => ' '.repeat(m.length));
+  const stripped = text.replace(/<!--[\s\S]*?-->/g, (m) => " ".repeat(m.length));
   // Strip fenced code blocks
-  const noCode = stripped.replace(/```[\s\S]*?```/g, (m) => ' '.repeat(m.length));
+  const noCode = stripped.replace(/```[\s\S]*?```/g, (m) => " ".repeat(m.length));
 
-  const inlineRe   = /\[[^\]]*\]\(([^)]+)\)/g;
+  const inlineRe = /\[[^\]]*\]\(([^)]+)\)/g;
   const referenceRe = /^\[[^\]]+\]:\s+(\S+)/gm;
 
   for (const re of [inlineRe, referenceRe]) {
     re.lastIndex = 0;
     let match;
     while ((match = re.exec(noCode)) !== null) {
-      const raw    = match[1].split(' ')[0]; // drop optional "title" part
-      const target = raw.replace(/^<|>$/g, ''); // strip angle-bracket wrapping
+      const raw = match[1].split(" ")[0]; // drop optional "title" part
+      const target = raw.replace(/^<|>$/g, ""); // strip angle-bracket wrapping
 
       // Calculate 1-based line number from match position
-      const lineNum = noCode.slice(0, match.index).split('\n').length;
+      const lineNum = noCode.slice(0, match.index).split("\n").length;
       links.push({ target, line: lineNum });
     }
   }
@@ -133,9 +133,9 @@ function extractLinks(text) {
  * @returns {'anchor-only' | 'external' | 'local'}
  */
 function classifyTarget(target) {
-  if (target.startsWith('#'))            return 'anchor-only';
-  if (/^[a-z][a-z\d+\-.]*:/i.test(target)) return 'external'; // scheme://...
-  return 'local';
+  if (target.startsWith("#")) return "anchor-only";
+  if (/^[a-z][a-z\d+\-.]*:/i.test(target)) return "external"; // scheme://...
+  return "local";
 }
 
 /**
@@ -152,7 +152,7 @@ function classifyTarget(target) {
  */
 function resolveLocalTarget(target, sourceFile) {
   // Strip anchor fragment
-  const withoutAnchor = target.split('#')[0];
+  const withoutAnchor = target.split("#")[0];
   if (!withoutAnchor) return sourceFile; // anchor-only links resolve to self
 
   const sourceDir = dirname(sourceFile);
@@ -169,7 +169,7 @@ function localFileExists(absPath) {
   if (existsSync(absPath)) return true;
   // Try with .md extension if no extension provided
   if (!extname(absPath)) {
-    for (const ext of ['.md', '.mdx']) {
+    for (const ext of [".md", ".mdx"]) {
       if (existsSync(absPath + ext)) return true;
     }
   }
@@ -186,16 +186,16 @@ function localFileExists(absPath) {
 async function checkExternalUrl(url) {
   try {
     const controller = new AbortController();
-    const timeout    = setTimeout(() => controller.abort(), 8_000);
-    const res        = await fetch(url, {
-      method: 'HEAD',
+    const timeout = setTimeout(() => controller.abort(), 8_000);
+    const res = await fetch(url, {
+      method: "HEAD",
       signal: controller.signal,
-      redirect: 'follow',
+      redirect: "follow",
     }).finally(() => clearTimeout(timeout));
 
     if (res.status === 405) {
       // Server does not allow HEAD — try GET
-      const res2 = await fetch(url, { redirect: 'follow', signal: AbortSignal.timeout(8_000) });
+      const res2 = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(8_000) });
       return { ok: res2.ok, status: res2.status };
     }
     return { ok: res.ok, status: res.status };
@@ -210,16 +210,16 @@ async function main() {
   const files = resolveTargets();
 
   if (files.length === 0) {
-    console.log('⚠  No Markdown files found to scan.');
-    console.log(`   Looked in: ${SCAN_TARGETS.map((t) => join(REPO_ROOT, t)).join(', ')}`);
+    console.log("⚠  No Markdown files found to scan.");
+    console.log(`   Looked in: ${SCAN_TARGETS.map((t) => join(REPO_ROOT, t)).join(", ")}`);
     process.exit(0);
   }
 
   console.log(`🔍 Scanning ${files.length} Markdown file(s) for broken links…`);
   if (CHECK_EXTERNAL) {
-    console.log('   External URL checking is ENABLED (--external)');
+    console.log("   External URL checking is ENABLED (--external)");
   } else {
-    console.log('   External URL checking is DISABLED (pass --external to enable)');
+    console.log("   External URL checking is DISABLED (pass --external to enable)");
   }
   console.log();
 
@@ -228,26 +228,26 @@ async function main() {
   let totalLinks = 0;
 
   for (const file of files) {
-    const text  = readFileSync(file, 'utf8');
+    const text = readFileSync(file, "utf8");
     const links = extractLinks(text);
-    const relFile = file.replace(REPO_ROOT + '/', '');
+    const relFile = file.replace(REPO_ROOT + "/", "");
 
     for (const { target, line } of links) {
       totalLinks++;
       const kind = classifyTarget(target);
 
-      if (kind === 'anchor-only') {
+      if (kind === "anchor-only") {
         // Same-file anchors: skip (heading normalisation is renderer-specific)
         continue;
       }
 
-      if (kind === 'external') {
+      if (kind === "external") {
         if (!CHECK_EXTERNAL) continue;
 
         const { ok, status } = await checkExternalUrl(target);
         if (!ok) {
-          broken.push({ file: relFile, line, target, reason: `HTTP ${status || 'timeout/error'}` });
-          console.error(`  ✗  ${relFile}:${line}  →  ${target}  (${status || 'timeout'})`);
+          broken.push({ file: relFile, line, target, reason: `HTTP ${status || "timeout/error"}` });
+          console.error(`  ✗  ${relFile}:${line}  →  ${target}  (${status || "timeout"})`);
         }
         continue;
       }
@@ -255,7 +255,7 @@ async function main() {
       // Local link
       const absTarget = resolveLocalTarget(target, file);
       if (!localFileExists(absTarget)) {
-        broken.push({ file: relFile, line, target, reason: 'file not found' });
+        broken.push({ file: relFile, line, target, reason: "file not found" });
         console.error(`  ✗  ${relFile}:${line}  →  ${target}  (file not found)`);
       }
     }
@@ -269,15 +269,15 @@ async function main() {
   console.log(`─────────────────────────────────────────────`);
 
   if (broken.length > 0) {
-    console.error('\n❌  Broken links detected — please fix the links listed above.\n');
+    console.error("\n❌  Broken links detected — please fix the links listed above.\n");
     process.exit(1);
   } else {
-    console.log('\n✅  All local links are valid.\n');
+    console.log("\n✅  All local links are valid.\n");
     process.exit(0);
   }
 }
 
 main().catch((err) => {
-  console.error('Fatal error:', err);
+  console.error("Fatal error:", err);
   process.exit(1);
 });

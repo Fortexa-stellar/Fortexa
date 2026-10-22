@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  GENESIS_HASH,
-  computeEntryHash,
-  verifyHashChain,
-} from "@/lib/audit/hash-chain";
+import { GENESIS_HASH, computeEntryHash, verifyHashChain } from "@/lib/audit/hash-chain";
 import type { AuditEntry } from "@/lib/types/domain";
 
 function makeEntry(overrides: Partial<AuditEntry> = {}): AuditEntry {
@@ -79,10 +75,21 @@ describe("computeEntryHash", () => {
   it("produces identical hashes regardless of action key insertion order", () => {
     const base = makeEntry();
     const actionABOrder = { ...base.action };
-    const actionBAOrder = { domain: base.action.domain, amountXLM: base.action.amountXLM, id: base.action.id, kind: base.action.kind, name: base.action.name, target: base.action.target };
+    const actionBAOrder = {
+      domain: base.action.domain,
+      amountXLM: base.action.amountXLM,
+      id: base.action.id,
+      kind: base.action.kind,
+      name: base.action.name,
+      target: base.action.target,
+    };
 
     const h1 = computeEntryHash({ ...base, action: actionABOrder, previousHash: GENESIS_HASH });
-    const h2 = computeEntryHash({ ...base, action: actionBAOrder as typeof base.action, previousHash: GENESIS_HASH });
+    const h2 = computeEntryHash({
+      ...base,
+      action: actionBAOrder as typeof base.action,
+      previousHash: GENESIS_HASH,
+    });
     expect(h1).toBe(h2);
   });
 
@@ -139,9 +146,7 @@ describe("verifyHashChain — modified entry", () => {
   it("detects a tampered field in the middle of the chain", () => {
     const chain = buildChain(3);
     // Mutate the explanation of the second entry without updating its hash.
-    const tampered = chain.map((e, idx) =>
-      idx === 1 ? { ...e, explanation: "tampered!" } : e
-    );
+    const tampered = chain.map((e, idx) => (idx === 1 ? { ...e, explanation: "tampered!" } : e));
     const result = verifyHashChain(tampered);
     expect(result.valid).toBe(false);
     if (!result.valid) {
@@ -152,9 +157,7 @@ describe("verifyHashChain — modified entry", () => {
 
   it("detects a tampered decision field", () => {
     const chain = buildChain(2);
-    const tampered = chain.map((e, idx) =>
-      idx === 0 ? { ...e, decision: "BLOCK" as const } : e
-    );
+    const tampered = chain.map((e, idx) => (idx === 0 ? { ...e, decision: "BLOCK" as const } : e));
     const result = verifyHashChain(tampered);
     expect(result.valid).toBe(false);
     if (!result.valid) {

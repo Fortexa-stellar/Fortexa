@@ -273,7 +273,12 @@ describe("observability metrics", () => {
     it("never emits metric label values longer than route allowlist entries", () => {
       const longBlob = "x".repeat(300);
       recordApiMetric({ route: longBlob, method: "POST", statusCode: 200, durationMs: 5 });
-      recordApiMetric({ route: `/api/decision?xdr=${longBlob}`, method: "POST", statusCode: 200, durationMs: 5 });
+      recordApiMetric({
+        route: `/api/decision?xdr=${longBlob}`,
+        method: "POST",
+        statusCode: 200,
+        durationMs: 5,
+      });
 
       const snapshot = getMetricsSnapshot();
       for (const r of snapshot.routes) {
@@ -307,8 +312,18 @@ describe("observability metrics", () => {
       // Test with a correctly formed Stellar address (G + 55 chars in base32)
       const stellarWallet = "GAIH3ULLFQ4DGSECF2AR555KZ4KNDGEKN4AFI4SU2M7B43MGK3QJZNSR";
       expect(stellarWallet.length).toBe(56);
-      recordApiMetric({ route: `/api/decision?wallet=${stellarWallet}`, method: "POST", statusCode: 200, durationMs: 10 });
-      recordApiMetric({ route: `/api/stellar/submit-signed/${stellarWallet}`, method: "POST", statusCode: 200, durationMs: 10 });
+      recordApiMetric({
+        route: `/api/decision?wallet=${stellarWallet}`,
+        method: "POST",
+        statusCode: 200,
+        durationMs: 10,
+      });
+      recordApiMetric({
+        route: `/api/stellar/submit-signed/${stellarWallet}`,
+        method: "POST",
+        statusCode: 200,
+        durationMs: 10,
+      });
       recordApiMetric({ route: stellarWallet, method: "POST", statusCode: 200, durationMs: 10 });
 
       const snapshot = getMetricsSnapshot();
@@ -325,10 +340,25 @@ describe("observability metrics", () => {
     });
 
     it("drops free-text and request values from route labels", () => {
-      recordApiMetric({ route: "free text with spaces", method: "POST", statusCode: 200, durationMs: 10 });
-      recordApiMetric({ route: 'injection"quote', method: "POST", statusCode: 200, durationMs: 10 });
+      recordApiMetric({
+        route: "free text with spaces",
+        method: "POST",
+        statusCode: 200,
+        durationMs: 10,
+      });
+      recordApiMetric({
+        route: 'injection"quote',
+        method: "POST",
+        statusCode: 200,
+        durationMs: 10,
+      });
       recordApiMetric({ route: "a".repeat(200), method: "POST", statusCode: 200, durationMs: 10 });
-      recordApiMetric({ route: "/api/decision?memo=hello world&amount=100", method: "POST", statusCode: 200, durationMs: 10 });
+      recordApiMetric({
+        route: "/api/decision?memo=hello world&amount=100",
+        method: "POST",
+        statusCode: 200,
+        durationMs: 10,
+      });
 
       const snapshot = getMetricsSnapshot();
       for (const r of snapshot.routes) {
@@ -376,7 +406,12 @@ describe("observability metrics", () => {
     it("never exposes wallet addresses in prometheus text", () => {
       const wallet = "GAIH3ULLFQ4DGSECF2AR555KZ4KNDGEKN4AFI4SU2M7B43MGK3QJZNSR";
       recordApiMetric({ route: wallet, method: "POST", statusCode: 200, durationMs: 10 });
-      recordApiMetric({ route: `/api/decision?wallet=${wallet}`, method: "POST", statusCode: 200, durationMs: 10 });
+      recordApiMetric({
+        route: `/api/decision?wallet=${wallet}`,
+        method: "POST",
+        statusCode: 200,
+        durationMs: 10,
+      });
       // Also try to inject via outcome/result with wallet-like string (should be dropped)
       // @ts-expect-error wallet injection attempt
       recordDecisionOutcome(wallet);
@@ -462,7 +497,11 @@ describe("observability metrics", () => {
 
     it("drops a destination label in the fixture from the body", () => {
       const fixture: FixtureSeries[] = [
-        { name: "fortexa_requests_total", labels: { route: "/api/stellar/pay", method: "POST" }, value: 3 },
+        {
+          name: "fortexa_requests_total",
+          labels: { route: "/api/stellar/pay", method: "POST" },
+          value: 3,
+        },
         {
           name: "fortexa_requests_total",
           labels: { route: "/api/stellar/pay", method: "POST", destination: wallet },
@@ -485,7 +524,9 @@ describe("observability metrics", () => {
     });
 
     it("rejects metric names outside the documented set", () => {
-      expect(renderMetricLine("fortexa_payment_destination_total", { route: "/api/stellar/pay" }, 1)).toBeNull();
+      expect(
+        renderMetricLine("fortexa_payment_destination_total", { route: "/api/stellar/pay" }, 1)
+      ).toBeNull();
       expect(renderHelpLine("fortexa_secret_errors_total", "Total secret errors")).toBeNull();
       expect(renderTypeLine("fortexa_secret_errors_total", "counter")).toBeNull();
     });
@@ -496,9 +537,19 @@ describe("observability metrics", () => {
       expect(isAllowedLabelKey("destination")).toBe(false);
       expect(isAllowedLabelKey("memo")).toBe(false);
 
-      expect(renderMetricLine("fortexa_requests_total", { route: "/api/decision", destination: wallet }, 1)).toBeNull();
-      expect(renderMetricLine("fortexa_decision_outcomes_total", { outcome: "APPROVE", memo: "hi" }, 1)).toBeNull();
-      expect(renderMetricLine("fortexa_requests_total", { route: "/api/decision", method: "GET" }, 1)).not.toBeNull();
+      expect(
+        renderMetricLine(
+          "fortexa_requests_total",
+          { route: "/api/decision", destination: wallet },
+          1
+        )
+      ).toBeNull();
+      expect(
+        renderMetricLine("fortexa_decision_outcomes_total", { outcome: "APPROVE", memo: "hi" }, 1)
+      ).toBeNull();
+      expect(
+        renderMetricLine("fortexa_requests_total", { route: "/api/decision", method: "GET" }, 1)
+      ).not.toBeNull();
     });
 
     it("redacts secret-bearing error text before it is appended to a help line", () => {
@@ -538,9 +589,24 @@ describe("observability metrics", () => {
       for (let i = 0; i < 200; i++) {
         // Simulate attacker creating 200 unique wallet-like routes
         const walletVariant = `G${String(i).padStart(55, "A")}`;
-        recordApiMetric({ route: `/api/decision?wallet=${walletVariant}`, method: "POST", statusCode: 200, durationMs: 10 });
-        recordApiMetric({ route: `/tmp/request-${i}-${baseWallet}-${i}`, method: "POST", statusCode: 200, durationMs: 10 });
-        recordApiMetric({ route: `free text payment ${i} for ${walletVariant}`, method: "POST", statusCode: 200, durationMs: 10 });
+        recordApiMetric({
+          route: `/api/decision?wallet=${walletVariant}`,
+          method: "POST",
+          statusCode: 200,
+          durationMs: 10,
+        });
+        recordApiMetric({
+          route: `/tmp/request-${i}-${baseWallet}-${i}`,
+          method: "POST",
+          statusCode: 200,
+          durationMs: 10,
+        });
+        recordApiMetric({
+          route: `free text payment ${i} for ${walletVariant}`,
+          method: "POST",
+          statusCode: 200,
+          durationMs: 10,
+        });
       }
 
       const snapshot = getMetricsSnapshot();
@@ -562,7 +628,12 @@ describe("observability metrics", () => {
       const wallet = "GAIH3ULLFQ4DGSECF2AR555KZ4KNDGEKN4AFI4SU2M7B43MGK3QJZNSR";
       for (let i = 0; i < 300; i++) {
         // Use wallet in route – should collapse to /other, not create new series
-        recordApiMetric({ route: `/attack/${i}/${wallet}`, method: `METHOD${i}`, statusCode: 200, durationMs: 10 });
+        recordApiMetric({
+          route: `/attack/${i}/${wallet}`,
+          method: `METHOD${i}`,
+          statusCode: 200,
+          durationMs: 10,
+        });
       }
       // Also record all legitimate routes
       for (const route of ALLOWED_ROUTES) {
