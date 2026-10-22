@@ -659,7 +659,21 @@ Common Stellar Horizon failures during the signed payment flow:
 
 ---
 
-## 19) 📄 License
+## 19) 🛡️ Security Changelog & Architectural Baseline
+
+Security-relevant behavior modifications, authorization constraints, and audit invariants are tracked in [`SECURITY_CHANGELOG.md`](SECURITY_CHANGELOG.md).
+
+The security baseline covers:
+- **Auth:** SEP-53 challenge verification, HMAC session cookies, brute-force lockout, and session revocation.
+- **Policy:** Deterministic policy evaluation, schema validation, and rollback conflict preview.
+- **Audit:** Cryptographic SHA-256 hash chains, export integrity checks, and sensitive data redaction.
+- **Payment:** Quote-locked transaction builds, client-only signing, remote blocklist gates, and idempotent broadcast.
+
+Contributors introducing security modifications must record entries in [`SECURITY_CHANGELOG.md`](SECURITY_CHANGELOG.md).
+
+---
+
+## 20) 📄 License
 
 MIT — see the canonical text in [`LICENSE`](LICENSE).
 
