@@ -350,10 +350,20 @@ npm run start
 npm run lint
 npm test
 npm run test:watch
+npm run test:coverage
 npm run check:production-readiness
 npm run demo:scenarios
 npm run db:migrate
 ```
+
+### Running test coverage
+
+To produce a Vitest coverage summary and enforce the documented baseline thresholds:
+
+\\ash
+npm run test:coverage
+\
+The test suite enforces a baseline of 50% for statements and branches in itest.config.ts.
 
 ### CI diagnostic artifacts
 
