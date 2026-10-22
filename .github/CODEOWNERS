@@ -1,0 +1,27 @@
+# Fortexa code owners.
+# Changes to the paths below require review from the listed owner.
+# Later patterns take precedence, so keep this file as a flat list of protected paths.
+
+# CI, dependency manifests, and lockfile
+/.github/workflows/**      @karagozemin
+/package.json              @karagozemin
+/package-lock.json         @karagozemin
+
+# Auth, security, policy, and Stellar payment libraries
+/src/lib/auth/**           @karagozemin
+/src/lib/security/**       @karagozemin
+/src/lib/policy/**         @karagozemin
+/src/lib/stellar/**        @karagozemin
+
+# Auth, policy, and payment API routes
+/src/app/api/auth/**       @karagozemin
+/src/app/api/policy/**     @karagozemin
+/src/app/api/stellar/**    @karagozemin
+
+# Executable config files and environment template
+/.env.example              @karagozemin
+/eslint.config.mjs         @karagozemin
+/next.config.ts            @karagozemin
+/postcss.config.mjs        @karagozemin
+/vitest.config.ts          @karagozemin
+/vitest.setup.ts           @karagozemin
