@@ -697,3 +697,16 @@ Fortexa ensures that all interactive components share a consistent, high-contras
 - **Button Component**: [`src/components/ui/button.tsx`](src/components/ui/button.tsx) aligns with this standard via `focus-visible:ring-2` and `focus-visible:ring-offset-2`.
 
 Verified via `scripts/focus-visible-audit.test.ts` (`npx vitest run scripts/focus-visible-audit.test.ts`).
+
+
+---
+
+## 21) 🐛 Structured Bug Reporting & Security Guidelines
+
+Contributors reporting issues are guided by a structured GitHub issue form ([`.github/ISSUE_TEMPLATE/bug_report.yml`](.github/ISSUE_TEMPLATE/bug_report.yml)) that collects essential diagnostic metadata:
+
+- **Reproduction Steps:** Step-by-step instructions to reproduce the issue.
+- **Deployment Mode:** Local development (`next dev` / file store), self-hosted Docker, or Vercel.
+- **Stellar Network:** Stellar Testnet, Mainnet, Futurenet, or local mock Horizon.
+- **Redacted Logs:** Relevant console traces and error payloads with sensitive keys removed.
+- **Security Notice:** Do **NOT** post private keys (`S...`), passwords, session secrets, or API tokens in public issues.
