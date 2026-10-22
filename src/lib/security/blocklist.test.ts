@@ -81,6 +81,16 @@ describe("blocklist health", () => {
     const health = getBlocklistHealth();
     expect(health.lastError).toBe("HTTP 503");
   });
+
+  it("rejects a feed response larger than 1 MiB", async () => {
+    process.env.FORTEXA_BLOCKLIST_URL = "https://example.com/blocklist.json";
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response("x".repeat(1024 * 1024 + 1), { status: 200 }),
+    );
+
+    await expect(fetchBlocklist()).rejects.toThrow("Blocklist response exceeds 1048576 bytes");
+    expect(getBlocklistHealth().domainCount).toBe(0);
+  });
 });
 
 describe("checkBlocklist", () => {

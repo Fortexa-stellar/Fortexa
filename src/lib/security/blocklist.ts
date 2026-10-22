@@ -1,5 +1,37 @@
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const DEFAULT_FETCH_TIMEOUT_MS = 5000; // 5 second timeout for blocklist fetch
+const MAX_BLOCKLIST_RESPONSE_BYTES = 1024 * 1024; // 1 MiB
+
+async function readLimitedResponseBody(response: Response): Promise<string> {
+  const reader = response.body?.getReader();
+  if (!reader) return "";
+
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      totalBytes += value.byteLength;
+      if (totalBytes > MAX_BLOCKLIST_RESPONSE_BYTES) {
+        await reader.cancel();
+        throw new Error(`Blocklist response exceeds ${MAX_BLOCKLIST_RESPONSE_BYTES} bytes`);
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const body = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(body);
+}
 
 let cachedDomains: string[] = [];
 let cacheExpiresAt = 0;
@@ -45,7 +77,7 @@ export async function fetchBlocklist(): Promise<string[]> {
     const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-    const text = await res.text();
+    const text = await readLimitedResponseBody(res);
     let domains: string[];
 
     try {
