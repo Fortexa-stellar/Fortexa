@@ -14,6 +14,7 @@
     "demo:scenarios": "tsx scripts/demo-scenarios.ts",
     "db:migrate": "tsx scripts/run-db-migrations.ts",
     "demo:reset": "tsx scripts/reset-local-demo-state.ts",
+    "check:env-duplicates": "node scripts/check-env-duplicates.mjs",
     "check:docs": "node scripts/check-doc-links.mjs",
     "check:docs:external": "node scripts/check-doc-links.mjs --external"
   },

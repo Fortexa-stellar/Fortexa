@@ -334,6 +334,7 @@ npm run lint
 npm test
 npm run test:watch
 npm run check:production-readiness
+npm run check:env-duplicates
 npm run demo:scenarios
 npm run db:migrate
 ```
@@ -353,6 +354,10 @@ Run the standalone demo runner (prints expected vs actual for every seeded scena
 ```bash
 npm run demo:scenarios
 ```
+
+### Env example duplicate check
+
+`npm run check:env-duplicates` reads `.env.example`, skips blank lines and full-line comments, and exits non-zero when a variable name is assigned more than once. The report lists each duplicate key with its line numbers. CI runs the same command.
 
 ### Production Readiness Check
 
