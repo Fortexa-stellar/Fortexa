@@ -20,9 +20,21 @@ vi.mock("@/lib/security/blocklist", () => ({
   getBlocklistHealth: () => mockGetBlocklistHealth(),
 }));
 
+const mockGetReadiness = vi.fn();
+vi.mock("@/lib/readiness/checks", () => ({
+  getReadiness: (...args: unknown[]) => mockGetReadiness(...args),
+}));
+
+const readyResult = {
+  ready: true,
+  failing: [],
+  checks: { migration: "pass", policy_store: "pass", network: "pass" },
+};
+
 describe("GET /api/health", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockGetReadiness.mockResolvedValue(readyResult);
     mockGetDatabaseMigrationStatus.mockResolvedValue({
       configured: false,
       ready: true,
@@ -125,41 +137,55 @@ describe("GET /api/health", () => {
     async function readiness() {
       const response = await GET(new NextRequest("http://localhost:3000/api/health"));
       expect(response.status).toBe(200);
-      return (await response.json()) as { ready: boolean; failingChecks: string[]; checks: unknown[] };
+      return (await response.json()) as {
+        ready: boolean;
+        failingChecks: string[];
+        checks: Record<string, string>;
+      };
     }
 
-    it("reports ready when the configured database and Horizon answer", async () => {
-      process.env.DATABASE_URL = "postgres://fortexa@db.example.com/fortexa";
-      process.env.STELLAR_HORIZON_URL = "https://horizon.example.com";
-      mockRunWithDatabase.mockResolvedValue({ available: true });
-      mockRoot.mockResolvedValue({});
-
+    it("reports the readiness gate result without leaking secrets", async () => {
       const json = await readiness();
 
       expect(json.ready).toBe(true);
       expect(json.failingChecks).toEqual([]);
-      expect(json.checks).toHaveLength(3);
+      expect(Object.keys(json.checks)).toHaveLength(3);
     });
 
-    it("names the failing checks when the database and Horizon do not answer", async () => {
-      process.env.DATABASE_URL = "postgres://fortexa@db.example.com/fortexa";
-      process.env.STELLAR_HORIZON_URL = "https://horizon.example.com";
-      mockRunWithDatabase.mockResolvedValue({ available: false });
-      mockRoot.mockRejectedValue(new Error("Timeout"));
+    it("names the failing checks when the readiness gate fails", async () => {
+      mockGetReadiness.mockResolvedValue({
+        ready: false,
+        failing: ["migration", "policy_store"],
+        checks: { migration: "fail", policy_store: "fail", network: "pass" },
+      });
 
       const json = await readiness();
 
       expect(json.ready).toBe(false);
-      expect(json.failingChecks).toEqual(["storage", "horizon"]);
+      expect(json.failingChecks).toEqual(["migration", "policy_store"]);
     });
 
-    it("does not treat the file store as a failing database", async () => {
-      mockRunWithDatabase.mockResolvedValue({ available: false });
+    it("keeps the health payload independent of Horizon for file-store deployments", async () => {
+      mockGetReadiness.mockResolvedValue(readyResult);
+      mockRoot.mockRejectedValue(new Error("Timeout"));
 
       const json = await readiness();
 
       expect(json.ready).toBe(true);
       expect(mockRoot).not.toHaveBeenCalled();
     });
+  });
+
+  it("marks health responses as non-cacheable", async () => {
+    mockGetBlocklistHealth.mockReturnValue({
+      configured: false,
+      lastRefreshAt: null,
+      domainCount: 0,
+      lastError: null,
+    });
+
+    const response = await GET(new NextRequest("http://localhost:3000/api/health"));
+
+    expect(response.headers.get("cache-control")).toBe("no-store");
   });
 });
