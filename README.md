@@ -659,7 +659,23 @@ Common Stellar Horizon failures during the signed payment flow:
 
 ---
 
-## 19) 📄 License
+## 19) 🛡️ Dependency Source Integrity Guard
+
+Fortexa enforces supply-chain security by rejecting unreviewed dependency sources in both `package.json` and `package-lock.json`:
+
+- **Rejected patterns:**
+  - `git+` protocols (`git+https:`, `git+ssh:`, `git://`)
+  - GitHub shorthand formats (`user/repo`, `github:user/repo`)
+  - Local filesystem references (`file:`, `link:`)
+- **Execution:**
+  ```bash
+  npm run check:dependency-sources
+  ```
+All dependencies must resolve to official package registries with deterministic semver specifications.
+
+---
+
+## 20) 📄 License
 
 MIT — see the canonical text in [`LICENSE`](LICENSE).
 
