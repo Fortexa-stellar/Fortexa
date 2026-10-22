@@ -5,6 +5,10 @@ on:
     branches: [main]
   pull_request:
 
+# CI only checks out code, runs tests, and builds without needing write permissions
+permissions:
+  contents: read
+
 jobs:
   quality:
     runs-on: ubuntu-latest
