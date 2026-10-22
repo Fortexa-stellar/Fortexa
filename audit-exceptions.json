@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Production dependency audit policy and exceptions registry for Fortexa",
+  "severityThreshold": "high",
+  "exceptions": [
+    {
+      "package": "@stellar/stellar-sdk",
+      "severity": "high",
+      "advisory": "GHSA-vh66-26gq-q6x8",
+      "reason": "Transitive vulnerability via bundled axios; upgrade to v17 requires breaking SDK API migration",
+      "updatePath": "Scheduled for future major version upgrade once v17 API changes are tested"
+    },
+    {
+      "package": "axios",
+      "severity": "high",
+      "advisory": "GHSA-vh66-26gq-q6x8",
+      "reason": "Direct dependency of @stellar/stellar-sdk 16; patched version requires major SDK upgrade",
+      "updatePath": "Will be resolved when upstream @stellar/stellar-sdk upgrades to >=17.3.0"
+    },
+    {
+      "package": "follow-redirects",
+      "severity": "high",
+      "advisory": "GHSA-q3jh-wrc6-jgq8",
+      "reason": "Transitive dependency through axios; fix requires upstream axios update",
+      "updatePath": "Will be resolved with upcoming upstream axios dependency update"
+    },
+    {
+      "package": "next",
+      "severity": "critical",
+      "advisory": "GHSA-vcvr-r3jv-pc5j",
+      "reason": "Core Next.js framework; patch update to next@16.4+ being validated separately",
+      "updatePath": "Tracked in upcoming Next.js framework upgrade PR"
+    },
+    {
+      "package": "sharp",
+      "severity": "high",
+      "advisory": "GHSA-wq5f-xc86-pv6w",
+      "reason": "Image processing dependency; non-exploitable on testnet payment paths",
+      "updatePath": "Will update sharp once Next.js compatibility is verified"
+    },
+    {
+      "package": "source-map-js",
+      "severity": "high",
+      "advisory": "GHSA-68fv-2mgg-jv7q",
+      "reason": "Source map utility for PostCSS; unused during production payment execution",
+      "updatePath": "Can be upgraded in lockfile during routine dependency maintenance"
+    }
+  ]
+}

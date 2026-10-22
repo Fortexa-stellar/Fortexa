@@ -659,7 +659,20 @@ Common Stellar Horizon failures during the signed payment flow:
 
 ---
 
-## 19) 📄 License
+## 19) 🔒 Production Dependency Audit & Exceptions Policy
+
+Fortexa enforces a blocking dependency audit on production dependencies in CI.
+
+- **Severity threshold:** Vulnerabilities with severity **`HIGH`** or **`CRITICAL`** block the CI quality gate.
+- **Exceptions policy (`audit-exceptions.json`):** If an upstream vulnerability cannot be immediately upgraded due to breaking API migrations, it must be registered in `audit-exceptions.json` with a documented `reason` and concrete `updatePath`.
+- **Command:**
+  ```bash
+  npm run audit:production
+  ```
+
+---
+
+## 20) 📄 License
 
 MIT (see `package.json`).
 
