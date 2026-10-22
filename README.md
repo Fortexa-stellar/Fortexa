@@ -351,6 +351,7 @@ npm run lint
 npm test
 npm run test:watch
 npm run check:production-readiness
+npm run check:config-line-lengths
 npm run demo:scenarios
 npm run db:migrate
 ```
@@ -374,6 +375,20 @@ Run the standalone demo runner (prints expected vs actual for every seeded scena
 ```bash
 npm run demo:scenarios
 ```
+
+### Config line-length check
+
+Executable config files are limited to 500 characters per line so appended
+code cannot hide beyond the normal diff viewport:
+
+```bash
+npm run check:config-line-lengths
+```
+
+The check covers `next`, `postcss`, `eslint`, `tailwind`, and Vitest config
+files plus `package.json`; lockfiles and generated output are excluded. See
+[docs/check-config-line-lengths.md](docs/check-config-line-lengths.md) for
+details.
 
 ### CI Telemetry Opt-out
 
