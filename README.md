@@ -338,6 +338,13 @@ npm run demo:scenarios
 npm run db:migrate
 ```
 
+### CI build smoke check
+
+CI installs from the committed `package-lock.json` (`npm ci`), runs the
+production build (`npm run build`), then runs `git diff --exit-code` so a
+build that regenerates or reformats a tracked file fails loudly instead of
+silently drifting from what is committed.
+
 ### Running the policy pack regression suite
 
 The investor-facing scenario pack lives in `src/lib/scenarios/seed.ts` and its regression suite in `src/lib/scenarios/scenario-pack.test.ts`.
