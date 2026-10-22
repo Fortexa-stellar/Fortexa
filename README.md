@@ -46,18 +46,18 @@ If you only read one section, read this:
 The core security premise of Fortexa is that it **does not hold private keys or perform server-side signing.**
 This end-to-end flow validates that design:
 
-| Step | UI / Route | Source / Logic | Expected Signal |
-|---|---|---|---|
-| **1. Login** | `/login` | [`POST /api/auth/login`](src/app/api/auth/login/route.ts) <br> [`src/components/login-form.tsx`](src/components/login-form.tsx) | **Success**: Freighter challenge signed, session issued.<br>**Failure**: Signature mismatch, unauthorized wallet. |
-| **2. Decision** | `/console` | [`POST /api/decision`](src/app/api/decision/route.ts) <br> [`src/components/decision-console.tsx`](src/components/decision-console.tsx) | **Success**: Returns `APPROVE` or `WARN` with a fixed payment quote.<br>**Failure**: Returns `BLOCK` (no quote). |
-| **3. Quote Lock** | `/console` | [`POST /api/stellar/build-payment`](src/app/api/stellar/build-payment/route.ts) | **Success**: Build request perfectly matches the approved audit entry quote.<br>**Failure**: Server rejects tampered destination, amount, or memo with `403`. |
-| **4. Unsigned XDR Build** | `/console` | [`POST /api/stellar/build-payment`](src/app/api/stellar/build-payment/route.ts) | **Success**: Server returns valid unsigned XDR envelope.<br>**Failure**: Network timeout, missing parameters. |
-| **5. Wallet Signing** | `/console` | `signTransaction` inside <br> [`src/components/decision-console.tsx`](src/components/decision-console.tsx) | **Success**: Freighter popup appears, user signs, UI holds signed XDR.<br>**Failure**: User rejects in wallet. |
-| **6. Signed Submit** | `/console` | [`POST /api/stellar/submit-signed`](src/app/api/stellar/submit-signed/route.ts) | **Success**: Broadcasts successfully to Stellar Testnet (200 OK).<br>**Failure**: Horizon error (`tx_bad_seq`, `op_underfunded`). |
-| **7. Explorer Link** | `/console` | [`src/components/decision-console.tsx`](src/components/decision-console.tsx) | **Success**: Clickable link to Stellar Expert confirming hash matches. |
-| **8. Audit Evidence** | `/activity`<br>`/ops` | [`GET /api/audit`](src/app/api/audit/route.ts) <br> [`src/app/activity/page.tsx`](src/app/activity/page.tsx) | **Success**: Immutable record of the original decision and execution hash. |
+| Step                      | UI / Route            | Source / Logic                                                                                                                          | Expected Signal                                                                                                                                               |
+| ------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1. Login**              | `/login`              | [`POST /api/auth/login`](src/app/api/auth/login/route.ts) <br> [`src/components/login-form.tsx`](src/components/login-form.tsx)         | **Success**: Freighter challenge signed, session issued.<br>**Failure**: Signature mismatch, unauthorized wallet.                                             |
+| **2. Decision**           | `/console`            | [`POST /api/decision`](src/app/api/decision/route.ts) <br> [`src/components/decision-console.tsx`](src/components/decision-console.tsx) | **Success**: Returns `APPROVE` or `WARN` with a fixed payment quote.<br>**Failure**: Returns `BLOCK` (no quote).                                              |
+| **3. Quote Lock**         | `/console`            | [`POST /api/stellar/build-payment`](src/app/api/stellar/build-payment/route.ts)                                                         | **Success**: Build request perfectly matches the approved audit entry quote.<br>**Failure**: Server rejects tampered destination, amount, or memo with `403`. |
+| **4. Unsigned XDR Build** | `/console`            | [`POST /api/stellar/build-payment`](src/app/api/stellar/build-payment/route.ts)                                                         | **Success**: Server returns valid unsigned XDR envelope.<br>**Failure**: Network timeout, missing parameters.                                                 |
+| **5. Wallet Signing**     | `/console`            | `signTransaction` inside <br> [`src/components/decision-console.tsx`](src/components/decision-console.tsx)                              | **Success**: Freighter popup appears, user signs, UI holds signed XDR.<br>**Failure**: User rejects in wallet.                                                |
+| **6. Signed Submit**      | `/console`            | [`POST /api/stellar/submit-signed`](src/app/api/stellar/submit-signed/route.ts)                                                         | **Success**: Broadcasts successfully to Stellar Testnet (200 OK).<br>**Failure**: Horizon error (`tx_bad_seq`, `op_underfunded`).                             |
+| **7. Explorer Link**      | `/console`            | [`src/components/decision-console.tsx`](src/components/decision-console.tsx)                                                            | **Success**: Clickable link to Stellar Expert confirming hash matches.                                                                                        |
+| **8. Audit Evidence**     | `/activity`<br>`/ops` | [`GET /api/audit`](src/app/api/audit/route.ts) <br> [`src/app/activity/page.tsx`](src/app/activity/page.tsx)                            | **Success**: Immutable record of the original decision and execution hash.                                                                                    |
 
-*(Note: Fortexa is currently built for testnet validation. Mainnet readiness requires further risk intel integrations.)*
+_(Note: Fortexa is currently built for testnet validation. Mainnet readiness requires further risk intel integrations.)_
 
 ---
 
@@ -116,10 +116,10 @@ Challenge TTL: `FORTEXA_AUTH_CHALLENGE_TTL_SECONDS` (default `300`).
 
 Denied requests return a stable machine-readable `code` alongside the usual rate-limit headers:
 
-| Condition | HTTP | `code` |
-|---|---|---|
-| Destination or domain on the blocklist | `403` | `BLOCKLISTED` |
-| Route rate budget exhausted | `429` | `RATE_LIMITED` |
+| Condition                              | HTTP  | `code`         |
+| -------------------------------------- | ----- | -------------- |
+| Destination or domain on the blocklist | `403` | `BLOCKLISTED`  |
+| Route rate budget exhausted            | `429` | `RATE_LIMITED` |
 
 Destination and domain values never appear in metrics labels.
 
@@ -149,6 +149,7 @@ Fortexa currently does **not perform server-side signing or private-key custody*
 - Decision engine: `src/lib/decision/engine.ts`
 
 Decision outcomes:
+
 - `BLOCK`
 - `REQUIRE_APPROVAL`
 - `WARN`
@@ -176,18 +177,19 @@ Simulation is strictly read-only: it never saves the policy and never consumes u
 
 The policy decision authorizes a fixed payment quote (destination, amount, asset, memo, network). `POST /api/stellar/build-payment` is the enforcement gate: it loads the audit entry by `auditEntryId`, confirms the decision is `APPROVE`/`WARN`, and rejects any request whose fields diverge from the stored quote.
 
-| Condition | HTTP | Response |
-|---|---|---|
-| Missing/invalid body (`auditEntryId`, schema) | `400` | `Invalid payment build request.` + zod details |
+| Condition                                      | HTTP  | Response                                                                         |
+| ---------------------------------------------- | ----- | -------------------------------------------------------------------------------- |
+| Missing/invalid body (`auditEntryId`, schema)  | `400` | `Invalid payment build request.` + zod details                                   |
 | Unknown audit entry or non-executable decision | `403` | `No authorized payment decision found…` / `Decision 'BLOCK' does not authorize…` |
-| Tampered destination, amount, asset, or memo | `403` | `{ error, field }` naming the mismatched field |
-| Valid approved request | `200` | `{ ok: true, xdr, networkPassphrase, … }` |
+| Tampered destination, amount, asset, or memo   | `403` | `{ error, field }` naming the mismatched field                                   |
+| Valid approved request                         | `200` | `{ ok: true, xdr, networkPassphrase, … }`                                        |
 
 Client-side UI must pass the same `paymentQuoteInput` at decision time and reuse the returned `auditEntry.id` both when building XDR and submitting it. Mutating any authorized field after approval cannot produce an executable transaction.
 
 **Idempotent retries:** `POST /api/stellar/submit-signed` accepts an optional idempotency key, supplied either as an `Idempotency-Key` request header or an `idempotencyKey` body field (the header wins if both are present). Results are stored per authenticated user + key + signed-XDR hash. Replaying the same key with the same signed XDR returns the original result (`200`, with header `Idempotency-Replayed: true`) without resubmitting to Horizon. Reusing the same key with a different signed XDR returns `409 Conflict`. Omitting the key preserves the original submit-on-every-request behavior. Keys must be 8–255 characters.
 
 Additional behavior:
+
 - XDR build timeout configured to 180 seconds.
 - Submit errors include Horizon result codes when available.
 
@@ -203,10 +205,10 @@ Additional behavior:
 
 Every new audit entry is linked into a tamper-evident SHA-256 hash chain:
 
-| Field | Description |
-|---|---|
-| `previousHash` | `entryHash` of the immediately preceding entry, or `0000…0000` (64 zeroes) for the first hashed entry. |
-| `entryHash` | SHA-256 of the entry's canonical fields (`id`, `timestamp`, `action`, `decision`, `explanation`, `triggeredPolicies`, `riskFindings`, `stellarTxHash`, `previousHash`). Object keys are sorted before hashing so DB-stored and file-stored entries produce identical digests. |
+| Field          | Description                                                                                                                                                                                                                                                                   |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `previousHash` | `entryHash` of the immediately preceding entry, or `0000…0000` (64 zeroes) for the first hashed entry.                                                                                                                                                                        |
+| `entryHash`    | SHA-256 of the entry's canonical fields (`id`, `timestamp`, `action`, `decision`, `explanation`, `triggeredPolicies`, `riskFindings`, `stellarTxHash`, `previousHash`). Object keys are sorted before hashing so DB-stored and file-stored entries produce identical digests. |
 
 Both fields are included in JSON exports. CSV exports add `entryHash` and `previousHash` columns.
 
@@ -224,11 +226,11 @@ npm run verify:audit -- path/to/export.json
 
 The script reads the JSON export, extracts the entries (handles `scope=mine` and `scope=all` formats), and runs the same `verifyHashChain` logic that the library uses. Exit code:
 
-| Exit code | Meaning |
-|---|---|
-| `0` | All entries verified successfully |
-| `1` | Chain integrity check failed (see stdout for details) |
-| `2` | Usage error or file not readable |
+| Exit code | Meaning                                               |
+| --------- | ----------------------------------------------------- |
+| `0`       | All entries verified successfully                     |
+| `1`       | Chain integrity check failed (see stdout for details) |
+| `2`       | Usage error or file not readable                      |
 
 Usage: `tsx scripts/verify-audit-export.ts <file>`
 
@@ -237,6 +239,7 @@ Usage: `tsx scripts/verify-audit-export.ts <file>`
 ## 8) 🛠️ Local Setup
 
 ### Requirements
+
 - Node.js 22.x
 - npm 10.x
 
@@ -255,22 +258,25 @@ Open: `http://localhost:3000`
 To clean up local developer state safely, you can use the local demo reset utility. This script is strictly for local environments and implements guardrails to prevent accidental cleanup of production/non-local databases.
 
 #### Guardrails
+
 - **Local Database Check**: Inspects `DATABASE_URL` and blocks execution if the hostname is not local (`localhost`, `127.0.0.1`, `::1`, or local UNIX sockets).
 - **Explicit Confirmation**: Rejects execution unless **both** the environment variable `FORTEXA_ALLOW_LOCAL_RESET=true` and CLI flag `--yes` are provided.
 
 #### Usage
 
-* **Dry-Run (Default)**: Inspect what files and databases would be cleared without modifying any data.
+- **Dry-Run (Default)**: Inspect what files and databases would be cleared without modifying any data.
+
   ```bash
   npm run demo:reset
   ```
-  *(or `npx tsx scripts/reset-local-demo-state.ts`)*
 
-* **Apply Reset**: Execute the state reset once all guardrails are met.
+  _(or `npx tsx scripts/reset-local-demo-state.ts`)_
+
+- **Apply Reset**: Execute the state reset once all guardrails are met.
   ```bash
   FORTEXA_ALLOW_LOCAL_RESET=true npm run demo:reset -- --yes
   ```
-  *(or `FORTEXA_ALLOW_LOCAL_RESET=true npx tsx scripts/reset-local-demo-state.ts --yes`)*
+  _(or `FORTEXA_ALLOW_LOCAL_RESET=true npx tsx scripts/reset-local-demo-state.ts --yes`)_
 
 `.env.example` is intentionally development-oriented and uses Stellar testnet defaults, so it will not pass the production readiness check until you replace the demo values with production configuration.
 
@@ -283,16 +289,15 @@ To clean up local developer state safely, you can use the local demo reset utili
 loads the app can read it. Everything else here stays server-only and is
 never sent to the client.
 
-| Scope | Variables | Notes |
-| --- | --- | --- |
-| **Client-exposed** (`NEXT_PUBLIC_*`) | `NEXT_PUBLIC_STELLAR_DESTINATION` | Public by design (a Stellar address). Safe to expose. |
-| **Server secrets** | `FORTEXA_AUTH_SECRET`, `DATABASE_URL`, `REDIS_URL`, `GROQ_API_KEY`, `FORTEXA_OPERATOR_WALLETS`, `FORTEXA_SIGNER_WALLETS`, `FORTEXA_VIEWER_WALLETS`, `FORTEXA_SHARED_STATE_PATH` | **Never** rename or copy these under a `NEXT_PUBLIC_` prefix. Doing so ships the secret in client-side JavaScript. |
+| Scope                                | Variables                                                                                                                                                                       | Notes                                                                                                              |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| **Client-exposed** (`NEXT_PUBLIC_*`) | `NEXT_PUBLIC_STELLAR_DESTINATION`                                                                                                                                               | Public by design (a Stellar address). Safe to expose.                                                              |
+| **Server secrets**                   | `FORTEXA_AUTH_SECRET`, `DATABASE_URL`, `REDIS_URL`, `GROQ_API_KEY`, `FORTEXA_OPERATOR_WALLETS`, `FORTEXA_SIGNER_WALLETS`, `FORTEXA_VIEWER_WALLETS`, `FORTEXA_SHARED_STATE_PATH` | **Never** rename or copy these under a `NEXT_PUBLIC_` prefix. Doing so ships the secret in client-side JavaScript. |
 
 ⚠️ **Do not expose auth, database, Redis, or Groq credentials to the
 client.** If a future variable needs to reach browser code, give it its own
 narrowly-scoped `NEXT_PUBLIC_*` name — never widen an existing server
 secret's scope.
-
 
 Reference (`.env.example`):
 
@@ -428,6 +433,7 @@ In `NODE_ENV=production`, Fortexa also applies this check before `/api/stellar/b
 JSON `POST` routes that accept request bodies enforce a shared size limit before parsing (default **64 KiB**, override with `FORTEXA_JSON_BODY_MAX_BYTES`). Oversized payloads receive HTTP **413** with a clear error message; malformed but small JSON still returns the route's normal validation error.
 
 ### Auth
+
 - `POST /api/auth/challenge`
 - `POST /api/auth/login`
 - `POST /api/auth/logout`
@@ -436,6 +442,7 @@ JSON `POST` routes that accept request bodies enforce a shared size limit before
 - `DELETE /api/auth/wallet/revoke` (`operator`) — revokes session wallet mapping
 
 ### Policy
+
 - `GET /api/policy`
 - `POST /api/policy` (`operator`)
 - `POST /api/policy/simulate` (`operator`) — read-only pre-save simulation
@@ -444,10 +451,12 @@ JSON `POST` routes that accept request bodies enforce a shared size limit before
 - `POST /api/policy/rollback/preview` (`operator`) — read-only rollback impact preview
 
 ### Decision / Planning
+
 - `POST /api/decision` (`operator`)
 - `POST /api/agent/plan` (`operator`, Groq-backed)
 
 ### Audit / Observability
+
 - `GET /api/audit`
 - `GET /api/audit/export?format=json|csv&scope=mine|all&from=<ISO8601>&to=<ISO8601>&decision=APPROVE|WARN|REQUIRE_APPROVAL|BLOCK&domain=<string>&actionId=<string>`
   - **Filters:** `from` / `to` (ISO 8601 date), `decision`, `domain`, `actionId` — all optional
@@ -457,13 +466,14 @@ JSON `POST` routes that accept request bodies enforce a shared size limit before
     - `GET /api/audit/export?format=json&scope=all&decision=BLOCK&domain=malicious.example.com`
     - `GET /api/audit/export?format=json&scope=mine&actionId=evt_abc123`
   - **Redaction:** All `format=json` and `format=csv` responses are passed through
-    `src/lib/audit/redact.ts` *before* leaving the route — see
+    `src/lib/audit/redact.ts` _before_ leaving the route — see
     [§11.1 Audit Export Redaction](#111-audit-export-redaction) below for the full
     contract (what is redacted, what is preserved, and how to extend it).
 - `GET /api/health`
 - `GET /api/metrics` (`?format=prometheus`)
 
 ### Stellar
+
 - `GET /api/stellar/balance`
 - `POST /api/stellar/setup` (session-wallet bootstrap/sync helper; not manual wallet linking)
 - `POST /api/stellar/build-payment`
@@ -482,12 +492,12 @@ but they never see raw secrets.
 
 **What is always redacted** (replaced with a `{ "$redacted": "<reason>" }` placeholder):
 
-| Reason            | Examples of redacted keys / values                                            |
-| ----------------- | ---------------------------------------------------------------------------- |
-| `session`         | `sessionKey`, `session_id`, `wallet_session`, `authSession`                  |
+| Reason            | Examples of redacted keys / values                                                                                                                              |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `session`         | `sessionKey`, `session_id`, `wallet_session`, `authSession`                                                                                                     |
 | `token`           | `token`, `accessToken`, `refreshToken`, `bearer`, `authorization`, `auth`, `jwt`, `access_token`, `refresh_token`, plus any value matching a JWT-shaped pattern |
-| `signed_xdr`      | `signedXDR`, `signed_xdr`, `xdr`, `signature`, plus any value that starts with `XDR:`, contains `signed xdr`/`signed tx`, or is a long base64-ish block |
-| `sensitive_field` | Anything that matches a configured sensitive key or pattern that doesn't fit a more specific bucket |
+| `signed_xdr`      | `signedXDR`, `signed_xdr`, `xdr`, `signature`, plus any value that starts with `XDR:`, contains `signed xdr`/`signed tx`, or is a long base64-ish block         |
+| `sensitive_field` | Anything that matches a configured sensitive key or pattern that doesn't fit a more specific bucket                                                             |
 
 The redaction is recursive — nested objects, arrays, and unknown keys are walked
 until the configured max depth (25). It also catches value-only matches: a JWT-shaped
@@ -570,6 +580,7 @@ See [docs/observability.md](docs/observability.md) for the Prometheus scrape con
 ### DB-first with File Fallback
 
 Stores include:
+
 - `audit-store`
 - `policy-store`
 - `user-wallet-store`
@@ -577,10 +588,12 @@ Stores include:
 
 If `DATABASE_URL` is available and healthy, Postgres is used.
 Otherwise Fortexa falls back to local JSON files:
+
 - local/dev default: `.fortexa/*.json`
 - Vercel default: `/tmp/fortexa/*.json`
 
 Optional overrides:
+
 - `FORTEXA_STORE_DIR` to set file-store directory explicitly (the audit file store only opens paths that resolve inside this directory; `..`, absolute paths outside it, and symlinks leading out of it are refused with a `StoragePathError`)
 - `FORTEXA_SHARED_STATE_PATH` for shared lockout/rate-limit state file path
   - use an absolute path on Vercel (example: `/tmp/fortexa/shared-security-state.json`)
@@ -626,15 +639,18 @@ Fortexa is intentionally optimized for hackathon clarity and wallet-native contr
 Reviewer-facing explanation text is guarded by snapshot tests to ensure transparency and prevent accidental explanation drift across changes.
 
 **How to update snapshots:**
+
 ```bash
 npm run test -- src/lib/decision/engine.scenarios.test.ts --updateSnapshot
 ```
 
 **Files:**
+
 - `src/lib/decision/engine.scenarios.test.ts` - Snapshot tests for decision explanations
 - `src/lib/decision/engine.test.ts` - Updated summary file referencing the snapshots
 
 **Covered decision types:**
+
 - **APPROVE** - Safe research payment (human-readable approval message)
 - **BLOCK** - Malicious endpoint blocked by domain policy
 - **WARN** - Typosquat domain risk detected (caution warning)
@@ -697,3 +713,15 @@ Fortexa ensures that all interactive components share a consistent, high-contras
 - **Button Component**: [`src/components/ui/button.tsx`](src/components/ui/button.tsx) aligns with this standard via `focus-visible:ring-2` and `focus-visible:ring-offset-2`.
 
 Verified via `scripts/focus-visible-audit.test.ts` (`npx vitest run scripts/focus-visible-audit.test.ts`).
+
+---
+
+## 21) 🛡️ Application Error Boundary
+
+Fortexa includes a global application error boundary ([`src/app/error.tsx`](src/app/error.tsx)) for authenticated and client views:
+
+- **Safe Exception Masking**: Suppresses raw error messages and stack traces to prevent internal server details, database strings, or tokens from leaking to the browser.
+- **Request ID Tracking**: Displays `error.digest` as a discrete Request ID when provided by Next.js to facilitate support diagnostics.
+- **Retry Navigation**: Provides a functional `reset()` retry button along with quick navigation back to `/dashboard`.
+
+Verified via `scripts/error-boundary.test.ts` (`npx vitest run scripts/error-boundary.test.ts`).
