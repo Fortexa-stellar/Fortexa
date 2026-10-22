@@ -354,6 +354,10 @@ Run the standalone demo runner (prints expected vs actual for every seeded scena
 npm run demo:scenarios
 ```
 
+### CI Telemetry Opt-out
+
+The CI workflow (`.github/workflows/ci.yml`) explicitly disables Next.js anonymous telemetry at workflow scope using `NEXT_TELEMETRY_DISABLED: "1"` to ensure isolated and deterministic builds without external telemetry network calls.
+
 ### Production Readiness Check
 
 Run this before every production deployment and before enabling protected payment flows:
