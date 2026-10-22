@@ -3,7 +3,8 @@ import { randomUUID } from "node:crypto";
 
 import { GENESIS_HASH, computeEntryHash } from "@/lib/audit/hash-chain";
 import { runWithDatabase, runWithDatabaseStrict } from "@/lib/storage/db";
-import { getFortexaStoreDir, getFortexaStorePath } from "@/lib/storage/paths";
+import { getFortexaStoreDir, getFortexaStorePath, resolveContainedStorePath } from "@/lib/storage/paths";
+import type { ContainedStorePath } from "@/lib/storage/paths";
 import type { AuditEntry, DailyUsage, DecisionType } from "@/lib/types/domain";
 
 type AuditStoreFile = {
@@ -12,6 +13,7 @@ type AuditStoreFile = {
 };
 
 export const AUDIT_EXPORT_MAX_ROWS = 10000;
+const AUDIT_STORE_FILE_NAME = "audit.json";
 
 export type AuditFilter = {
   from?: string;
@@ -137,7 +139,7 @@ function applyFilter(
   });
 }
 
-const storePath = getFortexaStorePath("audit.json");
+const storePath = getFortexaStorePath(AUDIT_STORE_FILE_NAME);
 let fallbackMutationQueue = Promise.resolve();
 
 function withFallbackMutationLock<T>(operation: () => Promise<T>): Promise<T> {

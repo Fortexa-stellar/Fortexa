@@ -1,9 +1,19 @@
 name: CI
 
+# Diagnostic artifact retention is 7 days (retention-days: 7).
+# This workflow does not upload logs or reports. If a job later uploads them
+# with actions/upload-artifact, set retention-days to 7 so GitHub deletes the
+# diagnostic files after one week: long enough to inspect a failed release,
+# short enough that CI logs and reports are not kept indefinitely.
+
 on:
   push:
     branches: [main]
   pull_request:
+
+# CI only checks out code, runs tests, and builds without needing write permissions
+permissions:
+  contents: read
 
 # Disable Next.js anonymous telemetry reporting during CI builds and tests
 # to prevent outbound network calls, avoid spurious tracking, and speed up CI execution.
@@ -17,13 +27,17 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: npm
+
+      # Stdlib-only static scan, so it runs before any dependency is installed.
+      - name: Repository malware guard
+        run: npm run check:malware
 
       - name: Install dependencies
         run: npm ci
@@ -36,3 +50,6 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Check documentation links
+        run: npm run check:docs

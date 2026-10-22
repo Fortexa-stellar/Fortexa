@@ -54,7 +54,7 @@ redirects). A `405 Method Not Allowed` falls back to a `GET` request.
 
 ## CI integration
 
-Add a step to your GitHub Actions workflow:
+`.github/workflows/ci.yml` runs this as a blocking quality step:
 
 ```yaml
 - name: Check documentation links

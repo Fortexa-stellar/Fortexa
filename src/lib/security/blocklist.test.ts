@@ -81,6 +81,16 @@ describe("blocklist health", () => {
     const health = getBlocklistHealth();
     expect(health.lastError).toBe("HTTP 503");
   });
+
+  it("rejects a feed response larger than 1 MiB", async () => {
+    process.env.FORTEXA_BLOCKLIST_URL = "https://example.com/blocklist.json";
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response("x".repeat(1024 * 1024 + 1), { status: 200 }),
+    );
+
+    await expect(fetchBlocklist()).rejects.toThrow("Blocklist response exceeds 1048576 bytes");
+    expect(getBlocklistHealth().domainCount).toBe(0);
+  });
 });
 
 describe("checkBlocklist", () => {
@@ -115,5 +125,65 @@ describe("checkBlocklist", () => {
   it("does not throw when the feed is unreachable", async () => {
     vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("down"));
     await expect(checkBlocklist("good.example")).resolves.toEqual({ allow: true, reasonCode: null });
+  });
+});
+
+describe("production blocklist URL", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+    delete process.env.FORTEXA_BLOCKLIST_URL;
+    resetBlocklistCache();
+  });
+
+  it("fetches an HTTPS blocklist URL in production", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("FORTEXA_BLOCKLIST_URL", "https://blocklist.example.com/list.json");
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(JSON.stringify(["bad.example"]), { status: 200 })
+    );
+
+    await expect(fetchBlocklist()).resolves.toEqual(["bad.example"]);
+    expect(fetchSpy).toHaveBeenCalledWith(
+      "https://blocklist.example.com/list.json",
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
+    );
+    expect(getBlocklistHealth().configured).toBe(true);
+  });
+
+  it.each([
+    ["", "required in production"],
+    ["   ", "required in production"],
+    ["http://blocklist.example.com/list.json", "must use HTTPS"],
+    ["not a url", "valid HTTPS URL"],
+    ["https://", "valid HTTPS URL"],
+  ])("rejects %j before fetch (%s)", async (blocklistUrl, message) => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("FORTEXA_BLOCKLIST_URL", blocklistUrl);
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    await expect(fetchBlocklist()).rejects.toThrow(message);
+    await expect(checkBlocklist("good.example")).rejects.toThrow(message);
+    expect(() => getBlocklistHealth()).toThrow(message);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("rejects an unset blocklist URL in production before fetch", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    delete process.env.FORTEXA_BLOCKLIST_URL;
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    await expect(fetchBlocklist()).rejects.toThrow("required in production");
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("still allows an empty blocklist URL outside production", async () => {
+    vi.stubEnv("NODE_ENV", "test");
+    delete process.env.FORTEXA_BLOCKLIST_URL;
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    await expect(fetchBlocklist()).resolves.toEqual([]);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(getBlocklistHealth().configured).toBe(false);
   });
 });

@@ -18,6 +18,7 @@ describe("production readiness", () => {
         NODE_ENV: "test",
         DATABASE_URL: "postgres://fortexa:secret@db.example.com:5432/fortexa",
         FORTEXA_AUTH_SECRET: "0123456789abcdef0123456789abcdef",
+        FORTEXA_BLOCKLIST_URL: "https://blocklist.example.com/list.json",
         FORTEXA_OPERATOR_WALLETS: VALID_OPERATOR_WALLET,
         FORTEXA_SHARED_STATE_PATH: "shared/security-state.json",
         STELLAR_HORIZON_URL: "https://horizon.stellar.org",
@@ -38,6 +39,7 @@ describe("production readiness", () => {
       expect.arrayContaining([
         "STELLAR_HORIZON_URL",
         "STELLAR_NETWORK_PASSPHRASE",
+        "FORTEXA_BLOCKLIST_URL",
         "FORTEXA_AUTH_SECRET",
         "FORTEXA_OPERATOR_WALLETS",
         "DATABASE_URL or FORTEXA_STORE_DIR",
@@ -154,12 +156,13 @@ describe("production readiness", () => {
         NODE_ENV: "production",
         DATABASE_URL: "postgres://fortexa:secret@db.example.com:5432/fortexa",
         FORTEXA_AUTH_SECRET: "0123456789abcdef0123456789abcdef",
+        FORTEXA_BLOCKLIST_URL: "https://blocklist.example.com/list.json",
         FORTEXA_OPERATOR_WALLETS: VALID_OPERATOR_WALLET,
         FORTEXA_SHARED_STATE_PATH: "shared/security-state.json",
         STELLAR_HORIZON_URL: "https://horizon.stellar.org",
         STELLAR_NETWORK_PASSPHRASE: Networks.PUBLIC,
       } as unknown as NodeJS.ProcessEnv,
-      { cwd: "/srv/fortexa", appliedMigrationId: "006_audit_chain_sequence" }
+      { cwd: "/srv/fortexa", appliedMigrationId: "005_audit_chain_sequence" }
     );
 
     expect(report.ok).toBe(true);
@@ -211,6 +214,43 @@ describe("production readiness", () => {
       ])
     );
   });
+
+  const validProductionEnv = {
+    NODE_ENV: "production",
+    DATABASE_URL: "postgres://fortexa:secret@db.example.com:5432/fortexa",
+    FORTEXA_AUTH_SECRET: "0123456789abcdef0123456789abcdef",
+    FORTEXA_BLOCKLIST_URL: "https://blocklist.example.com/list.json",
+    FORTEXA_OPERATOR_WALLETS: VALID_OPERATOR_WALLET,
+    FORTEXA_SHARED_STATE_PATH: "shared/security-state.json",
+    STELLAR_HORIZON_URL: "https://horizon.stellar.org",
+    STELLAR_NETWORK_PASSPHRASE: Networks.PUBLIC,
+  } as unknown as NodeJS.ProcessEnv;
+
+  it("accepts an HTTPS blocklist URL in production", () => {
+    const report = checkProductionReadiness(validProductionEnv, { cwd: "/srv/fortexa" });
+
+    expect(report.issues.map((issue) => issue.setting)).not.toContain("FORTEXA_BLOCKLIST_URL");
+  });
+
+  it.each([
+    ["", "required in production"],
+    ["   ", "required in production"],
+    ["http://blocklist.example.com/list.json", "must use HTTPS"],
+    ["not a url", "valid HTTPS URL"],
+    ["https://", "valid HTTPS URL"],
+  ])("rejects blocklist URL %j in production (%s)", (blocklistUrl, message) => {
+    const report = checkProductionReadiness(
+      { ...validProductionEnv, FORTEXA_BLOCKLIST_URL: blocklistUrl },
+      { cwd: "/srv/fortexa" }
+    );
+
+    expect(report.ok).toBe(false);
+    const issue = report.issues.find((entry) => entry.setting === "FORTEXA_BLOCKLIST_URL");
+    expect(issue?.message).toEqual(expect.stringContaining(message));
+    if (blocklistUrl.trim()) {
+      expect(issue?.message).not.toContain(blocklistUrl.trim());
+    }
+  });
 });
 
 describe("service readiness", () => {
@@ -218,6 +258,7 @@ describe("service readiness", () => {
     NODE_ENV: "production",
     DATABASE_URL: "postgres://fortexa:secret@db.example.com:5432/fortexa",
     FORTEXA_AUTH_SECRET: "0123456789abcdef0123456789abcdef",
+    FORTEXA_BLOCKLIST_URL: "https://blocklist.example.com/list.json",
     FORTEXA_OPERATOR_WALLETS: VALID_OPERATOR_WALLET,
     FORTEXA_SHARED_STATE_PATH: "shared/security-state.json",
     STELLAR_HORIZON_URL: "https://horizon.stellar.org",

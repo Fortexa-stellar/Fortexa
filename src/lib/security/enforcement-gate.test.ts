@@ -92,6 +92,27 @@ describe("enforceRequestGate", () => {
     }
   });
 
+  it("rejects an HTTP blocklist URL in production instead of failing open", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("FORTEXA_BLOCKLIST_URL", "http://example.com/blocklist.json");
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    try {
+      await expect(
+        enforceRequestGate(requestFromIp("10.9.0.2"), {
+          rateLimitKey: "gate-https",
+          limit: 5,
+          windowMs: 60_000,
+          destination: "https://trusted.example.com/pay",
+        })
+      ).rejects.toThrow("must use HTTPS");
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllEnvs();
+      vi.restoreAllMocks();
+    }
+  });
+
   it("denies a blocklisted destination with code BLOCKLISTED and 403", async () => {
     process.env.FORTEXA_BLOCKLIST_URL = "https://example.com/blocklist.json";
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(

@@ -1,5 +1,95 @@
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const DEFAULT_FETCH_TIMEOUT_MS = 5000; // 5 second timeout for blocklist fetch
+const MAX_BLOCKLIST_RESPONSE_BYTES = 1024 * 1024; // 1 MiB
+
+async function readLimitedResponseBody(response: Response): Promise<string> {
+  const reader = response.body?.getReader();
+  if (!reader) return "";
+
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      totalBytes += value.byteLength;
+      if (totalBytes > MAX_BLOCKLIST_RESPONSE_BYTES) {
+        await reader.cancel();
+        throw new Error(`Blocklist response exceeds ${MAX_BLOCKLIST_RESPONSE_BYTES} bytes`);
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const body = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder().decode(body);
+}
+
+/** Production rejected an empty, non-HTTPS, or malformed blocklist URL. */
+export class BlocklistUrlError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "BlocklistUrlError";
+  }
+}
+
+/**
+ * Production requires `FORTEXA_BLOCKLIST_URL` to be an absolute HTTPS URL.
+ * Returns a clear error message, or null when the value is acceptable.
+ * Does not include the configured value, which may carry a query secret.
+ */
+export function productionBlocklistUrlProblem(
+  value: string | undefined
+): string | null {
+  const url = value?.trim() ?? "";
+  if (!url) {
+    return "FORTEXA_BLOCKLIST_URL is required in production and must be an HTTPS URL.";
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return "FORTEXA_BLOCKLIST_URL must be a valid HTTPS URL in production.";
+  }
+
+  if (parsed.protocol !== "https:") {
+    return "FORTEXA_BLOCKLIST_URL must use HTTPS in production.";
+  }
+
+  if (!parsed.hostname) {
+    return "FORTEXA_BLOCKLIST_URL must be a valid HTTPS URL in production.";
+  }
+
+  return null;
+}
+
+/**
+ * Read the configured feed URL.
+ * Outside production an empty value stays disabled. In production, empty,
+ * HTTP, and malformed values throw instead of being fetched.
+ */
+function readConfiguredBlocklistUrl(): string | null {
+  const raw = process.env.FORTEXA_BLOCKLIST_URL;
+  if (process.env.NODE_ENV === "production") {
+    const problem = productionBlocklistUrlProblem(raw);
+    if (problem) {
+      throw new BlocklistUrlError(problem);
+    }
+    return (raw ?? "").trim();
+  }
+
+  const url = raw?.trim() ?? "";
+  return url.length > 0 ? url : null;
+}
 
 let cachedDomains: string[] = [];
 let cacheExpiresAt = 0;
@@ -26,7 +116,7 @@ function getBlocklistTimeout(): number {
 /** Return current blocklist feed health without triggering a refresh. */
 export function getBlocklistHealth(): BlocklistHealth {
   return {
-    configured: Boolean(process.env.FORTEXA_BLOCKLIST_URL),
+    configured: Boolean(readConfiguredBlocklistUrl()),
     lastRefreshAt,
     domainCount: cachedDomains.length,
     lastError: lastErrorSummary,
@@ -35,7 +125,7 @@ export function getBlocklistHealth(): BlocklistHealth {
 
 /** Fetch and cache the external blocklist. Returns [] on any failure. */
 export async function fetchBlocklist(): Promise<string[]> {
-  const url = process.env.FORTEXA_BLOCKLIST_URL;
+  const url = readConfiguredBlocklistUrl();
   if (!url) return [];
 
   if (Date.now() < cacheExpiresAt) return cachedDomains;
@@ -45,7 +135,7 @@ export async function fetchBlocklist(): Promise<string[]> {
     const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-    const text = await res.text();
+    const text = await readLimitedResponseBody(res);
     let domains: string[];
 
     try {
@@ -93,7 +183,10 @@ export async function checkBlocklist(domain: string): Promise<BlocklistVerdict> 
   let domains: string[];
   try {
     domains = await fetchBlocklist();
-  } catch {
+  } catch (err) {
+    if (err instanceof BlocklistUrlError) {
+      throw err;
+    }
     domains = cachedDomains;
   }
 

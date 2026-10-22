@@ -10,6 +10,7 @@ import type { AuditFilter } from "@/lib/storage/audit-store";
 import { redactAuditExportEntriesByUser, redactAuditExportPayload } from "@/lib/audit/redact";
 import { AuditChainError, verifyAuditChain } from "@/lib/audit/hash-chain";
 import type { ChainVerificationResult } from "@/lib/audit/hash-chain";
+import { buildAuditExportFilename } from "@/lib/audit/export-filename";
 
 const AUDIT_CHAIN_VERIFICATION_FAILED = "audit_chain_verification_failed";
 
@@ -44,24 +45,6 @@ function chainFailureDetails(result: Extract<ChainVerificationResult, { valid: f
     checkedCount: result.checkedCount,
     legacyCount: result.legacyCount,
   };
-}
-
-function chainErrorResponse(
-  request: NextRequest,
-  startedAtMs: number,
-  error: AuditChainError,
-) {
-  const status = error.code === "audit_chain_row_cap_exceeded" ? 413 : 422;
-  return jsonWithRequestContext(request, {
-    route: "/api/audit/export",
-    startedAtMs,
-    status,
-    body: {
-      error: error.message,
-      code: error.code,
-      ...(error.details ?? {}),
-    },
-  });
 }
 
 export async function GET(request: NextRequest) {
@@ -181,7 +164,7 @@ export async function GET(request: NextRequest) {
         status: 200,
         headers: {
           "Content-Type": "text/csv; charset=utf-8",
-          "Content-Disposition": `attachment; filename=${filenameAll}`,
+          "Content-Disposition": `attachment; filename=${buildAuditExportFilename("all")}`,
           "x-request-id": request.headers.get("x-request-id") ?? crypto.randomUUID(),
         },
       });
@@ -230,7 +213,7 @@ export async function GET(request: NextRequest) {
     }));
 
     logInfo("Audit export success (mine/csv)", { ...context, userId: auth.session.userId });
-    const filenameMine = `fortexa-audit-mine-${new Date().toISOString().slice(0, 10)}.csv`;
+    const filenameMine = buildAuditExportFilename("mine");
     return new NextResponse(toCsv(rows), {
       status: 200,
       headers: {

@@ -4,7 +4,7 @@ import {
   readSharedLockout,
   removeSharedLockout,
   writeSharedLockout,
-} from @"lib/security/shared-security-state";
+} from "@/lib/security/shared-security-state";
 
 type LockoutRecord = {
   attempts: number;

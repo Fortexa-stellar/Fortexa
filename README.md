@@ -278,6 +278,22 @@ To clean up local developer state safely, you can use the local demo reset utili
 
 ## 9) 🌍 Environment Variables
 
+**Server secrets vs. client-exposed values.** Next.js inlines every
+`NEXT_PUBLIC_*` variable into the browser bundle at build time — anyone who
+loads the app can read it. Everything else here stays server-only and is
+never sent to the client.
+
+| Scope | Variables | Notes |
+| --- | --- | --- |
+| **Client-exposed** (`NEXT_PUBLIC_*`) | `NEXT_PUBLIC_STELLAR_DESTINATION` | Public by design (a Stellar address). Safe to expose. |
+| **Server secrets** | `FORTEXA_AUTH_SECRET`, `DATABASE_URL`, `REDIS_URL`, `GROQ_API_KEY`, `FORTEXA_OPERATOR_WALLETS`, `FORTEXA_SIGNER_WALLETS`, `FORTEXA_VIEWER_WALLETS`, `FORTEXA_SHARED_STATE_PATH` | **Never** rename or copy these under a `NEXT_PUBLIC_` prefix. Doing so ships the secret in client-side JavaScript. |
+
+⚠️ **Do not expose auth, database, Redis, or Groq credentials to the
+client.** If a future variable needs to reach browser code, give it its own
+narrowly-scoped `NEXT_PUBLIC_*` name — never widen an existing server
+secret's scope.
+
+
 Reference (`.env.example`):
 
 ```bash
@@ -318,7 +334,8 @@ NEXT_PUBLIC_STELLAR_DESTINATION=
 
 # Optional external blocklist URL for dynamic threat-intel
 # Accepts JSON array of domains or plain-text (one domain per line, # comments ignored)
-# Cached in-memory for 5 minutes; feed failures fall back silently
+# Responses are limited to 1 MiB; cached in-memory for 5 minutes;
+# feed failures fall back silently
 FORTEXA_BLOCKLIST_URL=
 ```
 
@@ -337,6 +354,10 @@ npm run check:production-readiness
 npm run demo:scenarios
 npm run db:migrate
 ```
+
+### CI diagnostic artifacts
+
+`.github/workflows/ci.yml` does not upload logs or reports. Diagnostic artifact retention is 7 days. If a job later uploads them with `actions/upload-artifact`, set `retention-days: 7`. Seven days leaves a failed run inspectable through the following release week, then GitHub deletes the files. `scripts/ci-artifact-retention.test.ts` fails when any upload step omits that value or sets a different one.
 
 ### Running the policy pack regression suite
 
@@ -644,7 +665,12 @@ Common Stellar Horizon failures during the signed payment flow:
 
 ## 19) 📄 License
 
-MIT (see `package.json`).
+MIT — see the canonical text in [`LICENSE`](LICENSE).
+
+The same license is declared in `package.json` (`"license": "MIT"`). No additional
+license configuration is required; `scripts/license.test.ts` is a focused check that
+keeps `LICENSE`, the `package.json` metadata, and this README link in sync (run it
+with `npm test`).
 
 All done
 ...
