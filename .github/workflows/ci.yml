@@ -1,5 +1,11 @@
 name: CI
 
+# Diagnostic artifact retention is 7 days (retention-days: 7).
+# This workflow does not upload logs or reports. If a job later uploads them
+# with actions/upload-artifact, set retention-days to 7 so GitHub deletes the
+# diagnostic files after one week: long enough to inspect a failed release,
+# short enough that CI logs and reports are not kept indefinitely.
+
 on:
   push:
     branches: [main]

@@ -338,6 +338,10 @@ npm run demo:scenarios
 npm run db:migrate
 ```
 
+### CI diagnostic artifacts
+
+`.github/workflows/ci.yml` does not upload logs or reports. Diagnostic artifact retention is 7 days. If a job later uploads them with `actions/upload-artifact`, set `retention-days: 7`. Seven days leaves a failed run inspectable through the following release week, then GitHub deletes the files. `scripts/ci-artifact-retention.test.ts` fails when any upload step omits that value or sets a different one.
+
 ### Running the policy pack regression suite
 
 The investor-facing scenario pack lives in `src/lib/scenarios/seed.ts` and its regression suite in `src/lib/scenarios/scenario-pack.test.ts`.
