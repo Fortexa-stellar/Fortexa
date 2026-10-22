@@ -622,6 +622,11 @@ Common Stellar Horizon failures during the signed payment flow:
 
 ## 19) 📄 License
 
-MIT (see `package.json`).
+MIT — see the canonical text in [`LICENSE`](LICENSE).
+
+The same license is declared in `package.json` (`"license": "MIT"`). No additional
+license configuration is required; `scripts/license.test.ts` is a focused check that
+keeps `LICENSE`, the `package.json` metadata, and this README link in sync (run it
+with `npm test`).
 
 All done
