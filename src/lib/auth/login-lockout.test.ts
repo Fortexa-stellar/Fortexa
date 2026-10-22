@@ -7,7 +7,7 @@ import {
   resetLoginLockoutClock,
   resetLoginLockoutStore,
   setLoginLockoutClock,
-} from @"lib/auth/login-lockout";
+} from "@/lib/auth/login-lockout";
 
 function fakeClock(startMs: number) {
   let current = startMs;

@@ -2,17 +2,17 @@ import { Keypair } from "@stellar/stellar-sdk";
 import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AUTH_COOKIE_KEY } from @/lib/auth/session";
-import { hashSep53Message, resetWalletChallengeStore } from @/lib/auth/wallet-challenge";
+import { AUTH_COOKIE_KEY } from "@/lib/auth/session";
+import { hashSep53Message, resetWalletChallengeStore } from "@/lib/auth/wallet-challenge";
 import {
   isLoginLocked,
   registerLoginFailure,
   resetLoginLockoutClock,
   resetLoginLockoutStore,
   setLoginLockoutClock,
-} from @"lib/auth/login-lockout";
-import { POST as createChallenge } from @"app/api/auth/challenge/route";
-import { POST as login } from @"app/api/auth/login/route";
+} from "@/lib/auth/login-lockout";
+import { POST as createChallenge } from "@/app/api/auth/challenge/route";
+import { POST as login } from "@/app/api/auth/login/route";
 
 const AUTHORIZED_SECRET = "SAKICEVQLYWGSOJS4WW7HZJWAHZVEEBS527LHK5V4MLJALYKICQCJXMW";
 const AUTHORIZED_PUBLIC_KEY = "GBXFXNDLV4LSWA4VB7YIL5GBD7BVNR22SGBTDKMO2SBZZHDXSKZYCP7L";

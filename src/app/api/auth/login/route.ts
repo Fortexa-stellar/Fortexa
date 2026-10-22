@@ -2,15 +2,15 @@ import { readJsonBody } from "@/lib/http/read-json-body";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 
-import { clearLoginFailures, isLoginLocked, readClientIp, registerLoginFailure } from @"lib/auth/login-lockout";
-import { AUTH_COOKIE_KEY, createSessionToken } from @/lib/auth/session";
-import { verifyWalletChallenge } from @"lib/auth/wallet-challenge";
-import { normalizeWalletPublicKey, resolveRoleByWallet } from @"lib/auth/wallet-role";
-import { jsonWithRequestContext } from @"lib/observability/http";
-import { getRequestLogContext, logError, logInfo, logWarn } from @"lib/observability/logger";
-import { consumeRateLimit, rateLimitHeaders } from @/lib/security/rate-limit";
-import { upsertUserWallet } from @"lib/storage/user-wallet-store";
-import { logValidationFailure, toPublicValidationDetails } from @/lib/validation/errors";
+import { clearLoginFailures, isLoginLocked, readClientIp, registerLoginFailure } from "@/lib/auth/login-lockout";
+import { AUTH_COOKIE_KEY, createSessionToken } from "@/lib/auth/session";
+import { verifyWalletChallenge } from "@/lib/auth/wallet-challenge";
+import { normalizeWalletPublicKey, resolveRoleByWallet } from "@/lib/auth/wallet-role";
+import { jsonWithRequestContext } from "@/lib/observability/http";
+import { getRequestLogContext, logError, logInfo, logWarn } from "@/lib/observability/logger";
+import { consumeRateLimit, rateLimitHeaders } from "@/lib/security/rate-limit";
+import { upsertUserWallet } from "@/lib/storage/user-wallet-store";
+import { logValidationFailure, toPublicValidationDetails } from "@/lib/validation/errors";
 
 const loginSchema = z.object({
   publicKey: z.string().regex(/^G[A-Z2-7]{55}$/u, "Invalid Stellar public key."),

@@ -46,24 +46,6 @@ function chainFailureDetails(result: Extract<ChainVerificationResult, { valid: f
   };
 }
 
-function chainErrorResponse(
-  request: NextRequest,
-  startedAtMs: number,
-  error: AuditChainError,
-) {
-  const status = error.code === "audit_chain_row_cap_exceeded" ? 413 : 422;
-  return jsonWithRequestContext(request, {
-    route: "/api/audit/export",
-    startedAtMs,
-    status,
-    body: {
-      error: error.message,
-      code: error.code,
-      ...(error.details ?? {}),
-    },
-  });
-}
-
 export async function GET(request: NextRequest) {
   const startedAtMs = Date.now();
   const context = getRequestLogContext(request, "/api/audit/export");
