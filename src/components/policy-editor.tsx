@@ -224,6 +224,9 @@ export function PolicyEditor({
       return;
     }
 
+    await postPolicyUpdate(buildDraftPolicy(policy), "Policy saved successfully.");
+  }
+
   /**
    * POST the given document to /api/policy and apply the response.
    * Shared by the gated activation flow and the import flow.
@@ -596,7 +599,7 @@ export function PolicyEditor({
   return (
     <div className="space-y-6">
       {networkMismatch || sensitivePayload ? (
-        <Alert className="border-red-500/40 bg-red-500/10" role="alert">
+        <Alert className="border-red-500/40 bg-red-500/10" role="alert" aria-live="assertive">
           <AlertTitle>Saving disabled</AlertTitle>
           <AlertDescription>
             {networkMismatch
@@ -606,7 +609,7 @@ export function PolicyEditor({
         </Alert>
       ) : null}
       {!sessionLoading && !isOperator ? (
-        <Alert className="border-amber-500/40 bg-amber-500/10">
+        <Alert className="border-amber-500/40 bg-amber-500/10" role="status" aria-live="polite">
           <AlertTitle>Viewer mode</AlertTitle>
           <AlertDescription>Policy editing is disabled. Only operator role can update policy.</AlertDescription>
         </Alert>
@@ -626,6 +629,8 @@ export function PolicyEditor({
             <p className="text-sm text-[hsl(var(--muted-foreground))]">Per-transaction cap</p>
             <Input
               type="number"
+              aria-label="Per-transaction cap"
+              aria-disabled={writeDisabled}
               value={policy?.perTxCapXLM ?? 0}
               disabled={writeDisabled}
               onChange={(event) =>
@@ -637,6 +642,8 @@ export function PolicyEditor({
             <p className="text-sm text-[hsl(var(--muted-foreground))]">Daily spending cap</p>
             <Input
               type="number"
+              aria-label="Daily spending cap"
+              aria-disabled={writeDisabled}
               value={policy?.dailyCapXLM ?? 0}
               disabled={writeDisabled}
               onChange={(event) =>
@@ -648,6 +655,8 @@ export function PolicyEditor({
             <p className="text-sm text-[hsl(var(--muted-foreground))]">Max tool calls/day</p>
             <Input
               type="number"
+              aria-label="Max tool calls per day"
+              aria-disabled={writeDisabled}
               value={policy?.maxToolCallsPerDay ?? 0}
               disabled={writeDisabled}
               onChange={(event) =>
@@ -659,6 +668,8 @@ export function PolicyEditor({
             <p className="text-sm text-[hsl(var(--muted-foreground))]">Risk score threshold</p>
             <Input
               type="number"
+              aria-label="Risk score threshold"
+              aria-disabled={writeDisabled}
               value={policy?.riskThreshold ?? 0}
               disabled={writeDisabled}
               onChange={(event) =>
@@ -676,6 +687,8 @@ export function PolicyEditor({
           </CardHeader>
           <CardContent>
             <textarea
+              aria-label="Allowed domains"
+              aria-disabled={writeDisabled}
               className="min-h-32 w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.4)] px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring)/0.4)]"
               value={allowedDomains}
               disabled={writeDisabled}
@@ -689,6 +702,8 @@ export function PolicyEditor({
           </CardHeader>
           <CardContent>
             <textarea
+              aria-label="Blocked domains"
+              aria-disabled={writeDisabled}
               className="min-h-32 w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.4)] px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring)/0.4)]"
               value={blockedDomains}
               disabled={writeDisabled}
@@ -702,6 +717,8 @@ export function PolicyEditor({
           </CardHeader>
           <CardContent>
             <textarea
+              aria-label="Allowed tools"
+              aria-disabled={writeDisabled}
               className="min-h-32 w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.4)] px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring)/0.4)]"
               value={allowedTools}
               disabled={writeDisabled}
@@ -715,6 +732,8 @@ export function PolicyEditor({
           </CardHeader>
           <CardContent>
             <textarea
+              aria-label="Blocked tools"
+              aria-disabled={writeDisabled}
               className="min-h-32 w-full rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--muted)/0.4)] px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring)/0.4)]"
               value={blockedTools}
               disabled={writeDisabled}
@@ -861,7 +880,7 @@ export function PolicyEditor({
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={runSimulation} disabled={writeDisabled || simulating}>
+            <Button onClick={runSimulation} disabled={writeDisabled || simulating} aria-disabled={writeDisabled || simulating} aria-label="Run simulation">
               {simulating ? "Simulating..." : "Run simulation"}
             </Button>
             <label className="flex items-center gap-2 text-sm text-[hsl(var(--muted-foreground))]">
@@ -891,27 +910,27 @@ export function PolicyEditor({
       </Card>
 
       <div className="flex gap-2">
-        <Button onClick={savePolicy} disabled={saveDisabled}>Save Policy</Button>
-        <Button variant="outline" onClick={loadPolicy} disabled={loading}>Reload</Button>
-        <Button variant="outline" onClick={loadHistory} disabled={loading}>Reload History</Button>
+        <Button onClick={savePolicy} disabled={saveDisabled} aria-disabled={saveDisabled} aria-label="Save Policy">Save Policy</Button>
+        <Button variant="outline" onClick={loadPolicy} disabled={loading} aria-disabled={loading} aria-label="Reload policy">Reload</Button>
+        <Button variant="outline" onClick={loadHistory} disabled={loading} aria-disabled={loading} aria-label="Reload policy history">Reload History</Button>
       </div>
 
       {validationGate.status === "valid" ? (
-        <Alert className="border-emerald-500/40 bg-emerald-500/10" data-testid="policy-validation-status">
+        <Alert className="border-emerald-500/40 bg-emerald-500/10" data-testid="policy-validation-status" role="status" aria-live="polite">
           <AlertTitle>Draft validated</AlertTitle>
           <AlertDescription>
             The validate route accepted this exact document. Activation is unlocked until you edit the draft.
           </AlertDescription>
         </Alert>
       ) : validationGate.status === "invalid" ? (
-        <Alert className="border-red-500/40 bg-red-500/10" data-testid="policy-validation-status">
+        <Alert className="border-red-500/40 bg-red-500/10" data-testid="policy-validation-status" role="alert" aria-live="assertive">
           <AlertTitle>Validation failed — activation is disabled</AlertTitle>
           <AlertDescription>
             <p>
               The validate route rejected this draft. The errors below are returned by the API and shown
               unmodified.
             </p>
-            <ul className="mt-2 list-disc space-y-1 pl-4">
+            <ul className="mt-2 list-disc space-y-1 pl-4" aria-label="Validation error list">
               {buildValidationDisplayErrors(validationGate).map((error) => (
                 <li key={error} className="break-words font-mono text-xs">
                   {error}
@@ -923,7 +942,7 @@ export function PolicyEditor({
       ) : null}
 
       {conflict ? (
-        <Alert className="border-red-500/40 bg-red-500/10">
+        <Alert className="border-red-500/40 bg-red-500/10" role="alert" aria-live="assertive">
           <AlertTitle>Save conflict — another operator edited this policy</AlertTitle>
           <AlertDescription>
             <p>{conflict.message}</p>
@@ -958,7 +977,7 @@ export function PolicyEditor({
         </Alert>
       ) : null}
 
-      <Alert className="border-[hsl(var(--accent)/0.2)] bg-[hsl(var(--accent)/0.05)]">
+      <Alert className="border-[hsl(var(--accent)/0.2)] bg-[hsl(var(--accent)/0.05)]" role="status" aria-live="polite">
         <AlertTitle>Policy status</AlertTitle>
         <AlertDescription>
           {status}
