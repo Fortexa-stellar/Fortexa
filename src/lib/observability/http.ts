@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server";
 
 import { recordApiMetric } from "@/lib/observability/metrics";
 import { redactSensitiveFields } from "@/lib/observability/redact";
+import { applySecurityHeaders } from "@/lib/security/headers";
 
 export type HttpExchangeLog = {
   method: string;
@@ -45,7 +46,7 @@ export function jsonWithRequestContext(
     logExchange?: boolean;
     requestBody?: unknown;
     requestBodyTooLarge?: boolean;
-  }
+  },
 ) {
   if (input.logExchange) {
     logHttpExchange({
