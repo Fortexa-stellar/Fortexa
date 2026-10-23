@@ -4,7 +4,14 @@ import type {
   SecurityEvaluation,
   SecurityFinding,
 } from "@/lib/types/domain";
-import { fetchBlocklist } from "@/lib/security/blocklist";
+import {
+  BlocklistUrlError,
+  DEFAULT_BLOCKLIST_TIMEOUT_MS,
+  fetchBlocklist,
+  getBlocklistTimeoutMs,
+  getStaleBlocklist,
+  isBlocklistTimeout,
+} from "@/lib/security/blocklist";
 
 /** Configuration for analyzer timeout behavior. */
 export interface AnalyzerConfig {
@@ -13,8 +20,16 @@ export interface AnalyzerConfig {
 
 /** Default analyzer configuration - 5 second timeout for blocklist fetch. */
 export const defaultAnalyzerConfig: AnalyzerConfig = {
-  blocklistTimeoutMs: 5000,
+  blocklistTimeoutMs: DEFAULT_BLOCKLIST_TIMEOUT_MS,
 };
+
+/**
+ * The analyzer configuration in effect: the blocklist timeout comes from
+ * `FORTEXA_BLOCKLIST_TIMEOUT_MS` (bounded, see `getBlocklistTimeoutMs`).
+ */
+export function getAnalyzerConfig(): AnalyzerConfig {
+  return { blocklistTimeoutMs: getBlocklistTimeoutMs() };
+}
 
 const suspiciousPatterns = [
   /ignore\s+all\s+previous\s+instructions/i,
@@ -144,62 +159,35 @@ function blocklistCheck(
   return [];
 }
 
-type BlocklistFetchStatus = {
-  blocked: boolean;
-  timedOut: boolean;
-  error?: string;
+type BlocklistLoad = {
+  blocklist: string[];
+  /** Set when the feed could not be refreshed; `null` when it was reachable (or not configured). */
+  failure: { timedOut: boolean; error: string } | null;
 };
 
 /**
- * Fetch the blocklist and report whether the feed was reachable.
- * `fetchBlocklist` enforces its own timeout and rethrows fetch failures; on
- * failure we fall back to an empty list and report the degraded status.
+ * Load the blocklist, never waiting longer than the blocklist timeout and never
+ * throwing.
+ *
+ * `fetchBlocklist` aborts a slow feed itself and rethrows every failure. The
+ * fallback is deterministic: the last list fetched successfully, or an empty
+ * list if there never was one, together with a failure the caller reports as a
+ * degraded check. A stale list can only add findings, so falling back to it never
+ * hides a known-bad domain.
  */
-async function fetchBlocklistWithTimeout(): Promise<{
-  blocklist: string[];
-  status: BlocklistFetchStatus;
-}> {
-  const { blocklistTimeoutMs } = getAnalyzerConfig();
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), blocklistTimeoutMs);
-
+async function loadBlocklist(): Promise<BlocklistLoad> {
   try {
-    const controller = new AbortController();
-    const { blocklistTimeoutMs } = getAnalyzerConfig();
-    const timeoutId = setTimeout(() => controller.abort(), blocklistTimeoutMs);
-
-    try {
-      const blocklist = await fetchBlocklist();
-      clearTimeout(timeoutId);
-      const health = getBlocklistHealth();
-      if (health.lastError) {
-        return {
-          blocklist,
-          status: {
-            blocked: true,
-            timedOut: false,
-            error: health.lastError,
-          },
-        };
-      }
-      return { blocklist, status: { blocked: false, timedOut: false } };
-    } finally {
-      clearTimeout(timeoutId);
-    }
+    return { blocklist: await fetchBlocklist(), failure: null };
   } catch (err) {
-    const isTimeout = err instanceof Error && err.name === "AbortError";
-    const health = getBlocklistHealth();
-    const blocklist = [];
-    return { 
-      blocklist, 
-      status: { 
-        blocked: true, 
-        timedOut: isTimeout || /abort|timeout/i.test(health.lastError || ""), 
-        error: health.lastError || "Blocklist fetch failed" 
-      } 
+    // A misconfigured production URL is a deployment error, not a feed failure.
+    if (err instanceof BlocklistUrlError) throw err;
+    return {
+      blocklist: getStaleBlocklist(),
+      failure: {
+        timedOut: isBlocklistTimeout(err),
+        error: err instanceof Error ? err.message : "Blocklist fetch failed",
+      },
     };
-  } finally {
-    clearTimeout(timeoutId);
   }
 }
 
@@ -220,29 +208,24 @@ export async function evaluateSecurity(
     ...targetCheck(action),
   ];
 
-  // Fetch blocklist with timeout handling
-  const { blocklist, status: blocklistFetchStatus } =
-    await fetchBlocklistWithTimeout();
+  // Fetch the blocklist; a failure degrades the evaluation but never aborts it.
+  const { blocklist, failure } = await loadBlocklist();
 
-  if (blocklistFetchStatus.timedOut) {
-    analyzerStatus.blocklistStatus = "timeout";
-    analyzerStatus.blocklistTimedOut = true;
-    analyzerStatus.blocklistError =
-      blocklistFetchStatus.error ?? "Blocklist fetch timed out";
-    analyzerStatus.isDegraded = true;
-    analyzerStatus.degradationReasons?.push(
-      `blocklist_timeout_${config.blocklistTimeoutMs}ms`,
-    );
-  } else if (blocklistFetchStatus.blocked) {
+  if (failure) {
     analyzerStatus.blocklistStatus = "error";
-    analyzerStatus.blocklistError = blocklistFetchStatus.error;
+    analyzerStatus.blocklistError = failure.error;
     analyzerStatus.isDegraded = true;
-    analyzerStatus.degradationReasons?.push("blocklist_fetch_failed");
-  } else {
-    analyzerStatus.blocklistStatus = "success";
+    if (failure.timedOut) {
+      analyzerStatus.blocklistTimedOut = true;
+      analyzerStatus.degradationReasons?.push(
+        `blocklist_timeout_${config.blocklistTimeoutMs}ms`,
+      );
+    } else {
+      analyzerStatus.degradationReasons?.push("blocklist_fetch_failed");
+    }
   }
 
-  // Add blocklist findings (if available)
+  // Add blocklist findings (the fresh list, or the stale one after a failure)
   findings.push(...blocklistCheck(action.domain, blocklist));
 
   const riskScore = Math.min(
