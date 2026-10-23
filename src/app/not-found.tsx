@@ -43,18 +43,26 @@ export default function NotFound() {
             Page Not Found
           </h1>
           <p className="text-sm text-neutral-400">
-            The requested page does not exist, has been relocated, or is unavailable under the current policy.
+            The requested page does not exist, has been relocated, or is unavailable under the
+            current policy.
           </p>
         </div>
 
         <div className="flex w-full flex-col gap-3 pt-2 sm:flex-row">
-          <Button asChild variant="outline" className="flex-1 gap-2 border-white/10 text-white hover:bg-white/10">
+          <Button
+            asChild
+            variant="outline"
+            className="flex-1 gap-2 border-white/10 text-white hover:bg-white/10"
+          >
             <Link href="/" aria-label="Return to Fortexa homepage">
               <ArrowLeft className="h-4 w-4" />
               <span>Home</span>
             </Link>
           </Button>
-          <Button asChild className="flex-1 gap-2 bg-emerald-500 text-black hover:bg-emerald-400 font-medium">
+          <Button
+            asChild
+            className="flex-1 gap-2 bg-emerald-500 text-black hover:bg-emerald-400 font-medium"
+          >
             <Link href="/console" aria-label="Go to Fortexa decision and payment console">
               <Compass className="h-4 w-4" />
               <span>Console</span>
