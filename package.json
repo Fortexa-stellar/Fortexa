@@ -18,7 +18,8 @@
     "check:env-example": "tsx scripts/check-env-example.ts",
     "check:docs": "node scripts/check-doc-links.mjs",
     "check:malware": "node scripts/check-repo-malware.mjs",
-    "check:docs:external": "node scripts/check-doc-links.mjs --external"
+    "check:docs:external": "node scripts/check-doc-links.mjs --external",
+    "smoke:standalone": "tsx scripts/smoke-standalone.ts"
   },
   "keywords": [
     "web3",

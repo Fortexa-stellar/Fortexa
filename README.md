@@ -353,7 +353,19 @@ npm run test:watch
 npm run check:production-readiness
 npm run demo:scenarios
 npm run db:migrate
+npm run smoke:standalone
 ```
+
+### Standalone server startup smoke test
+
+Verify the production standalone server artifact boots cleanly and serves traffic:
+
+```bash
+npm run build
+npm run smoke:standalone
+```
+
+The test acquires an OS-assigned ephemeral port, spawns the standalone Next.js server, polls `/api/health` until ready, and terminates the server process cleanly.
 
 ### CI diagnostic artifacts
 

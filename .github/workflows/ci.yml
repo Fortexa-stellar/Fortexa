@@ -58,5 +58,8 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Standalone server smoke test
+        run: npm run smoke:standalone
+
       - name: Check documentation links
         run: npm run check:docs
