@@ -431,7 +431,7 @@ JSON `POST` routes that accept request bodies enforce a shared size limit before
 - `POST /api/auth/challenge`
 - `POST /api/auth/login`
 - `POST /api/auth/logout`
-- `GET /api/auth/session`
+- `GET /api/auth/session` - returns `{ authenticated: boolean, user?: { email, role, userId, exp } }`; verified via direct route tests for missing, valid, expired, and revoked sessions ([`route.test.ts`](src/app/api/auth/session/route.test.ts))
 - `POST /api/auth/refresh`
 - `DELETE /api/auth/wallet/revoke` (`operator`) — revokes session wallet mapping
 
