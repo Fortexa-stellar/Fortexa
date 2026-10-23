@@ -4,3 +4,10 @@
   height: 100%;
   overflow: hidden;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .color-bends-container canvas {
+    animation: none !important;
+    transition: none !important;
+  }
+}

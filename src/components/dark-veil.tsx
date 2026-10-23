@@ -129,6 +129,25 @@ export function DarkVeil({
 
     const mesh = new Mesh(gl, { geometry, program });
 
+    const mediaQuery =
+      typeof window !== "undefined" && typeof window.matchMedia === "function"
+        ? window.matchMedia("(prefers-reduced-motion: reduce)")
+        : null;
+    let isReducedMotion = Boolean(mediaQuery?.matches);
+
+    const start = performance.now();
+    let frame = 0;
+
+    const renderStaticFrame = () => {
+      program.uniforms.uTime.value = 0;
+      program.uniforms.uHueShift.value = hueShift;
+      program.uniforms.uNoise.value = noiseIntensity;
+      program.uniforms.uScan.value = scanlineIntensity;
+      program.uniforms.uScanFreq.value = scanlineFrequency;
+      program.uniforms.uWarp.value = warpAmount;
+      renderer.render({ scene: mesh });
+    };
+
     const resize = () => {
       const w = parent.clientWidth;
       const h = parent.clientHeight;
@@ -136,6 +155,9 @@ export function DarkVeil({
 
       renderer.setSize(w * resolutionScale, h * resolutionScale);
       program.uniforms.uResolution.value.set(w, h);
+      if (isReducedMotion) {
+        renderStaticFrame();
+      }
     };
 
     const resizeObserver = new ResizeObserver(resize);
@@ -143,10 +165,11 @@ export function DarkVeil({
     window.addEventListener("resize", resize);
     resize();
 
-    const start = performance.now();
-    let frame = 0;
-
     const loop = () => {
+      if (isReducedMotion) {
+        renderStaticFrame();
+        return;
+      }
       program.uniforms.uTime.value = ((performance.now() - start) / 1000) * speed;
       program.uniforms.uHueShift.value = hueShift;
       program.uniforms.uNoise.value = noiseIntensity;
@@ -157,12 +180,25 @@ export function DarkVeil({
       frame = requestAnimationFrame(loop);
     };
 
+    const handleMotionChange = (e: MediaQueryListEvent) => {
+      isReducedMotion = e.matches;
+      if (isReducedMotion) {
+        cancelAnimationFrame(frame);
+        renderStaticFrame();
+      } else {
+        frame = requestAnimationFrame(loop);
+      }
+    };
+
+    mediaQuery?.addEventListener("change", handleMotionChange);
+
     loop();
 
     return () => {
       cancelAnimationFrame(frame);
       resizeObserver.disconnect();
       window.removeEventListener("resize", resize);
+      mediaQuery?.removeEventListener("change", handleMotionChange);
     };
   }, [hueShift, noiseIntensity, scanlineIntensity, speed, scanlineFrequency, warpAmount, resolutionScale]);
 

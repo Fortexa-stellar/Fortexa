@@ -180,6 +180,14 @@ body.app-shell {
   to { transform: rotate(360deg); }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .app-workspace-orb,
+  .app-workspace-beam {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 body.app-shell .glass-sidebar {
   background: linear-gradient(180deg, hsl(var(--surface-2) / 0.72), hsl(var(--surface-1) / 0.58));
   backdrop-filter: blur(28px) saturate(1.2);
