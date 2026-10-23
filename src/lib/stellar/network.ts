@@ -1,5 +1,7 @@
 import { Networks } from "@stellar/stellar-sdk";
 
+import { assertNoEmbeddedCredentials } from "@/lib/validation/remote-urls";
+
 export const STELLAR_PUBLIC_NETWORK_PASSPHRASE = Networks.PUBLIC;
 export const STELLAR_TESTNET_NETWORK_PASSPHRASE = Networks.TESTNET;
 
@@ -27,10 +29,12 @@ export function getStellarNetworkPassphrase(
 export function getStellarHorizonUrl(
   env: StellarEnv = process.env
 ) {
-  return (
-    normalizeEnvValue(env.STELLAR_HORIZON_URL) ??
-    "https://horizon-testnet.stellar.org"
-  );
+  const configured = normalizeEnvValue(env.STELLAR_HORIZON_URL);
+  if (configured) {
+    assertNoEmbeddedCredentials(configured, "STELLAR_HORIZON_URL");
+    return configured;
+  }
+  return "https://horizon-testnet.stellar.org";
 }
 
 export function inferStellarNetworkFromHorizonUrl(url: string):

@@ -2,6 +2,8 @@ import { closeSync, existsSync, mkdirSync, openSync, readFileSync, renameSync, r
 import path from "node:path";
 import Redis from "ioredis";
 
+import { hasEmbeddedCredentials } from "@/lib/validation/remote-urls";
+
 export type SharedRateLimitState = {
   count: number;
   resetAt: number;
@@ -47,12 +49,20 @@ function getRedisClient(): Redis | null {
     return null;
   }
 
+  if (hasEmbeddedCredentials(redisUrl)) {
+    console.error("REDIS_URL must not contain embedded username or password credentials.");
+    isRedisUnreachable = true;
+    return null;
+  }
+
   if (!redisClient) {
     try {
       redisClient = new Redis(redisUrl, {
         connectTimeout: 1000,
         maxRetriesPerRequest: 0,
         enableOfflineQueue: false,
+        username: process.env.REDIS_USERNAME?.trim() || undefined,
+        password: process.env.REDIS_PASSWORD?.trim() || undefined,
       });
 
       redisClient.on("error", (err) => {
@@ -99,7 +109,9 @@ function getSharedStatePath() {
 }
 
 export function isSharedSecurityStateEnabled() {
-  return Boolean(process.env.REDIS_URL?.trim()) || Boolean(getSharedStatePath());
+  const redisUrl = process.env.REDIS_URL?.trim();
+  const validRedis = Boolean(redisUrl && !hasEmbeddedCredentials(redisUrl));
+  return validRedis || Boolean(getSharedStatePath());
 }
 
 function readSharedState(): SharedSecurityState {
