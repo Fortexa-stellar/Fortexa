@@ -108,6 +108,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (
+      (error instanceof Error && (error.name === "AbortError" || error.name === "TimeoutError" || /abort|timeout/i.test(error.message))) ||
+      (typeof DOMException !== "undefined" && error instanceof DOMException && (error.name === "AbortError" || error.name === "TimeoutError"))
+    ) {
+      logWarn("Agent plan generation timed out", {
+        code: PLAN_ERRORS.PROVIDER_UNAVAILABLE,
+        detail: error instanceof Error ? error.message : "timeout",
+        route: "/api/agent/plan",
+      });
+
+      return NextResponse.json(
+        {
+          error: PLAN_ERROR_MESSAGES[PLAN_ERRORS.PROVIDER_UNAVAILABLE],
+          code: PLAN_ERRORS.PROVIDER_UNAVAILABLE,
+        },
+        { status: 422, headers: rateLimitHeaders(rate) }
+      );
+    }
+
     logError("Unexpected error in agent plan route", {
       detail: error instanceof Error ? error.message : "unknown",
       route: "/api/agent/plan",
