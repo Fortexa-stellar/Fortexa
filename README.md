@@ -428,7 +428,7 @@ In `NODE_ENV=production`, Fortexa also applies this check before `/api/stellar/b
 JSON `POST` routes that accept request bodies enforce a shared size limit before parsing (default **64 KiB**, override with `FORTEXA_JSON_BODY_MAX_BYTES`). Oversized payloads receive HTTP **413** with a clear error message; malformed but small JSON still returns the route's normal validation error.
 
 ### Auth
-- `POST /api/auth/challenge`
+- `POST /api/auth/challenge` — issues a one-time SEP-53 wallet login challenge; verified by direct route tests covering valid challenge generation, malformed input rejection (400), custom TTL configuration, and uncacheable security headers in [route.test.ts](src/app/api/auth/challenge/route.test.ts)
 - `POST /api/auth/login`
 - `POST /api/auth/logout`
 - `GET /api/auth/session`
