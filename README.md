@@ -433,7 +433,7 @@ JSON `POST` routes that accept request bodies enforce a shared size limit before
 - `POST /api/auth/logout`
 - `GET /api/auth/session`
 - `POST /api/auth/refresh`
-- `DELETE /api/auth/wallet/revoke` (`operator`) — revokes session wallet mapping
+- `DELETE /api/auth/wallet/revoke` (`operator`) — revokes session wallet mapping; verified at the route boundary for unauthenticated rejection (401), role denial (403), active wallet revocation, user isolation, and idempotent repeated revocation in [route.test.ts](src/app/api/auth/wallet/revoke/route.test.ts)
 
 ### Policy
 - `GET /api/policy`
