@@ -4,6 +4,37 @@ import { PLAN_ERRORS, PlanError } from "@/lib/ai/plan-errors";
 
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 const DEFAULT_MODEL = process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile";
+export const DEFAULT_GROQ_TIMEOUT_MS = 15_000;
+
+export function getGroqTimeoutMs(): number {
+  const envVal = process.env.GROQ_TIMEOUT_MS;
+  if (envVal) {
+    const parsed = parseInt(envVal, 10);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+  return DEFAULT_GROQ_TIMEOUT_MS;
+}
+
+export type GenerateAgentPlanOptions = {
+  timeoutMs?: number;
+  signal?: AbortSignal;
+};
+
+function isAbortOrTimeoutError(err: unknown): boolean {
+  if (typeof DOMException !== "undefined" && err instanceof DOMException) {
+    return err.name === "AbortError" || err.name === "TimeoutError";
+  }
+  if (err instanceof Error) {
+    return (
+      err.name === "AbortError" ||
+      err.name === "TimeoutError" ||
+      /abort|timeout|timed out/i.test(err.message)
+    );
+  }
+  return false;
+}
 
 export type PlanCompletionContent = string;
 
@@ -56,19 +87,27 @@ export function parseAgentPlanFromContent(content: PlanCompletionContent): Agent
 
 export async function generateAgentPlanPayloadWithGroq(
   input: AgentPlanRequestInput,
+  options?: GenerateAgentPlanOptions,
 ): Promise<AgentPlanInput> {
-  const content = await requestPlanCompletionContent(input);
+  const content = await requestPlanCompletionContent(input, options);
   return parseAgentPlanFromContent(content);
 }
 
 export async function requestPlanCompletionContent(
   input: AgentPlanRequestInput,
+  options?: GenerateAgentPlanOptions,
 ): Promise<PlanCompletionContent> {
   const apiKey = process.env.GROQ_API_KEY;
 
   if (!apiKey) {
     throw new PlanError(PLAN_ERRORS.PROVIDER_UNAVAILABLE, "GROQ_API_KEY is not configured.");
   }
+
+  const timeoutMs = options?.timeoutMs ?? getGroqTimeoutMs();
+  const timeoutSignal = AbortSignal.timeout(timeoutMs);
+  const signal = options?.signal
+    ? AbortSignal.any([options.signal, timeoutSignal])
+    : timeoutSignal;
 
   const systemPrompt = [
     "You are an AI agent planner for Fortexa.",
@@ -92,21 +131,38 @@ export async function requestPlanCompletionContent(
     .filter(Boolean)
     .join("\n");
 
-  const completionResponse = await fetch(GROQ_API_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: DEFAULT_MODEL,
-      temperature: 0.2,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-    }),
-  });
+  let completionResponse: Response;
+  try {
+    completionResponse = await fetch(GROQ_API_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: DEFAULT_MODEL,
+        temperature: 0.2,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+      }),
+      signal,
+    });
+  } catch (err) {
+    if (err instanceof PlanError) {
+      throw err;
+    }
+
+    if (isAbortOrTimeoutError(err) || signal.aborted) {
+      throw new PlanError(
+        PLAN_ERRORS.PROVIDER_UNAVAILABLE,
+        `Groq API request timed out after ${timeoutMs}ms.`
+      );
+    }
+
+    throw err;
+  }
 
   if (!completionResponse.ok) {
     throw new PlanError(
@@ -136,6 +192,9 @@ export async function requestPlanCompletionContent(
  * not authorize a payment — callers that move money must run the action
  * through the live decision engine first (see src/lib/ai/plan-filter.ts).
  */
-export async function generateAgentActionWithGroq(input: AgentPlanRequestInput) {
-  return generateAgentPlanPayloadWithGroq(input);
+export async function generateAgentActionWithGroq(
+  input: AgentPlanRequestInput,
+  options?: GenerateAgentPlanOptions,
+) {
+  return generateAgentPlanPayloadWithGroq(input, options);
 }
