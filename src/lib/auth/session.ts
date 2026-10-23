@@ -1,6 +1,11 @@
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
-
 import type { NextRequest } from "next/server";
+
+import {
+  isSessionGenerationCurrent,
+  registerSession,
+  rotateSessionGeneration,
+} from "@/lib/auth/session-store";
 
 export type AuthRole = "operator" | "signer" | "viewer";
 
@@ -8,24 +13,33 @@ export type AuthSession = {
   userId: string;
   email: string;
   role: AuthRole;
+  roles?: AuthRole[];
   /**
    * Session id. Minted once at login and carried forward by refresh, so every
    * token generation of one login shares it. Logout revokes by this id.
    */
   sid: string;
+  gen?: number;
   exp: number;
   publicKey?: string;
+};
+
+export type VerifySessionTokenOptions = {
+  allowStaleGeneration?: boolean;
 };
 
 export const AUTH_COOKIE_KEY = "fortexa_session";
 
 /** Longest lifetime any session token is issued with. */
 export const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
+export const DEFAULT_SESSION_TTL_SECONDS = SESSION_MAX_AGE_SECONDS;
 
 function getAuthSecret() {
   const secret = process.env.FORTEXA_AUTH_SECRET?.trim();
   if (!secret) {
-    throw new Error("FORTEXA_AUTH_SECRET is required for auth session signing.");
+    throw new Error(
+      "FORTEXA_AUTH_SECRET is required for auth session signing.",
+    );
   }
   return secret;
 }
@@ -36,21 +50,43 @@ function encodeBase64Url(value: string | Buffer) {
 }
 
 function decodeBase64Url(value: string) {
-  const padded = value.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((value.length + 3) % 4);
+  const padded =
+    value.replace(/-/g, "+").replace(/_/g, "/") +
+    "===".slice((value.length + 3) % 4);
   return Buffer.from(padded, "base64").toString("utf8");
 }
 
 function sign(payloadPart: string) {
-  return createHmac("sha256", getAuthSecret()).update(payloadPart).digest("base64url");
+  return createHmac("sha256", getAuthSecret())
+    .update(payloadPart)
+    .digest("base64url");
 }
 
-export function createSessionToken(input: { email: string; role: AuthRole; userId?: string; expiresInSeconds?: number; publicKey?: string }) {
+function normalizeGeneration(value: unknown): number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0
+    ? value
+    : 0;
+}
+
+export function createSessionToken(input: {
+  email: string;
+  role: AuthRole;
+  roles?: AuthRole[];
+  userId?: string;
+  sessionId?: string | null;
+  generation?: number;
+  expiresInSeconds?: number;
+  publicKey?: string;
+}) {
   const now = Math.floor(Date.now() / 1000);
   const payload: AuthSession = {
     userId: input.userId ?? randomUUID(),
     email: input.email,
     role: input.role,
-    exp: now + (input.expiresInSeconds ?? 60 * 60 * 24 * 7),
+    roles: input.roles,
+    sid: input.sessionId ?? randomUUID(),
+    gen: normalizeGeneration(input.generation),
+    exp: now + (input.expiresInSeconds ?? SESSION_MAX_AGE_SECONDS),
     publicKey: input.publicKey,
   };
 
@@ -60,7 +96,10 @@ export function createSessionToken(input: { email: string; role: AuthRole; userI
   return `${payloadPart}.${signaturePart}`;
 }
 
-export function verifySessionToken(token: string, options?: VerifySessionTokenOptions): AuthSession | null {
+export function verifySessionToken(
+  token: string,
+  options?: VerifySessionTokenOptions,
+): AuthSession | null {
   const parts = token.split(".");
   if (parts.length !== 2) {
     return null;
@@ -81,7 +120,9 @@ export function verifySessionToken(token: string, options?: VerifySessionTokenOp
   }
 
   try {
-    const parsed = JSON.parse(decodeBase64Url(payloadPart)) as Partial<AuthSession>;
+    const parsed = JSON.parse(
+      decodeBase64Url(payloadPart),
+    ) as Partial<AuthSession>;
 
     // A token without a session id cannot be revoked, so it is not accepted.
     if (
@@ -99,15 +140,22 @@ export function verifySessionToken(token: string, options?: VerifySessionTokenOp
       return null;
     }
 
-    if (parsed.role !== "operator" && parsed.role !== "signer" && parsed.role !== "viewer") {
+    if (
+      parsed.role !== "operator" &&
+      parsed.role !== "signer" &&
+      parsed.role !== "viewer"
+    ) {
       return null;
     }
 
-    if (parsed.roles !== undefined && (!Array.isArray(parsed.roles) || parsed.roles.some((role) => role !== "operator" && role !== "signer" && role !== "viewer"))) {
-      return null;
-    }
-
-    if (parsed.roles !== undefined && (!Array.isArray(parsed.roles) || parsed.roles.some((role) => role !== "operator" && role !== "signer" && role !== "viewer"))) {
+    if (
+      parsed.roles !== undefined &&
+      (!Array.isArray(parsed.roles) ||
+        parsed.roles.some(
+          (role) =>
+            role !== "operator" && role !== "signer" && role !== "viewer",
+        ))
+    ) {
       return null;
     }
 
@@ -115,16 +163,18 @@ export function verifySessionToken(token: string, options?: VerifySessionTokenOp
       userId: parsed.userId,
       email: parsed.email,
       role: parsed.role,
+      roles: parsed.roles,
       exp: parsed.exp,
       gen: normalizeGeneration(parsed.gen),
-      sid: normalizeSessionId(parsed.sid),
+      sid: parsed.sid,
+      publicKey: parsed.publicKey,
     };
 
     if (!options?.allowStaleGeneration) {
       const generationCurrent = isSessionGenerationCurrent({
         userId: session.userId,
         sessionId: session.sid,
-        generation: session.gen,
+        generation: session.gen ?? 0,
       });
 
       if (!generationCurrent) {
@@ -180,7 +230,7 @@ export function rotateSessionToken(session: AuthSession) {
   const rotated = rotateSessionGeneration({
     userId: session.userId,
     sessionId: session.sid,
-    currentGeneration: session.gen,
+    currentGeneration: session.gen ?? 0,
     expiresAtMs: Date.now() + DEFAULT_SESSION_TTL_SECONDS * 1000,
   });
 
