@@ -6,6 +6,14 @@ export default defineConfig({
     environment: "node",
     include: ["src/**/*.test.ts", "scripts/**/*.test.ts"],
     setupFiles: ["./vitest.setup.ts"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json-summary"],
+      thresholds: {
+        statements: 50,
+        branches: 50,
+      },
+    },
   },
   resolve: {
     alias: {
