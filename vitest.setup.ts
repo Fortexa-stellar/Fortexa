@@ -1,4 +1,4 @@
-import { promises as fs } from "node:fs";
+import { mkdirSync, promises as fs } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -15,9 +15,12 @@ import { afterAll } from "vitest";
  */
 const unique = `${process.pid}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 const storeDir = path.join(tmpdir(), `fortexa-vitest-${unique}`);
+mkdirSync(storeDir, { recursive: true });
 
 process.env.FORTEXA_STORE_DIR = storeDir;
 
 afterAll(async () => {
-  await fs.rm(storeDir, { recursive: true, force: true }).catch(() => undefined);
+  await fs
+    .rm(storeDir, { recursive: true, force: true })
+    .catch(() => undefined);
 });
