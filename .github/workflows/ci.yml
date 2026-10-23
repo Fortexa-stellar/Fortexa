@@ -35,9 +35,12 @@ jobs:
           node-version: 22
           cache: npm
 
-      # Stdlib-only static scan, so it runs before any dependency is installed.
+      # Stdlib-only static scans, so they run before any dependency is installed.
       - name: Repository malware guard
         run: npm run check:malware
+
+      - name: Check config line lengths
+        run: npm run check:config-line-lengths
 
       - name: Verify Node.js toolchain
         run: |
