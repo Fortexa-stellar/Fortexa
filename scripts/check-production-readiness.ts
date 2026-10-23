@@ -21,7 +21,7 @@ async function main() {
     });
     try {
       const result = await pool.query<{ id: string }>(`SELECT id FROM fortexa_schema_migrations`);
-      const appliedSet = new Set(result.rows.map(r => r.id));
+      const appliedSet = new Set(result.rows.map((r) => r.id));
       for (let i = STORAGE_MIGRATIONS.length - 1; i >= 0; i--) {
         if (appliedSet.has(STORAGE_MIGRATIONS[i].id)) {
           appliedMigrationId = STORAGE_MIGRATIONS[i].id;

@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-
 // Setup mock state storage
 let hookIndex = 0;
 const states: unknown[] = [];
@@ -15,7 +14,8 @@ vi.mock("react", async () => {
       const currentIndex = hookIndex;
       hookIndex++;
       if (states.length <= currentIndex) {
-        const value = typeof initialValue === "function" ? (initialValue as () => unknown)() : initialValue;
+        const value =
+          typeof initialValue === "function" ? (initialValue as () => unknown)() : initialValue;
         states.push(value);
         setters.push((newValue: unknown) => {
           if (typeof newValue === "function") {
@@ -35,7 +35,10 @@ vi.mock("react", async () => {
 
 // Mock components to keep tests light
 vi.mock("@/components/decision-badge", () => ({
-  DecisionBadge: ({ decision }: { decision: string }) => ({ type: "DecisionBadge", props: { decision } }),
+  DecisionBadge: ({ decision }: { decision: string }) => ({
+    type: "DecisionBadge",
+    props: { decision },
+  }),
 }));
 vi.mock("@/components/ui/input", () => ({
   Input: (props: Record<string, unknown>) => ({ type: "Input", props }),
@@ -51,7 +54,7 @@ import type { DecisionResult, DecisionType } from "@/lib/types/domain";
 
 function makeEvaluation(
   scenario: (typeof demoScenarios)[number],
-  actualDecision: DecisionType,
+  actualDecision: DecisionType
 ): ScenarioEvaluation {
   const result: DecisionResult = {
     decision: actualDecision,
@@ -234,7 +237,9 @@ describe("ScenariosCatalog Search, Filter, and Empty State", () => {
     expect(heading.props.children).toBe("No scenarios match your current filters.");
 
     const paragraph = emptyStateDiv.props.children[2];
-    expect(paragraph.props.children).toBe("Try clearing your search or filters to see all available scenarios.");
+    expect(paragraph.props.children).toBe(
+      "Try clearing your search or filters to see all available scenarios."
+    );
 
     const clearButton = emptyStateDiv.props.children[3];
     expect(clearButton.props.id).toBe("clear-filters-btn");

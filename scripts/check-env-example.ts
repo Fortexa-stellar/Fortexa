@@ -116,9 +116,7 @@ function main(filePath: string): never {
     process.exit(1);
   }
 
-  console.log(
-    `✓ ${filePath}: ${declarations.length} environment keys declared, no duplicates.`
-  );
+  console.log(`✓ ${filePath}: ${declarations.length} environment keys declared, no duplicates.`);
   process.exit(0);
 }
 

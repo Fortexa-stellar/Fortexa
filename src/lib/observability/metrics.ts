@@ -371,7 +371,11 @@ export function toPrometheusText() {
   push(renderTypeLine("fortexa_requests_total", "counter"));
   for (const route of snapshot.routes) {
     push(
-      renderMetricLine("fortexa_requests_total", { route: route.route, method: route.method }, route.totalCount)
+      renderMetricLine(
+        "fortexa_requests_total",
+        { route: route.route, method: route.method },
+        route.totalCount
+      )
     );
   }
 
@@ -386,11 +390,18 @@ export function toPrometheusText() {
   lines.push("# TYPE fortexa_decisions_denied_total counter");
   lines.push(`fortexa_decisions_denied_total ${snapshot.counters.deny}`);
 
-  lines.push("# HELP fortexa_rate_limit_rejections_total Total requests rejected by the rate limiter");
+  lines.push(
+    "# HELP fortexa_rate_limit_rejections_total Total requests rejected by the rate limiter"
+  );
   lines.push("# TYPE fortexa_rate_limit_rejections_total counter");
   lines.push(`fortexa_rate_limit_rejections_total ${snapshot.counters.rateLimit}`);
 
-  push(renderHelpLine("fortexa_stellar_submit_results_total", "Total Stellar submission attempts by result"));
+  push(
+    renderHelpLine(
+      "fortexa_stellar_submit_results_total",
+      "Total Stellar submission attempts by result"
+    )
+  );
   push(renderTypeLine("fortexa_stellar_submit_results_total", "counter"));
   for (const [result, count] of stellarSubmitResultCounts) {
     push(renderMetricLine("fortexa_stellar_submit_results_total", { result }, count));
@@ -413,7 +424,10 @@ export function recordStellarSubmitResult(result: StellarSubmitResult) {
   if (!ALLOWED_RESULTS.has(result as StellarSubmitResult)) {
     return;
   }
-  stellarSubmitResultCounts.set(result as StellarSubmitResult, (stellarSubmitResultCounts.get(result as StellarSubmitResult) ?? 0) + 1);
+  stellarSubmitResultCounts.set(
+    result as StellarSubmitResult,
+    (stellarSubmitResultCounts.get(result as StellarSubmitResult) ?? 0) + 1
+  );
 }
 
 export function resetMetrics() {

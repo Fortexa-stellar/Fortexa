@@ -29,17 +29,13 @@ describe("checkReadiness", () => {
   });
 
   it("is not ready and names the migration check for a stale migration", async () => {
-    const result = await checkReadiness(
-      deps({ getAppliedMigrationId: async () => "0002_older" }),
-    );
+    const result = await checkReadiness(deps({ getAppliedMigrationId: async () => "0002_older" }));
     expect(result.ready).toBe(false);
     expect(result.failing).toEqual(["migration"]);
   });
 
   it("fails the migration check when no migration is applied", async () => {
-    const result = await checkReadiness(
-      deps({ getAppliedMigrationId: async () => null }),
-    );
+    const result = await checkReadiness(deps({ getAppliedMigrationId: async () => null }));
     expect(result.failing).toEqual(["migration"]);
   });
 
@@ -49,7 +45,7 @@ describe("checkReadiness", () => {
         getAppliedMigrationId: async () => {
           throw new Error("db down");
         },
-      }),
+      })
     );
     expect(result.ready).toBe(false);
     expect(result.failing).toEqual(["migration"]);
@@ -64,23 +60,19 @@ describe("checkReadiness", () => {
         loadPolicyStore: async () => {
           throw new Error("cannot read");
         },
-      }),
+      })
     );
     expect(broken.failing).toEqual(["policy_store"]);
   });
 
   it("is not ready on a passphrase mismatch", async () => {
-    const result = await checkReadiness(
-      deps({ getConfiguredPassphrase: () => TESTNET }),
-    );
+    const result = await checkReadiness(deps({ getConfiguredPassphrase: () => TESTNET }));
     expect(result.ready).toBe(false);
     expect(result.failing).toEqual(["network"]);
   });
 
   it("is not ready when the passphrase is missing", async () => {
-    const result = await checkReadiness(
-      deps({ getConfiguredPassphrase: () => null }),
-    );
+    const result = await checkReadiness(deps({ getConfiguredPassphrase: () => null }));
     expect(result.failing).toEqual(["network"]);
   });
 
@@ -90,7 +82,7 @@ describe("checkReadiness", () => {
         getAppliedMigrationId: async () => null,
         loadPolicyStore: async () => false,
         getConfiguredPassphrase: () => TESTNET,
-      }),
+      })
     );
     expect(result.failing).toEqual(["migration", "policy_store", "network"]);
   });
@@ -98,13 +90,11 @@ describe("checkReadiness", () => {
 
 describe("readinessBody", () => {
   it("contains only check names and pass/fail, never passphrases or ids", async () => {
-    const result = await checkReadiness(
-      deps({ getConfiguredPassphrase: () => TESTNET }),
-    );
+    const result = await checkReadiness(deps({ getConfiguredPassphrase: () => TESTNET }));
     const serialized = JSON.stringify(readinessBody(result));
 
     expect(Object.keys(readinessBody(result)).sort()).toEqual(
-      ["checks", "failing", "ok", "ready"].sort(),
+      ["checks", "failing", "ok", "ready"].sort()
     );
     expect(serialized).not.toContain(TESTNET);
     expect(serialized).not.toContain(PUBLIC);

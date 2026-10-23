@@ -164,7 +164,15 @@ export function DarkVeil({
       resizeObserver.disconnect();
       window.removeEventListener("resize", resize);
     };
-  }, [hueShift, noiseIntensity, scanlineIntensity, speed, scanlineFrequency, warpAmount, resolutionScale]);
+  }, [
+    hueShift,
+    noiseIntensity,
+    scanlineIntensity,
+    speed,
+    scanlineFrequency,
+    warpAmount,
+    resolutionScale,
+  ]);
 
   return (
     <div className="darkveil-stage">

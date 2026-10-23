@@ -122,9 +122,7 @@ describe("beginIdempotentSubmit", () => {
     const requestHash = hashCanonicalPaymentBody(KEY, { signedXdr: "XDR" });
 
     const claims = await Promise.all(
-      Array.from({ length: 5 }, () =>
-        beginIdempotentSubmit(USER_ID, KEY, requestHash, NO_WAIT)
-      )
+      Array.from({ length: 5 }, () => beginIdempotentSubmit(USER_ID, KEY, requestHash, NO_WAIT))
     );
 
     expect(claims.filter((claim) => claim.outcome === "claimed")).toHaveLength(1);
@@ -152,8 +150,14 @@ describe("beginIdempotentSubmit", () => {
   });
 
   it("conflicts when the same key is reused with a different body", async () => {
-    const firstHash = hashCanonicalPaymentBody(KEY, { signedXdr: "XDR", destination: DESTINATION_A });
-    const secondHash = hashCanonicalPaymentBody(KEY, { signedXdr: "XDR", destination: DESTINATION_B });
+    const firstHash = hashCanonicalPaymentBody(KEY, {
+      signedXdr: "XDR",
+      destination: DESTINATION_A,
+    });
+    const secondHash = hashCanonicalPaymentBody(KEY, {
+      signedXdr: "XDR",
+      destination: DESTINATION_B,
+    });
 
     await beginIdempotentSubmit(USER_ID, KEY, firstHash, NO_WAIT);
     await completeIdempotentSubmit(USER_ID, KEY, firstHash, {
@@ -169,8 +173,14 @@ describe("beginIdempotentSubmit", () => {
   });
 
   it("conflicts while the original request is still in flight", async () => {
-    const firstHash = hashCanonicalPaymentBody(KEY, { signedXdr: "XDR", destination: DESTINATION_A });
-    const secondHash = hashCanonicalPaymentBody(KEY, { signedXdr: "XDR", destination: DESTINATION_B });
+    const firstHash = hashCanonicalPaymentBody(KEY, {
+      signedXdr: "XDR",
+      destination: DESTINATION_A,
+    });
+    const secondHash = hashCanonicalPaymentBody(KEY, {
+      signedXdr: "XDR",
+      destination: DESTINATION_B,
+    });
 
     await beginIdempotentSubmit(USER_ID, KEY, firstHash, NO_WAIT);
 

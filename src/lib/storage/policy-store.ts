@@ -1,6 +1,10 @@
 import { promises as fs } from "node:fs";
 
-import { defaultPolicyConfig, readAmountStroops, validateNoDuplicateRules } from "@/lib/policy/engine";
+import {
+  defaultPolicyConfig,
+  readAmountStroops,
+  validateNoDuplicateRules,
+} from "@/lib/policy/engine";
 import { runWithDatabase } from "@/lib/storage/db";
 import { getFortexaStoreDir, getFortexaStorePath } from "@/lib/storage/paths";
 import type { PolicyConfig } from "@/lib/types/domain";
@@ -26,9 +30,13 @@ export class PolicyVersionConflict extends Error {
   public readonly currentUpdatedAt: string | null;
   public readonly expectedVersion: number;
 
-  constructor(input: {currentVersion: number; currentUpdatedAt: string | null; expectedVersion: number;}) {
+  constructor(input: {
+    currentVersion: number;
+    currentUpdatedAt: string | null;
+    expectedVersion: number;
+  }) {
     super(
-      `Policy version conflict: expected v${input.expectedVersion} but current is v${input.currentVersion}.`,
+      `Policy version conflict: expected v${input.expectedVersion} but current is v${input.currentVersion}.`
     );
     this.name = "PolicyVersionConflict";
     this.currentVersion = input.currentVersion;
@@ -46,7 +54,11 @@ export class PolicyMigrationError extends Error {
   public readonly failingVersion: number | null;
   public readonly issues: { path: string; message: string }[];
 
-  constructor(input: {error: string; failingVersion?: number | null; issues?: { path: string; message: string }[];}) {
+  constructor(input: {
+    error: string;
+    failingVersion?: number | null;
+    issues?: { path: string; message: string }[];
+  }) {
     super(input.error);
     this.name = "PolicyMigrationError";
     this.failingVersion = input.failingVersion ?? null;
@@ -286,7 +298,7 @@ export async function getPolicyConfig() {
 export async function updatePolicyConfig(
   nextPolicy: PolicyConfig,
   updatedBy?: string,
-  options?: { expectedVersion?: number },
+  options?: { expectedVersion?: number }
 ) {
   const expectedVersion = options?.expectedVersion;
   const initialized = await ensureDbPolicyState();
@@ -309,14 +321,9 @@ export async function updatePolicyConfig(
 
       const currentRow = current.rows[0];
       const currentVersion = currentRow?.version ?? 1;
-      const currentUpdatedAt = currentRow
-        ? new Date(currentRow.updated_at).toISOString()
-        : null;
+      const currentUpdatedAt = currentRow ? new Date(currentRow.updated_at).toISOString() : null;
 
-      if (
-        typeof expectedVersion === "number" &&
-        expectedVersion !== currentVersion
-      ) {
+      if (typeof expectedVersion === "number" && expectedVersion !== currentVersion) {
         throw new PolicyVersionConflict({
           currentVersion,
           currentUpdatedAt,
@@ -328,27 +335,28 @@ export async function updatePolicyConfig(
       // between the read above and this update (another writer won the race).
       const nextVersion = currentVersion + 1;
 
-      const updateResult = expectedVersion === undefined
-        ? await pool.query(
-            `
+      const updateResult =
+        expectedVersion === undefined
+          ? await pool.query(
+              `
               UPDATE fortexa_policy_state
               SET version = $1,
                   updated_at = $2::timestamptz,
                   policy = $3::jsonb
               WHERE id = 1
             `,
-            [nextVersion, now, JSON.stringify(normalized)]
-          )
-        : await pool.query(
-            `
+              [nextVersion, now, JSON.stringify(normalized)]
+            )
+          : await pool.query(
+              `
               UPDATE fortexa_policy_state
               SET version = $1,
                   updated_at = $2::timestamptz,
                   policy = $3::jsonb
               WHERE id = 1 AND version = $4
             `,
-            [nextVersion, now, JSON.stringify(normalized), expectedVersion]
-          );
+              [nextVersion, now, JSON.stringify(normalized), expectedVersion]
+            );
 
       if (updateResult.rowCount === 0) {
         // We expected to find version = expectedVersion but it changed under us.
@@ -401,10 +409,7 @@ export async function updatePolicyConfig(
   // which is acceptable for a single-node fallback.
   const current = await getPolicyConfig();
 
-  if (
-    typeof expectedVersion === "number" &&
-    expectedVersion !== (current.version ?? 1)
-  ) {
+  if (typeof expectedVersion === "number" && expectedVersion !== (current.version ?? 1)) {
     throw new PolicyVersionConflict({
       currentVersion: current.version ?? 1,
       currentUpdatedAt: current.updatedAt ?? null,

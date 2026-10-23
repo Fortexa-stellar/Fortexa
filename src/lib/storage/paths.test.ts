@@ -75,14 +75,20 @@ afterEach(() => {
 
 describe("resolveContainedStorePath", () => {
   it("resolves a file inside the data directory, including nested and not-yet-existing ones", async () => {
-    await expect(resolveContainedStorePath("audit.json")).resolves.toBe(path.join(dataDir, "audit.json"));
+    await expect(resolveContainedStorePath("audit.json")).resolves.toBe(
+      path.join(dataDir, "audit.json")
+    );
     await expect(resolveContainedStorePath("nested/deeper/audit.json")).resolves.toBe(
       path.join(dataDir, "nested", "deeper", "audit.json")
     );
     // `..` that stays inside is fine; containment is judged on the result.
-    await expect(resolveContainedStorePath("nested/../audit.json")).resolves.toBe(path.join(dataDir, "audit.json"));
+    await expect(resolveContainedStorePath("nested/../audit.json")).resolves.toBe(
+      path.join(dataDir, "audit.json")
+    );
     // A file whose name merely starts with ".." is not traversal.
-    await expect(resolveContainedStorePath("..audit.json")).resolves.toBe(path.join(dataDir, "..audit.json"));
+    await expect(resolveContainedStorePath("..audit.json")).resolves.toBe(
+      path.join(dataDir, "..audit.json")
+    );
   });
 
   it("accepts an absolute path that is inside the data directory", async () => {
@@ -93,7 +99,10 @@ describe("resolveContainedStorePath", () => {
 
   it("rejects '..' traversal out of the data directory", async () => {
     await expectRejected(resolveContainedStorePath("../outside/audit.json"), "parent_traversal");
-    await expectRejected(resolveContainedStorePath("nested/../../outside/audit.json"), "parent_traversal");
+    await expectRejected(
+      resolveContainedStorePath("nested/../../outside/audit.json"),
+      "parent_traversal"
+    );
   });
 
   it("rejects a sibling directory that only shares the data directory's string prefix", async () => {
@@ -123,7 +132,10 @@ describe("resolveContainedStorePath", () => {
     await linkDirectory(outsideDir, path.join(dataDir, "linked"));
 
     // Lexically this is inside the data directory; only the symlink escapes.
-    await expectRejected(resolveContainedStorePath("linked/audit.json"), "symlink_outside_data_dir");
+    await expectRejected(
+      resolveContainedStorePath("linked/audit.json"),
+      "symlink_outside_data_dir"
+    );
     // Also for a file that does not exist yet behind the link.
     await expectRejected(resolveContainedStorePath("linked/new.json"), "symlink_outside_data_dir");
   });
@@ -144,13 +156,24 @@ describe("resolveContainedStorePath", () => {
     await expect(resolveContainedStorePath("audit.json", linkedDataDir)).resolves.toBe(
       path.join(dataDir, "audit.json")
     );
-    await expectRejected(resolveContainedStorePath("../outside/audit.json", linkedDataDir), "parent_traversal");
+    await expectRejected(
+      resolveContainedStorePath("../outside/audit.json", linkedDataDir),
+      "parent_traversal"
+    );
   });
 
   it("rejects a file symlink pointing outside, and a dangling one", async (context) => {
     try {
-      await fs.symlink(path.join(outsideDir, "audit.json"), path.join(dataDir, "audit.json"), "file");
-      await fs.symlink(path.join(outsideDir, "missing.json"), path.join(dataDir, "dangling.json"), "file");
+      await fs.symlink(
+        path.join(outsideDir, "audit.json"),
+        path.join(dataDir, "audit.json"),
+        "file"
+      );
+      await fs.symlink(
+        path.join(outsideDir, "missing.json"),
+        path.join(dataDir, "dangling.json"),
+        "file"
+      );
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "EPERM") {
         // Windows without Developer Mode cannot create file symlinks. The
@@ -178,7 +201,10 @@ describe("audit file store opener", () => {
   });
 
   it("refuses to open a '..' path and never creates the outside file", async () => {
-    const error = await expectRejected(openAuditFileStore("../outside/escaped.json"), "parent_traversal");
+    const error = await expectRejected(
+      openAuditFileStore("../outside/escaped.json"),
+      "parent_traversal"
+    );
 
     expect(error.requestedPath).toBe("../outside/escaped.json");
     await expect(fs.access(path.join(outsideDir, "escaped.json"))).rejects.toThrow();
@@ -201,7 +227,11 @@ describe("audit file store opener", () => {
 
   it("refuses reads and writes when the configured data directory contains an escaping audit.json", async (context) => {
     try {
-      await fs.symlink(path.join(outsideDir, "audit.json"), path.join(dataDir, "audit.json"), "file");
+      await fs.symlink(
+        path.join(outsideDir, "audit.json"),
+        path.join(dataDir, "audit.json"),
+        "file"
+      );
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === "EPERM") {
         context.skip();
@@ -210,7 +240,10 @@ describe("audit file store opener", () => {
     }
 
     await expectRejected(listAuditEntries("user-1"), "symlink_outside_data_dir");
-    await expectRejected(appendAuditEntry("user-1", auditEntry("entry-2")), "symlink_outside_data_dir");
+    await expectRejected(
+      appendAuditEntry("user-1", auditEntry("entry-2")),
+      "symlink_outside_data_dir"
+    );
     // The outside file was neither parsed into an error nor overwritten.
     expect(await fs.readFile(path.join(outsideDir, "audit.json"), "utf8")).toBe(SECRET);
   });

@@ -3,7 +3,7 @@ export type CsvRow = Record<string, CsvValue>;
 
 export function sanitizeCsvCell(value: unknown): string {
   // Convert null/undefined to empty string
-  const stringValue = value == null ? '' : String(value);
+  const stringValue = value == null ? "" : String(value);
   // If the string starts with any formula injection prefix, prepend a single quote.
   if (/^[=+\-@]/.test(stringValue)) {
     return `'${stringValue}`;
@@ -24,9 +24,7 @@ export function escapeCsvCell(value: unknown): string {
   // Serializing it as JSON (instead of `[object Object]`) keeps the reason
   // visible while the surrounding quotes keep its quotes/commas in one cell.
   const serialized =
-    typeof value === 'object' && value !== null
-      ? JSON.stringify(value)
-      : sanitizeCsvCell(value);
+    typeof value === "object" && value !== null ? JSON.stringify(value) : sanitizeCsvCell(value);
   const sanitized = sanitizeCsvCell(serialized);
   return `"${sanitized.replaceAll('"', '""')}"`;
 }
@@ -39,16 +37,16 @@ export function escapeCsvCell(value: unknown): string {
  */
 export function toCsv(rows: CsvRow[]): string {
   if (rows.length === 0) {
-    return '';
+    return "";
   }
 
   const headers = Object.keys(rows[0] ?? {});
-  const lines = [headers.join(',')];
+  const lines = [headers.join(",")];
 
   for (const row of rows) {
-    const line = headers.map((header) => escapeCsvCell(row[header] ?? '')).join(',');
+    const line = headers.map((header) => escapeCsvCell(row[header] ?? "")).join(",");
     lines.push(line);
   }
 
-  return `${lines.join('\n')}\n`;
+  return `${lines.join("\n")}\n`;
 }

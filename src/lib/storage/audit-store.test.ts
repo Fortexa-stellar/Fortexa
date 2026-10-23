@@ -57,8 +57,8 @@ describe("audit-store append serialization", () => {
     const timestamp = new Date().toISOString();
     await Promise.all(
       Array.from({ length: 12 }, (_, index) =>
-        appendAuditEntry(USER_ID, makeEntry(`entry-${index}`, timestamp)),
-      ),
+        appendAuditEntry(USER_ID, makeEntry(`entry-${index}`, timestamp))
+      )
     );
 
     const entries = await listAuditEntries(USER_ID);
@@ -66,13 +66,15 @@ describe("audit-store append serialization", () => {
 
     expect(entries).toHaveLength(12);
     expect(verification).toMatchObject({ valid: true, checkedCount: 12 });
-    const ascending = [...entries].sort((left, right) => left.timestamp.localeCompare(right.timestamp));
+    const ascending = [...entries].sort((left, right) =>
+      left.timestamp.localeCompare(right.timestamp)
+    );
     expect(ascending[0]?.previousHash).toBe(GENESIS_HASH);
     for (let index = 1; index < ascending.length; index++) {
       expect(ascending[index]?.previousHash).toBe(ascending[index - 1]?.entryHash);
     }
     expect(ascending.at(-1)?.entryHash).toBe(
-      computeEntryHash({ ...ascending.at(-1)!, previousHash: ascending.at(-1)!.previousHash! }),
+      computeEntryHash({ ...ascending.at(-1)!, previousHash: ascending.at(-1)!.previousHash! })
     );
   });
 
@@ -80,7 +82,9 @@ describe("audit-store append serialization", () => {
     await appendAuditEntry(USER_ID, makeEntry("first"));
     const renameSpy = vi.spyOn(fs, "rename").mockRejectedValueOnce(new Error("disk write failed"));
 
-    await expect(appendAuditEntry(USER_ID, makeEntry("second"))).rejects.toThrow("disk write failed");
+    await expect(appendAuditEntry(USER_ID, makeEntry("second"))).rejects.toThrow(
+      "disk write failed"
+    );
 
     renameSpy.mockRestore();
     const entries = await listAuditEntries(USER_ID);
@@ -109,9 +113,16 @@ describe("audit-store append serialization", () => {
       }
     });
 
-    await expect(appendAuditEntry(USER_ID, makeEntry("db-failure"))).rejects.toThrow("insert failed");
+    await expect(appendAuditEntry(USER_ID, makeEntry("db-failure"))).rejects.toThrow(
+      "insert failed"
+    );
     expect(calls).toContain("ROLLBACK");
     expect(calls).not.toContain("COMMIT");
-    expect(await fs.access(storePath).then(() => true, () => false)).toBe(false);
+    expect(
+      await fs.access(storePath).then(
+        () => true,
+        () => false
+      )
+    ).toBe(false);
   });
 });

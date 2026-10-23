@@ -1,4 +1,5 @@
-const SENSITIVE_FIELD = /secret|token|passphrase|password|private.?key|seed|mnemonic|api.?key|credential|session/i;
+const SENSITIVE_FIELD =
+  /secret|token|passphrase|password|private.?key|seed|mnemonic|api.?key|credential|session/i;
 
 /** Reject unexpected sensitive keys before a settings payload can be saved. */
 export function hasSensitiveField(value: unknown): boolean {

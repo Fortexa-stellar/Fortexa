@@ -19,15 +19,10 @@ export const XLM_DECIMAL_PLACES = 7;
 const TEN = 10n;
 
 /** Why a value could not be read as an exact XLM amount. */
-export type StroopParseErrorCode =
-  | "not_a_decimal"
-  | "excess_precision"
-  | "negative"
-  | "not_finite";
+export type StroopParseErrorCode = "not_a_decimal" | "excess_precision" | "negative" | "not_finite";
 
 export type StroopParseResult =
-  | { ok: true; stroops: bigint }
-  | { ok: false; code: StroopParseErrorCode };
+  { ok: true; stroops: bigint } | { ok: false; code: StroopParseErrorCode };
 
 /** Optional sign, digits, optional fraction, optional exponent. */
 const DECIMAL_PATTERN = /^([+-])?(\d+)(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/u;

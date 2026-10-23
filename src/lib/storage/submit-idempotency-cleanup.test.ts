@@ -151,9 +151,7 @@ describe("cleanupOldIdempotencyRecords (file store)", () => {
   });
 
   it("returns 0 when there are no records to clean", async () => {
-    await writeRecords([
-      { idempotencyKey: "fresh-key", createdAt: daysAgo(1) },
-    ]);
+    await writeRecords([{ idempotencyKey: "fresh-key", createdAt: daysAgo(1) }]);
 
     const deleted = await cleanupOldIdempotencyRecords(7);
     expect(deleted).toBe(0);

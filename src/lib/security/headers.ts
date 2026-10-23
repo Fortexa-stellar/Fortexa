@@ -37,7 +37,7 @@ export type SecurityHeaderOptions = {
  */
 export function buildResponseSecurityHeaders(
   requestId: string,
-  options: SecurityHeaderOptions = {},
+  options: SecurityHeaderOptions = {}
 ): Record<string, string> {
   const headers: Record<string, string> = {
     "x-request-id": requestId,
@@ -62,7 +62,7 @@ export function buildResponseSecurityHeaders(
 export function applySecurityHeaders<T extends { headers: Headers }>(
   response: T,
   requestId: string,
-  options: SecurityHeaderOptions = {},
+  options: SecurityHeaderOptions = {}
 ): T {
   for (const [key, value] of Object.entries(buildResponseSecurityHeaders(requestId, options))) {
     response.headers.set(key, value);
@@ -78,7 +78,7 @@ export function applySecurityHeaders<T extends { headers: Headers }>(
  */
 export function securityHeadersForRequest(
   request: { headers: Headers },
-  options: SecurityHeaderOptions = {},
+  options: SecurityHeaderOptions = {}
 ): Record<string, string> {
   const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
   return buildResponseSecurityHeaders(requestId, options);

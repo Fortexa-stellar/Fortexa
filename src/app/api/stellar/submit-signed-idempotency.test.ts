@@ -21,8 +21,7 @@ const storeMocks = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/storage/submit-idempotency-store", async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import("@/lib/storage/submit-idempotency-store")>();
+  const actual = await importOriginal<typeof import("@/lib/storage/submit-idempotency-store")>();
 
   return {
     ...actual,
@@ -39,9 +38,8 @@ vi.mock("@/lib/storage/submit-idempotency-store", async (importOriginal) => {
 });
 
 vi.mock("@stellar/stellar-sdk", async () => {
-  const actual = await vi.importActual<typeof import("@stellar/stellar-sdk")>(
-    "@stellar/stellar-sdk",
-  );
+  const actual =
+    await vi.importActual<typeof import("@stellar/stellar-sdk")>("@stellar/stellar-sdk");
 
   class MockServer {
     submitTransaction(tx: unknown) {
@@ -105,10 +103,7 @@ function operatorCookie() {
   return `${AUTH_COOKIE_KEY}=${token}`;
 }
 
-function submitRequest(
-  body: unknown,
-  extraHeaders: Record<string, string> = {},
-) {
+function submitRequest(body: unknown, extraHeaders: Record<string, string> = {}) {
   return new NextRequest("http://localhost/api/stellar/submit-signed", {
     method: "POST",
     headers: {
@@ -133,7 +128,7 @@ function buildSignedXdr(amount: string, destination?: string) {
         destination: destination ?? destinationKey.publicKey(),
         asset: Asset.native(),
         amount,
-      }),
+      })
     )
     .addMemo(Memo.text("fortexa:idem"))
     .setTimeout(30)
@@ -153,9 +148,7 @@ function makeDecisionReceiptForXdr(signedXdr: string, amount: string) {
     amountXLM: amount,
     asset: "native",
     memo:
-      decoded.memo?.type === "text"
-        ? String(decoded.memo.value ?? "fortexa:idem")
-        : "fortexa:idem",
+      decoded.memo?.type === "text" ? String(decoded.memo.value ?? "fortexa:idem") : "fortexa:idem",
     network: "testnet",
   });
 }
@@ -186,9 +179,7 @@ beforeEach(async () => {
 afterAll(async () => {
   const storeDir = process.env.FORTEXA_STORE_DIR;
   if (storeDir && storeDir.startsWith("/tmp/fortexa-idem-")) {
-    await fs
-      .rm(storeDir, { recursive: true, force: true })
-      .catch(() => undefined);
+    await fs.rm(storeDir, { recursive: true, force: true }).catch(() => undefined);
   }
 });
 
@@ -199,13 +190,13 @@ describe("submit-signed idempotency", () => {
 
     const decisionReceipt = makeDecisionReceiptForXdr(signedXdr, "1.0000000");
     const first = await submitSignedPost(
-      submitRequest({ signedXdr, decisionReceipt, idempotencyKey: key }),
+      submitRequest({ signedXdr, decisionReceipt, idempotencyKey: key })
     );
     expect(first.status).toBe(200);
     const firstBody = await first.json();
 
     const second = await submitSignedPost(
-      submitRequest({ signedXdr, decisionReceipt, idempotencyKey: key }),
+      submitRequest({ signedXdr, decisionReceipt, idempotencyKey: key })
     );
     expect(second.status).toBe(200);
     expect(second.headers.get("Idempotency-Replayed")).toBe("true");
@@ -220,29 +211,23 @@ describe("submit-signed idempotency", () => {
     const firstXdr = buildSignedXdr("1.0000000");
     const secondXdr = buildSignedXdr("2.0000000");
 
-    const firstDecisionReceipt = makeDecisionReceiptForXdr(
-      firstXdr,
-      "1.0000000",
-    );
+    const firstDecisionReceipt = makeDecisionReceiptForXdr(firstXdr, "1.0000000");
     const first = await submitSignedPost(
       submitRequest({
         signedXdr: firstXdr,
         decisionReceipt: firstDecisionReceipt,
         idempotencyKey: key,
-      }),
+      })
     );
     expect(first.status).toBe(200);
 
-    const secondDecisionReceipt = makeDecisionReceiptForXdr(
-      secondXdr,
-      "2.0000000",
-    );
+    const secondDecisionReceipt = makeDecisionReceiptForXdr(secondXdr, "2.0000000");
     const conflict = await submitSignedPost(
       submitRequest({
         signedXdr: secondXdr,
         decisionReceipt: secondDecisionReceipt,
         idempotencyKey: key,
-      }),
+      })
     );
     expect(conflict.status).toBe(409);
     expect(horizonMocks.submitTransaction).toHaveBeenCalledTimes(1);
@@ -252,14 +237,10 @@ describe("submit-signed idempotency", () => {
     const signedXdr = buildSignedXdr("1.0000000");
 
     const decisionReceipt = makeDecisionReceiptForXdr(signedXdr, "1.0000000");
-    const first = await submitSignedPost(
-      submitRequest({ signedXdr, decisionReceipt }),
-    );
+    const first = await submitSignedPost(submitRequest({ signedXdr, decisionReceipt }));
     expect(first.status).toBe(200);
 
-    const second = await submitSignedPost(
-      submitRequest({ signedXdr, decisionReceipt }),
-    );
+    const second = await submitSignedPost(submitRequest({ signedXdr, decisionReceipt }));
     expect(second.status).toBe(200);
 
     expect(horizonMocks.submitTransaction).toHaveBeenCalledTimes(2);
@@ -271,12 +252,12 @@ describe("submit-signed idempotency", () => {
 
     const decisionReceipt = makeDecisionReceiptForXdr(signedXdr, "1.0000000");
     const first = await submitSignedPost(
-      submitRequest({ signedXdr, decisionReceipt }, { "Idempotency-Key": key }),
+      submitRequest({ signedXdr, decisionReceipt }, { "Idempotency-Key": key })
     );
     expect(first.status).toBe(200);
 
     const second = await submitSignedPost(
-      submitRequest({ signedXdr, decisionReceipt }, { "Idempotency-Key": key }),
+      submitRequest({ signedXdr, decisionReceipt }, { "Idempotency-Key": key })
     );
     expect(second.status).toBe(200);
     expect(second.headers.get("Idempotency-Replayed")).toBe("true");
@@ -288,23 +269,16 @@ describe("submit-signed idempotency", () => {
     const key = "idem-key-header-body-01";
 
     const decisionReceipt = makeDecisionReceiptForXdr(signedXdr, "1.0000000");
-    for (const idempotencyKey of [
-      "short",
-      "a".repeat(256),
-      "invalid key!",
-      "bad/key",
-    ]) {
+    for (const idempotencyKey of ["short", "a".repeat(256), "invalid key!", "bad/key"]) {
       const response = await submitSignedPost(
-        submitRequest({ signedXdr, decisionReceipt, idempotencyKey }),
+        submitRequest({ signedXdr, decisionReceipt, idempotencyKey })
       );
       expect(response.status).toBe(400);
       const body = await response.json();
       if (body.error === IDEMPOTENCY_KEY_ERROR) {
         expect(body.error).toBe(IDEMPOTENCY_KEY_ERROR);
       } else {
-        expect(body.details?.fieldErrors?.idempotencyKey?.[0]).toBe(
-          IDEMPOTENCY_KEY_ERROR,
-        );
+        expect(body.details?.fieldErrors?.idempotencyKey?.[0]).toBe(IDEMPOTENCY_KEY_ERROR);
       }
     }
 
@@ -316,10 +290,7 @@ describe("submit-signed idempotency", () => {
 
     const decisionReceipt = makeDecisionReceiptForXdr(signedXdr, "1.0000000");
     const response = await submitSignedPost(
-      submitRequest(
-        { signedXdr, decisionReceipt },
-        { "Idempotency-Key": "short" },
-      ),
+      submitRequest({ signedXdr, decisionReceipt }, { "Idempotency-Key": "short" })
     );
     expect(response.status).toBe(400);
     const body = await response.json();
@@ -332,10 +303,7 @@ describe("submit-signed idempotency", () => {
 
     const decisionReceipt = makeDecisionReceiptForXdr(signedXdr, "1.0000000");
     const response = await submitSignedPost(
-      submitRequest(
-        { signedXdr, decisionReceipt },
-        { "Idempotency-Key": "bad-key!" },
-      ),
+      submitRequest({ signedXdr, decisionReceipt }, { "Idempotency-Key": "bad-key!" })
     );
     expect(response.status).toBe(400);
     const body = await response.json();
@@ -353,13 +321,11 @@ describe("submit-signed idempotency", () => {
         signedXdr,
         decisionReceipt,
         idempotencyKey: oversizedKey,
-      }),
+      })
     );
     expect(response.status).toBe(400);
     const body = await response.json();
-    expect(body.details?.fieldErrors?.idempotencyKey?.[0]).toBe(
-      IDEMPOTENCY_KEY_ERROR,
-    );
+    expect(body.details?.fieldErrors?.idempotencyKey?.[0]).toBe(IDEMPOTENCY_KEY_ERROR);
     expect(horizonMocks.submitTransaction).not.toHaveBeenCalled();
   });
 });
@@ -419,7 +385,9 @@ describe("submit-signed idempotency - rejected retries", () => {
     const firstXdr = buildSignedXdr("1.0000000", Keypair.random().publicKey());
     const secondXdr = buildSignedXdr("1.0000000", Keypair.random().publicKey());
 
-    const first = await submitSignedPost(submitRequest({ signedXdr: firstXdr, idempotencyKey: key }));
+    const first = await submitSignedPost(
+      submitRequest({ signedXdr: firstXdr, idempotencyKey: key })
+    );
     expect(first.status).toBe(200);
     const firstBody = await first.json();
 
@@ -485,9 +453,7 @@ describe("submit-signed idempotency - rejected retries", () => {
         inFlightWaitMs: 0,
       });
 
-      const response = await submitSignedPost(
-        submitRequest({ signedXdr, idempotencyKey: key })
-      );
+      const response = await submitSignedPost(submitRequest({ signedXdr, idempotencyKey: key }));
 
       expect(response.status).toBe(409);
       expect(response.headers.get("Retry-After")).toBe("1");
@@ -577,16 +543,12 @@ describe("submit-signed idempotency - failed submits", () => {
       })
       .mockImplementationOnce(() => slowSuccess(30, OTHER_TX_HASH));
 
-    const ownerPromise = submitSignedPost(
-      submitRequest({ signedXdr, idempotencyKey: key })
-    );
+    const ownerPromise = submitSignedPost(submitRequest({ signedXdr, idempotencyKey: key }));
     await horizonEntered.promise;
 
     // The retry waits on the live claim; when the owner fails and releases the
     // key, the retry must take it over instead of replaying a phantom result.
-    const waitedPromise = submitSignedPost(
-      submitRequest({ signedXdr, idempotencyKey: key })
-    );
+    const waitedPromise = submitSignedPost(submitRequest({ signedXdr, idempotencyKey: key }));
 
     const failed = await ownerPromise;
     expect(failed.status).toBe(500);

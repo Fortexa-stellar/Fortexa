@@ -33,14 +33,9 @@ function normalizeConfiguredValue(value: string | undefined) {
   return trimmed && trimmed.length > 0 ? trimmed : null;
 }
 
-function normalizeConfiguredPath(
-  configuredPath: string,
-  cwd: string
-) {
+function normalizeConfiguredPath(configuredPath: string, cwd: string) {
   return path.normalize(
-    path.isAbsolute(configuredPath)
-      ? configuredPath
-      : path.join(cwd, configuredPath)
+    path.isAbsolute(configuredPath) ? configuredPath : path.join(cwd, configuredPath)
   );
 }
 
@@ -63,10 +58,7 @@ function countWallets(value: string | undefined) {
     .filter((item) => STELLAR_PUBLIC_KEY.test(item)).length;
 }
 
-function isUnsafeFileStoreDefault(
-  configuredStoreDir: string,
-  cwd: string
-) {
+function isUnsafeFileStoreDefault(configuredStoreDir: string, cwd: string) {
   const resolved = normalizeConfiguredPath(configuredStoreDir, cwd);
   const unsafeDefaults = [
     path.normalize(path.join(cwd, ".fortexa")),
@@ -116,9 +108,7 @@ export function checkProductionReadiness(
     );
   }
 
-  const networkPassphrase = normalizeConfiguredValue(
-    env.STELLAR_NETWORK_PASSPHRASE
-  );
+  const networkPassphrase = normalizeConfiguredValue(env.STELLAR_NETWORK_PASSPHRASE);
   if (!networkPassphrase) {
     addIssue(
       issues,
@@ -156,10 +146,7 @@ export function checkProductionReadiness(
       );
     }
 
-    if (
-      networkPassphrase === STELLAR_PUBLIC_NETWORK_PASSPHRASE &&
-      inferredNetwork === "testnet"
-    ) {
+    if (networkPassphrase === STELLAR_PUBLIC_NETWORK_PASSPHRASE && inferredNetwork === "testnet") {
       addIssue(
         issues,
         "STELLAR_HORIZON_URL, STELLAR_NETWORK_PASSPHRASE",
@@ -224,9 +211,7 @@ export function checkProductionReadiness(
   }
 
   const redisUrl = normalizeConfiguredValue(env.REDIS_URL);
-  const sharedStatePath = normalizeConfiguredValue(
-    env.FORTEXA_SHARED_STATE_PATH
-  );
+  const sharedStatePath = normalizeConfiguredValue(env.FORTEXA_SHARED_STATE_PATH);
   if (!redisUrl && !sharedStatePath) {
     addIssue(
       issues,
@@ -265,9 +250,7 @@ export function checkProductionReadiness(
   };
 }
 
-export function shouldEnforceProductionReadiness(
-  env: ReadinessEnv = process.env
-) {
+export function shouldEnforceProductionReadiness(env: ReadinessEnv = process.env) {
   return env.NODE_ENV === "production";
 }
 
@@ -283,9 +266,7 @@ export function getProtectedPaymentFlowReadinessReport(
   return report.ok ? null : report;
 }
 
-export function formatProductionReadinessReport(
-  report: ProductionReadinessReport
-) {
+export function formatProductionReadinessReport(report: ProductionReadinessReport) {
   if (report.ok) {
     return "Fortexa production readiness check passed.";
   }

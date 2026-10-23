@@ -31,7 +31,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark" data-scroll-behavior="smooth">
-      <body className={`${geistSans.variable} ${geistMono.variable} font-[family-name:var(--font-geist-sans)] antialiased`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} font-[family-name:var(--font-geist-sans)] antialiased`}
+      >
         <AppShell>{children}</AppShell>
       </body>
     </html>

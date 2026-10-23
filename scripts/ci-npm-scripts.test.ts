@@ -16,7 +16,7 @@ export function npmScriptsReferencedByWorkflow(workflow: string): string[] {
 
 export function missingNpmScripts(
   workflow: string,
-  packageJson: { scripts?: Record<string, string> },
+  packageJson: { scripts?: Record<string, string> }
 ): string[] {
   const known = new Set(Object.keys(packageJson.scripts ?? {}));
   return npmScriptsReferencedByWorkflow(workflow).filter((name) => !known.has(name));

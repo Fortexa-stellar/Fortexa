@@ -47,7 +47,7 @@ const permissivePolicy: PolicyConfig = { ...defaultPolicyConfig };
 const blockingPolicy: PolicyConfig = {
   ...defaultPolicyConfig,
   allowedDomains: defaultPolicyConfig.allowedDomains.filter(
-    (domain) => domain !== "api.safe-research.ai",
+    (domain) => domain !== "api.safe-research.ai"
   ),
   blockedDomains: [...defaultPolicyConfig.blockedDomains, "api.safe-research.ai"],
 };
@@ -175,7 +175,7 @@ describe("/api/policy/history route", () => {
 
     expect(payload.decisionImpact!.flippedIds).toEqual(helper.flippedIds);
     expect(payload.decisionImpact!.flips.map((f) => f.ruleId)).toEqual(
-      helper.flips.map((f) => f.ruleId),
+      helper.flips.map((f) => f.ruleId)
     );
     expect(payload.decisionImpact!.status).toBe(helper.status);
   });

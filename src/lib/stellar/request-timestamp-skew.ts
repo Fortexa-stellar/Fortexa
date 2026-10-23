@@ -47,11 +47,11 @@ export function getRequestTimestampSkewConfig(): RequestTimestampSkewConfig {
   return {
     maxPastSkewSeconds: readSkewSecondsEnv(
       "FORTEXA_REQUEST_TIMESTAMP_MAX_PAST_SKEW_SECONDS",
-      DEFAULT_MAX_PAST_SKEW_SECONDS,
+      DEFAULT_MAX_PAST_SKEW_SECONDS
     ),
     maxFutureSkewSeconds: readSkewSecondsEnv(
       "FORTEXA_REQUEST_TIMESTAMP_MAX_FUTURE_SKEW_SECONDS",
-      DEFAULT_MAX_FUTURE_SKEW_SECONDS,
+      DEFAULT_MAX_FUTURE_SKEW_SECONDS
     ),
   };
 }
@@ -92,7 +92,7 @@ export type RequestTimestampValidationResult =
  */
 export function validateRequestTimestamp(
   timestampMs: number,
-  options: Partial<RequestTimestampSkewConfig> & { nowMs?: number } = {},
+  options: Partial<RequestTimestampSkewConfig> & { nowMs?: number } = {}
 ): RequestTimestampValidationResult {
   if (!Number.isFinite(timestampMs)) {
     return { ok: false, code: "invalid", skewMs: Number.NaN, maxAllowedMs: 0 };

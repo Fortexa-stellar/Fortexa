@@ -18,7 +18,9 @@ const PROTECTED_PREFIXES = [
 ];
 
 function isProtectedPath(pathname: string) {
-  return PROTECTED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  return PROTECTED_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
 }
 
 function hasValidSession(request: NextRequest) {

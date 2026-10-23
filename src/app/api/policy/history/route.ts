@@ -4,7 +4,11 @@ import { requireAuth } from "@/lib/auth/require-auth";
 import { jsonWithRequestContext } from "@/lib/observability/http";
 import { getRequestLogContext, logError, logInfo, logWarn } from "@/lib/observability/logger";
 import { getDailyUsage, listAllAuditEntriesByUser } from "@/lib/storage/audit-store";
-import { getPolicyConfig, getPolicyHistory, getPolicyVersionByNumber } from "@/lib/storage/policy-store";
+import {
+  getPolicyConfig,
+  getPolicyHistory,
+  getPolicyVersionByNumber,
+} from "@/lib/storage/policy-store";
 import {
   diffDecisionImpact,
   openAllowDecisions,
@@ -86,7 +90,11 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    logInfo("Policy history read", { ...context, userId: auth.session.userId, count: entries.length });
+    logInfo("Policy history read", {
+      ...context,
+      userId: auth.session.userId,
+      count: entries.length,
+    });
 
     return jsonWithRequestContext(request, {
       route: "/api/policy/history",

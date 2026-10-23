@@ -31,7 +31,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const logContext: Record<string, string | number | boolean | null | undefined> = { route: "/api/agent/plan" };
+  const logContext: Record<string, string | number | boolean | null | undefined> = {
+    route: "/api/agent/plan",
+  };
 
   try {
     const rawBody = (await request.json().catch(() => ({}))) as unknown;

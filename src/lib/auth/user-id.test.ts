@@ -114,7 +114,7 @@ describe("wallet user id", () => {
           cookie: `${AUTH_COOKIE_KEY}=${token}`,
         },
         body: JSON.stringify({ scenarioId: "safe-research-payment" }),
-      }),
+      })
     );
 
     expect(response.status).toBe(401);

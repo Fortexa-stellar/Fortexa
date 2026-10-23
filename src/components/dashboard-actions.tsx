@@ -11,9 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 export const READINESS_POLL_MS = 30_000;
 
 export type DashboardReadiness =
-  | { status: "checking" }
-  | { status: "ready" }
-  | { status: "not_ready"; failingChecks: string[] };
+  { status: "checking" } | { status: "ready" } | { status: "not_ready"; failingChecks: string[] };
 
 export const DASHBOARD_ACTIONS = [
   { id: "run-evaluation", label: "Run evaluation", href: "/console" },
@@ -121,7 +119,13 @@ export function DashboardActions() {
                 </Button>
               </Link>
             ) : (
-              <Button key={action.id} className="gap-2" data-action={action.id} disabled aria-disabled="true">
+              <Button
+                key={action.id}
+                className="gap-2"
+                data-action={action.id}
+                disabled
+                aria-disabled="true"
+              >
                 {action.label}
               </Button>
             )

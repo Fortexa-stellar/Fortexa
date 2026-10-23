@@ -2,7 +2,12 @@ import { readJsonBody } from "@/lib/http/read-json-body";
 import { NextRequest } from "next/server";
 import { z } from "zod";
 
-import { clearLoginFailures, isLoginLocked, readClientIp, registerLoginFailure } from "@/lib/auth/login-lockout";
+import {
+  clearLoginFailures,
+  isLoginLocked,
+  readClientIp,
+  registerLoginFailure,
+} from "@/lib/auth/login-lockout";
 import { AUTH_COOKIE_KEY, createSessionToken } from "@/lib/auth/session";
 import { verifyWalletChallenge } from "@/lib/auth/wallet-challenge";
 import { normalizeWalletPublicKey, resolveRoleByWallet } from "@/lib/auth/wallet-role";
@@ -20,7 +25,9 @@ const loginSchema = z.object({
 
 const LOCKED_ERROR = "Account login is temporarily locked due to failed attempts.";
 
-function challengeErrorMessage(code: "missing" | "expired" | "replayed" | "wallet_mismatch" | "invalid_signature") {
+function challengeErrorMessage(
+  code: "missing" | "expired" | "replayed" | "wallet_mismatch" | "invalid_signature"
+) {
   switch (code) {
     case "expired":
       return "Login challenge expired. Request a new challenge and sign again.";
@@ -96,7 +103,11 @@ export async function POST(request: NextRequest) {
 
     const lockState = await isLoginLocked(userId, clientIp);
     if (lockState.locked) {
-      logWarn("Auth login blocked by lockout", { ...context, wallet: normalizedWallet, ip: clientIp });
+      logWarn("Auth login blocked by lockout", {
+        ...context,
+        wallet: normalizedWallet,
+        ip: clientIp,
+      });
       return respond(request, {
         route: "/api/auth/login",
         startedAtMs,
@@ -203,7 +214,10 @@ export async function POST(request: NextRequest) {
       route: "/api/auth/login",
       startedAtMs,
       status: 500,
-      body: { error: error instanceof Error ? error.message : "Login failed.", code: "internal_error" },
+      body: {
+        error: error instanceof Error ? error.message : "Login failed.",
+        code: "internal_error",
+      },
       headers: rateLimitHeaders(rate),
     });
   }

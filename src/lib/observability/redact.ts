@@ -29,7 +29,8 @@ const XDR_BLOB_PATTERN = /\b[A-Za-z0-9+/=_-]{100,}/g;
 // key=value / key:"value" style secret assignments that leak into free-text
 // error messages and serialized payloads.
 const SECRET_ASSIGNMENT_PATTERNS: Array<[RegExp, string]> = [
-  [// #205: memo= values carry free-text payment context.
+  [
+    // #205: memo= values carry free-text payment context.
     /\b(memo)\s*[=:]\s*("[^"]*"|'[^']*'|[^\s,;&"']+)/gi,
     "$1=[REDACTED]",
   ],
@@ -38,7 +39,10 @@ const SECRET_ASSIGNMENT_PATTERNS: Array<[RegExp, string]> = [
     "$1=[REDACTED]",
   ],
   [/\b(secret|token|signature)\s*[=:]\s*("[^"]*"|'[^']*'|[^\s,;&"']+)/gi, "$1=[REDACTED]"],
-  [/"(api[_-]?key|apikey|secret|token|signature|signed[_-]?xdr|xdr|password)"\s*:\s*"[^"]*"/gi, '"$1":"[REDACTED]"'],
+  [
+    /"(api[_-]?key|apikey|secret|token|signature|signed[_-]?xdr|xdr|password)"\s*:\s*"[^"]*"/gi,
+    '"$1":"[REDACTED]"',
+  ],
   [/Authorization:\s*(Bearer\s+)?[^,;"']+/gi, "Authorization: [REDACTED]"],
 ];
 
@@ -75,7 +79,10 @@ export function redactMetricText(text: string): string {
 
   return text
     .replace(/\r\n|\n|\r/g, " ")
-    .replace(SENSITIVE_PAIR_PATTERN, (_match, key: string, separator: string) => `${key}${separator}[REDACTED]`)
+    .replace(
+      SENSITIVE_PAIR_PATTERN,
+      (_match, key: string, separator: string) => `${key}${separator}[REDACTED]`
+    )
     .replace(WALLET_PATTERN, "[REDACTED]")
     .replace(BEARER_PATTERN, "Bearer [REDACTED]");
 }

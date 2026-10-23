@@ -23,7 +23,10 @@ export async function getNativeBalance(publicKey: string) {
   return native?.balance ?? "0";
 }
 
-export async function buildUnsignedPaymentTransaction(request: StellarPaymentRequest, sourcePublicKey: string) {
+export async function buildUnsignedPaymentTransaction(
+  request: StellarPaymentRequest,
+  sourcePublicKey: string
+) {
   const { networkPassphrase } = assertStellarNetworkConfig();
   const server = getHorizonServer();
   const sourceAccount = await server.loadAccount(sourcePublicKey);
@@ -87,18 +90,20 @@ export function decodeSignedXdrSourceAccount(signedXdr: string): SignedXdrSource
 
   const operation = decoded.operations.length === 1 ? decoded.operations[0] : undefined;
   const memoValue = decoded.memo.type === "text" ? decoded.memo.value : undefined;
-  const payment = operation?.type === "payment" && operation.asset.isNative()
-    ? {
-        destination: operation.destination,
-        amountXLM: operation.amount,
-        asset: "native" as const,
-        memo: memoValue === undefined
-          ? undefined
-          : typeof memoValue === "string"
-            ? memoValue
-            : memoValue.toString("utf8"),
-      }
-    : null;
+  const payment =
+    operation?.type === "payment" && operation.asset.isNative()
+      ? {
+          destination: operation.destination,
+          amountXLM: operation.amount,
+          asset: "native" as const,
+          memo:
+            memoValue === undefined
+              ? undefined
+              : typeof memoValue === "string"
+                ? memoValue
+                : memoValue.toString("utf8"),
+        }
+      : null;
 
   return {
     ok: true,
@@ -138,7 +143,7 @@ export function verifySignedXdrSigner(signedXdr: string, publicKey: string): boo
 
   const kp = Keypair.fromPublicKey(publicKey);
   const hash = decoded.hash();
-  
+
   for (const sig of decoded.signatures) {
     try {
       if (kp.verify(hash, sig.signature())) {

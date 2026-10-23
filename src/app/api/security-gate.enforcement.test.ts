@@ -15,7 +15,14 @@
 
 import { promises as fs } from "node:fs";
 
-import { Account, Asset, Keypair, Networks, Operation, TransactionBuilder } from "@stellar/stellar-sdk";
+import {
+  Account,
+  Asset,
+  Keypair,
+  Networks,
+  Operation,
+  TransactionBuilder,
+} from "@stellar/stellar-sdk";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.hoisted(() => {
@@ -132,7 +139,7 @@ async function seedPolicy() {
       blockedTools: ["shell"],
       allowedHours: { start: 0, end: 23 },
     },
-    "gate-route-test-setup",
+    "gate-route-test-setup"
   );
 }
 
@@ -177,7 +184,7 @@ describe("shared enforcement gate across routes", () => {
     resetBlocklistCache();
     process.env.FORTEXA_BLOCKLIST_URL = "https://example.com/blocklist.json";
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(JSON.stringify(domains), { status: 200 }),
+      new Response(JSON.stringify(domains), { status: 200 })
     );
   }
 
@@ -188,7 +195,7 @@ describe("shared enforcement gate across routes", () => {
     setBlocklistFeed([destinationKeypair.publicKey().toLowerCase()]);
 
     const response = await decisionPost(
-      jsonRequest("http://localhost/api/decision", decisionBody(CLEAN_DOMAIN)),
+      jsonRequest("http://localhost/api/decision", decisionBody(CLEAN_DOMAIN))
     );
 
     expect(response.status).toBe(403);
@@ -204,9 +211,7 @@ describe("shared enforcement gate across routes", () => {
     // also checks the action domain via the same feed.
     delete (body as { paymentQuoteInput?: unknown }).paymentQuoteInput;
 
-    const response = await decisionPost(
-      jsonRequest("http://localhost/api/decision", body),
-    );
+    const response = await decisionPost(jsonRequest("http://localhost/api/decision", body));
 
     expect(response.status).toBe(403);
     const payload = (await response.json()) as { code?: string };
@@ -219,7 +224,7 @@ describe("shared enforcement gate across routes", () => {
     // Authorize a quote against the clean destination first (blocklist
     // applied to the *build* destination below).
     const decisionRes = await decisionPost(
-      jsonRequest("http://localhost/api/decision", decisionBody(CLEAN_DOMAIN), "10.77.1.1"),
+      jsonRequest("http://localhost/api/decision", decisionBody(CLEAN_DOMAIN), "10.77.1.1")
     );
     expect(decisionRes.status).toBe(200);
     const decisionPayload = (await decisionRes.json()) as {
@@ -239,8 +244,8 @@ describe("shared enforcement gate across routes", () => {
           memo: "gate route test",
           network: "testnet",
         },
-        "10.77.1.2",
-      ),
+        "10.77.1.2"
+      )
     );
 
     expect(response.status).toBe(403);
@@ -262,7 +267,7 @@ describe("shared enforcement gate across routes", () => {
           destination: destinationKeypair.publicKey(),
           asset: Asset.native(),
           amount: "5.0000000",
-        }),
+        })
       )
       .setTimeout(30)
       .build();
@@ -274,8 +279,8 @@ describe("shared enforcement gate across routes", () => {
       jsonRequest(
         "http://localhost/api/stellar/submit-signed",
         { signedXdr: tx.toXDR() },
-        "10.77.2.1",
-      ),
+        "10.77.2.1"
+      )
     );
 
     expect(response.status).toBe(403);
@@ -289,13 +294,13 @@ describe("shared enforcement gate across routes", () => {
     // Decision limiter allows 40/min for this route; exhaust it.
     for (let i = 0; i < 40; i += 1) {
       const res = await decisionPost(
-        jsonRequest("http://localhost/api/decision", decisionBody(CLEAN_DOMAIN), ip),
+        jsonRequest("http://localhost/api/decision", decisionBody(CLEAN_DOMAIN), ip)
       );
       expect(res.status).toBe(200);
     }
 
     const denied = await decisionPost(
-      jsonRequest("http://localhost/api/decision", decisionBody(CLEAN_DOMAIN), ip),
+      jsonRequest("http://localhost/api/decision", decisionBody(CLEAN_DOMAIN), ip)
     );
 
     expect(denied.status).toBe(429);
@@ -305,7 +310,7 @@ describe("shared enforcement gate across routes", () => {
 
   it("rejects the request after the limit with 429 RATE_LIMITED on build-payment", async () => {
     const decisionRes = await decisionPost(
-      jsonRequest("http://localhost/api/decision", decisionBody(CLEAN_DOMAIN), "10.77.4.1"),
+      jsonRequest("http://localhost/api/decision", decisionBody(CLEAN_DOMAIN), "10.77.4.1")
     );
     expect(decisionRes.status).toBe(200);
     const { auditEntry } = (await decisionRes.json()) as {
@@ -324,13 +329,13 @@ describe("shared enforcement gate across routes", () => {
     const ip = "10.77.4.2";
     for (let i = 0; i < 30; i += 1) {
       const res = await buildPaymentPost(
-        jsonRequest("http://localhost/api/stellar/build-payment", buildBody, ip),
+        jsonRequest("http://localhost/api/stellar/build-payment", buildBody, ip)
       );
       expect(res.status).toBe(200);
     }
 
     const denied = await buildPaymentPost(
-      jsonRequest("http://localhost/api/stellar/build-payment", buildBody, ip),
+      jsonRequest("http://localhost/api/stellar/build-payment", buildBody, ip)
     );
 
     expect(denied.status).toBe(429);
@@ -358,7 +363,7 @@ describe("shared enforcement gate across routes", () => {
             destination: destinationKeypair.publicKey(),
             asset: Asset.native(),
             amount: "1.0000000",
-          }),
+          })
         )
         .setTimeout(30)
         .build();
@@ -372,18 +377,14 @@ describe("shared enforcement gate across routes", () => {
         jsonRequest(
           "http://localhost/api/stellar/submit-signed",
           { signedXdr: makeSignedXdr() },
-          ip,
-        ),
+          ip
+        )
       );
       expect(res.status).toBe(200);
     }
 
     const denied = await submitSignedPost(
-      jsonRequest(
-        "http://localhost/api/stellar/submit-signed",
-        { signedXdr: makeSignedXdr() },
-        ip,
-      ),
+      jsonRequest("http://localhost/api/stellar/submit-signed", { signedXdr: makeSignedXdr() }, ip)
     );
 
     expect(denied.status).toBe(429);
@@ -393,7 +394,7 @@ describe("shared enforcement gate across routes", () => {
 
   it("keeps allowed traffic on the normal success response", async () => {
     const decisionRes = await decisionPost(
-      jsonRequest("http://localhost/api/decision", decisionBody(CLEAN_DOMAIN), "10.77.6.1"),
+      jsonRequest("http://localhost/api/decision", decisionBody(CLEAN_DOMAIN), "10.77.6.1")
     );
     expect(decisionRes.status).toBe(200);
     const decisionPayload = (await decisionRes.json()) as {
@@ -423,8 +424,8 @@ describe("shared enforcement gate across routes", () => {
           memo: "gate route test",
           network: "testnet",
         },
-        "10.77.6.2",
-      ),
+        "10.77.6.2"
+      )
     );
     expect(buildRes.status).toBe(200);
     const buildPayload = (await buildRes.json()) as { ok?: boolean; xdr?: string };
@@ -441,7 +442,7 @@ describe("shared enforcement gate across routes", () => {
           destination: destinationKeypair.publicKey(),
           asset: Asset.native(),
           amount: "2.0000000",
-        }),
+        })
       )
       .setTimeout(30)
       .build();
@@ -451,8 +452,8 @@ describe("shared enforcement gate across routes", () => {
       jsonRequest(
         "http://localhost/api/stellar/submit-signed",
         { signedXdr: tx.toXDR() },
-        "10.77.6.3",
-      ),
+        "10.77.6.3"
+      )
     );
     expect(submitRes.status).toBe(200);
     const submitPayload = (await submitRes.json()) as {
@@ -467,7 +468,7 @@ describe("shared enforcement gate across routes", () => {
     setBlocklistFeed([BLOCKED_DOMAIN]);
 
     const response = await decisionPost(
-      jsonRequest("http://localhost/api/decision", decisionBody(BLOCKED_DOMAIN), "10.77.7.1"),
+      jsonRequest("http://localhost/api/decision", decisionBody(BLOCKED_DOMAIN), "10.77.7.1")
     );
     expect(response.status).toBe(403);
 
@@ -484,8 +485,8 @@ describe("shared enforcement gate across routes", () => {
     const ip = "10.77.8.";
     const batch = Array.from({ length: 20 }, (_, i) =>
       decisionPost(
-        jsonRequest("http://localhost/api/decision", decisionBody(CLEAN_DOMAIN), `${ip}${i}`),
-      ),
+        jsonRequest("http://localhost/api/decision", decisionBody(CLEAN_DOMAIN), `${ip}${i}`)
+      )
     );
     const responses = await Promise.all(batch);
     // Distinct IPs each get their own budget: all should succeed.
@@ -496,9 +497,7 @@ describe("shared enforcement gate across routes", () => {
     // Same IP, 40 parallel requests against the 40-request budget.
     const sameIp = "10.77.9.5";
     const parallel = Array.from({ length: 45 }, () =>
-      decisionPost(
-        jsonRequest("http://localhost/api/decision", decisionBody(CLEAN_DOMAIN), sameIp),
-      ),
+      decisionPost(jsonRequest("http://localhost/api/decision", decisionBody(CLEAN_DOMAIN), sameIp))
     );
     const settled = await Promise.all(parallel);
     const statuses = settled.map((r) => r.status);

@@ -129,25 +129,27 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const responseBody = (firstBroken
-      ? {
-          valid: false,
-          checkedEntries,
-          legacyEntries,
-          firstBrokenEntryId: firstBroken.entryId,
-          reason: firstBroken.reason,
-          scope: "all" as const,
-          timestamp,
-        }
-      : {
-          valid: true,
-          checkedEntries,
-          legacyEntries,
-          firstBrokenEntryId: null,
-          reason: null,
-          scope: "all" as const,
-          timestamp,
-        }) satisfies IntegrityResponse;
+    const responseBody = (
+      firstBroken
+        ? {
+            valid: false,
+            checkedEntries,
+            legacyEntries,
+            firstBrokenEntryId: firstBroken.entryId,
+            reason: firstBroken.reason,
+            scope: "all" as const,
+            timestamp,
+          }
+        : {
+            valid: true,
+            checkedEntries,
+            legacyEntries,
+            firstBrokenEntryId: null,
+            reason: null,
+            scope: "all" as const,
+            timestamp,
+          }
+    ) satisfies IntegrityResponse;
 
     if (firstBroken) {
       logWarn("Audit integrity tampered (all)", {

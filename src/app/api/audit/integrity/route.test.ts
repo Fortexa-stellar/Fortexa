@@ -12,11 +12,7 @@ vi.hoisted(() => {
 
 import { GET } from "@/app/api/audit/integrity/route";
 import { AUTH_COOKIE_KEY, createSessionToken } from "@/lib/auth/session";
-import {
-  appendAuditEntry,
-  listAuditEntries,
-  resetAuditState,
-} from "@/lib/storage/audit-store";
+import { appendAuditEntry, listAuditEntries, resetAuditState } from "@/lib/storage/audit-store";
 import type { AuditEntry } from "@/lib/types/domain";
 
 const OPERATOR_USER_ID = "integrity-operator";
@@ -77,7 +73,7 @@ async function seedChain(userId: string, count: number) {
       makeEntry({
         id: `${userId}-e${i + 1}`,
         timestamp: `2024-01-01T00:0${i}:00.000Z`,
-      }),
+      })
     );
   }
 }
@@ -87,7 +83,10 @@ async function seedLegacy(userId: string) {
   const dir = process.env.FORTEXA_STORE_DIR!;
   await fs.mkdir(dir, { recursive: true });
   const filePath = `${dir}/audit.json`;
-  let existing: { auditByUser: Record<string, AuditEntry[]>; usageByUser: Record<string, unknown> } = {
+  let existing: {
+    auditByUser: Record<string, AuditEntry[]>;
+    usageByUser: Record<string, unknown>;
+  } = {
     auditByUser: {},
     usageByUser: {},
   };
@@ -236,10 +235,7 @@ describe("GET /api/audit/integrity", () => {
   it("treats legacy entries without hash fields as valid (scope=mine)", async () => {
     await seedLegacy(LEGACY_USER_ID);
     const response = await GET(
-      getRequest(
-        "http://localhost/api/audit/integrity",
-        operatorCookie(LEGACY_USER_ID)
-      )
+      getRequest("http://localhost/api/audit/integrity", operatorCookie(LEGACY_USER_ID))
     );
     expect(response.status).toBe(200);
     const payload = (await response.json()) as {
@@ -253,10 +249,7 @@ describe("GET /api/audit/integrity", () => {
   });
 
   it("returns 403 when viewer requests scope=all", async () => {
-    const request = getRequest(
-      "http://localhost/api/audit/integrity?scope=all",
-      viewerCookie()
-    );
+    const request = getRequest("http://localhost/api/audit/integrity?scope=all", viewerCookie());
     const response = await GET(request);
     expect(response.status).toBe(403);
   });
@@ -266,10 +259,7 @@ describe("GET /api/audit/integrity", () => {
     await seedLegacy(LEGACY_USER_ID);
 
     const response = await GET(
-      getRequest(
-        "http://localhost/api/audit/integrity?scope=all",
-        operatorCookie()
-      )
+      getRequest("http://localhost/api/audit/integrity?scope=all", operatorCookie())
     );
     expect(response.status).toBe(200);
     const payload = (await response.json()) as {
@@ -286,10 +276,7 @@ describe("GET /api/audit/integrity", () => {
 
   it("returns 400 for an unknown scope value", async () => {
     const response = await GET(
-      getRequest(
-        "http://localhost/api/audit/integrity?scope=everyone",
-        operatorCookie()
-      )
+      getRequest("http://localhost/api/audit/integrity?scope=everyone", operatorCookie())
     );
     expect(response.status).toBe(400);
   });

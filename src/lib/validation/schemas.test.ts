@@ -49,21 +49,18 @@ describe("validation schemas", () => {
     Number.MAX_SAFE_INTEGER + 1,
     1.00000001,
     99999.99999999999,
-  ] as const)(
-    "rejects invalid agent action amount: %s",
-    (amount) => {
-      const parsed = agentActionSchema.safeParse({
-        id: "action-1",
-        name: "Test payment",
-        kind: "api_payment",
-        target: "svc:endpoint",
-        domain: "api.example.com",
-        amountXLM: amount,
-      });
+  ] as const)("rejects invalid agent action amount: %s", (amount) => {
+    const parsed = agentActionSchema.safeParse({
+      id: "action-1",
+      name: "Test payment",
+      kind: "api_payment",
+      target: "svc:endpoint",
+      domain: "api.example.com",
+      amountXLM: amount,
+    });
 
-      expect(parsed.success).toBe(false);
-    },
-  );
+    expect(parsed.success).toBe(false);
+  });
 
   it("accepts valid agent action amount boundaries", () => {
     for (const amountXLM of [0.0000001, 100000]) {
@@ -92,7 +89,7 @@ describe("validation schemas", () => {
       });
 
       expect(parsed.success).toBe(false);
-    },
+    }
   );
 
   it("accepts valid payment amount boundaries", () => {
@@ -112,10 +109,12 @@ describe("validation schemas", () => {
   it("requires an audit decision reference for signed payment submission", () => {
     const signedXdr = "A".repeat(20);
     expect(stellarSubmitSignedRequestSchema.safeParse({ signedXdr }).success).toBe(false);
-    expect(stellarSubmitSignedRequestSchema.safeParse({
-      signedXdr,
-      auditEntryId: "00000000-0000-4000-8000-000000000000",
-    }).success).toBe(true);
+    expect(
+      stellarSubmitSignedRequestSchema.safeParse({
+        signedXdr,
+        auditEntryId: "00000000-0000-4000-8000-000000000000",
+      }).success
+    ).toBe(true);
   });
 
   it("accepts valid agent plan request", () => {

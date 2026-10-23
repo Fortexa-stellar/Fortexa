@@ -61,7 +61,11 @@ describe("stellar balance/fund/pay decision gate", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     blocklist.checkBlocklist.mockResolvedValue({ allow: true, reasonCode: null });
-    await upsertUserWallet("gate-user", { publicKey: wallet, source: "external", provider: "freighter" });
+    await upsertUserWallet("gate-user", {
+      publicKey: wallet,
+      source: "external",
+      provider: "freighter",
+    });
   });
 
   it("rejects unauthenticated calls on all routes without touching Stellar", async () => {

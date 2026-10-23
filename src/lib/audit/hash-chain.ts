@@ -13,7 +13,7 @@ function canonicalize(value: unknown): unknown {
     return Object.fromEntries(
       Object.keys(obj)
         .sort()
-        .map((key) => [key, canonicalize(obj[key])]),
+        .map((key) => [key, canonicalize(obj[key])])
     );
   }
   return value ?? null;
@@ -24,7 +24,7 @@ function canonicalize(value: unknown): unknown {
  * Keys are sorted so the same entry hashes the same way from any store.
  */
 export function computeEntryHash(
-  entry: Omit<AuditEntry, "entryHash"> & { previousHash: string },
+  entry: Omit<AuditEntry, "entryHash"> & { previousHash: string }
 ): string {
   const input = {
     id: entry.id,
@@ -38,7 +38,9 @@ export function computeEntryHash(
     previousHash: entry.previousHash,
   };
 
-  return createHash("sha256").update(JSON.stringify(canonicalize(input)), "utf8").digest("hex");
+  return createHash("sha256")
+    .update(JSON.stringify(canonicalize(input)), "utf8")
+    .digest("hex");
 }
 
 /**
@@ -75,14 +77,14 @@ export function verifyHashChain(rows: Array<{ hash: string; previousHash: string
  */
 export function verifyAuditChain(
   entries: AuditEntry[],
-  options: { boundaries?: ChainBoundaries; maxRows?: number } = {},
+  options: { boundaries?: ChainBoundaries; maxRows?: number } = {}
 ): VerifiedChain {
   const maxRows = options.maxRows ?? DEFAULT_MAX_CHAIN_ROWS;
   if (entries.length > maxRows) {
     throw new AuditChainError(
       "audit_chain_row_cap_exceeded",
       `Audit chain exceeds the maximum of ${maxRows} rows.`,
-      { maxRows, rowCount: entries.length },
+      { maxRows, rowCount: entries.length }
     );
   }
 

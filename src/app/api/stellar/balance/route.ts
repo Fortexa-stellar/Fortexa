@@ -64,23 +64,23 @@ export async function GET(request: NextRequest) {
   }
 
   if (!(await checkBlocklist(publicKey)).allow) {
-    return NextResponse.json(
-      { error: "Wallet address is blocklisted." },
-      { status: 403 }
-    );
+    return NextResponse.json({ error: "Wallet address is blocklisted." }, { status: 403 });
   }
 
   try {
     const balance = await getNativeBalance(publicKey);
-    return NextResponse.json({
-      configured: true,
-      userId,
-      source: assignedWallet.source,
-      provider: assignedWallet.provider ?? "unknown",
-      network,
-      publicKey,
-      balance,
-    }, { headers: securityHeadersForRequest(request) });
+    return NextResponse.json(
+      {
+        configured: true,
+        userId,
+        source: assignedWallet.source,
+        provider: assignedWallet.provider ?? "unknown",
+        network,
+        publicKey,
+        balance,
+      },
+      { headers: securityHeadersForRequest(request) }
+    );
   } catch (error) {
     return NextResponse.json(
       {

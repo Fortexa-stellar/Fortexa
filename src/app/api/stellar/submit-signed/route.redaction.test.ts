@@ -66,8 +66,8 @@ describe("/api/stellar/submit-signed observability redaction", () => {
   it("redacts signed XDR, destination, memo, and api_key from submit failure logs", async () => {
     vi.mocked(getUserWallet).mockRejectedValueOnce(
       new Error(
-        `horizon rejected envelope ${SIGNED_XDR_BLOB} for ${TEST_DESTINATION} (memo=wire-8817, api_key=sk-live-abc123)`,
-      ),
+        `horizon rejected envelope ${SIGNED_XDR_BLOB} for ${TEST_DESTINATION} (memo=wire-8817, api_key=sk-live-abc123)`
+      )
     );
 
     const response = await POST(submitRequest());
@@ -100,7 +100,7 @@ describe("/api/stellar/submit-signed observability redaction", () => {
     const consoleInfoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
 
     vi.mocked(getUserWallet).mockRejectedValueOnce(
-      new Error(`payment to ${TEST_DESTINATION} failed (memo=invoice-42)`),
+      new Error(`payment to ${TEST_DESTINATION} failed (memo=invoice-42)`)
     );
 
     await POST(submitRequest());

@@ -145,7 +145,7 @@ describe("CI diagnostic artifact retention", () => {
   it("documents a 7-day retention period in the CI workflow", () => {
     const ci = readFileSync(join(repoRoot, ".github/workflows/ci.yml"), "utf8");
     expect(ci).toContain(
-      `Diagnostic artifact retention is ${DIAGNOSTIC_ARTIFACT_RETENTION_DAYS} days`,
+      `Diagnostic artifact retention is ${DIAGNOSTIC_ARTIFACT_RETENTION_DAYS} days`
     );
     expect(ci).toContain(`retention-days: ${DIAGNOSTIC_ARTIFACT_RETENTION_DAYS}`);
   });
@@ -214,7 +214,7 @@ describe("CI diagnostic artifact retention", () => {
   it("accepts a quoted retention value of 7", () => {
     const source = [
       "      - uses: actions/upload-artifact@v4",
-      '        with:',
+      "        with:",
       "          retention-days: '7'",
     ].join("\n");
     expect(retentionViolations(source, "ci.yml")).toEqual([]);

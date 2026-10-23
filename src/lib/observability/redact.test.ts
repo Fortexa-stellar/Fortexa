@@ -67,12 +67,7 @@ describe("redactSensitiveFields", () => {
 
   it("redacts mixed arrays containing objects and primitives", () => {
     const input = {
-      items: [
-        { token: "abc" },
-        "hello",
-        42,
-        { secret: "shh", nested: [{ xdr: "signed-stuff" }] },
-      ],
+      items: [{ token: "abc" }, "hello", 42, { secret: "shh", nested: [{ xdr: "signed-stuff" }] }],
     };
     const output = redactSensitiveFields(input);
     expect(output).toEqual({
@@ -179,10 +174,13 @@ describe("redactSensitiveFields", () => {
 
   it("redacts api_key=, token= and Bearer assignments inside free text", () => {
     const input = {
-      detail: "horizon rejected api_key=sk-live-abc123 token=xyz789 Authorization: Bearer aaa.bbb.ccc",
+      detail:
+        "horizon rejected api_key=sk-live-abc123 token=xyz789 Authorization: Bearer aaa.bbb.ccc",
     };
     const output = redactSensitiveFields(input);
-    expect(output.detail).toBe("horizon rejected api_key=[REDACTED] token=[REDACTED] Authorization: [REDACTED]");
+    expect(output.detail).toBe(
+      "horizon rejected api_key=[REDACTED] token=[REDACTED] Authorization: [REDACTED]"
+    );
   });
 
   it("redacts JSON-style signedXdr values inside serialized free text", () => {

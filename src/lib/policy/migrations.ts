@@ -103,9 +103,7 @@ function formatFailure(error: z.ZodError, version?: number | null): PolicyParseF
     message: issue.message,
   }));
 
-  const summary = issues
-    .map((issue) => `${issue.path}: ${issue.message}`)
-    .join("; ");
+  const summary = issues.map((issue) => `${issue.path}: ${issue.message}`).join("; ");
 
   return {
     ok: false,
@@ -145,8 +143,7 @@ function resolveDeclaredVersion(raw: Record<string, unknown>): number | null {
 }
 
 function stripVersionField(raw: Record<string, unknown>): Record<string, unknown> {
-  const { [VERSION_FIELD]: _,
-  ...rest } = raw;
+  const { [VERSION_FIELD]: _, ...rest } = raw;
   return rest;
 }
 
@@ -169,7 +166,7 @@ function jsKind(value: unknown): string {
  */
 function findTypeChanges(
   raw: Record<string, unknown>,
-  parsed: Record<string, unknown>,
+  parsed: Record<string, unknown>
 ): { path: string; message: string }[] {
   const changes: { path: string; message: string }[] = [];
 
@@ -193,10 +190,7 @@ function findTypeChanges(
  * field that is entirely missing from the raw input. Returns the list of
  * fields we can migrate, or `null` when any issue is non-migratable.
  */
-function findMigratableFields(
-  raw: Record<string, unknown>,
-  paths: Set<string>,
-): string[] | null {
+function findMigratableFields(raw: Record<string, unknown>, paths: Set<string>): string[] | null {
   const fields: string[] = [];
 
   for (const path of paths) {
@@ -228,14 +222,14 @@ export function parseStoredPolicy(raw: unknown): PolicyParseResult {
   if (declaredVersion === null) {
     return failure(
       `Policy document declares an invalid ${VERSION_FIELD}; expected an integer.`,
-      null,
+      null
     );
   }
 
   if (!(KNOWN_POLICY_SCHEMA_VERSIONS as readonly number[]).includes(declaredVersion)) {
     return failure(
       `Unknown policy schema version ${declaredVersion}. Supported versions: ${KNOWN_POLICY_SCHEMA_VERSIONS.join(", ")}.`,
-      declaredVersion,
+      declaredVersion
     );
   }
 
@@ -255,7 +249,7 @@ export function parseStoredPolicy(raw: unknown): PolicyParseResult {
     strict.error.issues.map((issue) => {
       const head = issue.path[0];
       return head === undefined ? "" : String(head);
-    }),
+    })
   );
 
   const migratableFields = findMigratableFields(stripped, issuePaths);
@@ -283,12 +277,10 @@ export function parseStoredPolicy(raw: unknown): PolicyParseResult {
   // Guard against a migration that silently changed a rule type.
   const typeChanges = findTypeChanges(
     stripped,
-    migrated.data as unknown as Record<string, unknown>,
+    migrated.data as unknown as Record<string, unknown>
   );
   if (typeChanges.length > 0) {
-    const summary = typeChanges
-      .map((change) => `${change.path}: ${change.message}`)
-      .join("; ");
+    const summary = typeChanges.map((change) => `${change.path}: ${change.message}`).join("; ");
     return {
       ok: false,
       error: `Policy migration changed a rule type. ${summary}`,

@@ -32,13 +32,21 @@ export async function POST(request: NextRequest) {
     const parsedBody = stellarSetupRequestSchema.safeParse(rawBody);
 
     if (!parsedBody.success) {
-      logValidationFailure("Stellar setup validation failed", { route: "/api/stellar/setup" }, parsedBody.error, rawBody);
+      logValidationFailure(
+        "Stellar setup validation failed",
+        { route: "/api/stellar/setup" },
+        parsedBody.error,
+        rawBody
+      );
       return NextResponse.json(
         {
           error: "Invalid wallet setup request.",
           details: toPublicValidationDetails(parsedBody.error),
         },
-        { status: 400, headers: { ...rateLimitHeaders(rate), ...securityHeadersForRequest(request) } }
+        {
+          status: 400,
+          headers: { ...rateLimitHeaders(rate), ...securityHeadersForRequest(request) },
+        }
       );
     }
 
@@ -62,7 +70,10 @@ export async function POST(request: NextRequest) {
     if (assignedWallet && "expired" in assignedWallet) {
       return NextResponse.json(
         { error: "Session wallet mapping has expired." },
-        { status: 401, headers: { ...rateLimitHeaders(rate), ...securityHeadersForRequest(request) } }
+        {
+          status: 401,
+          headers: { ...rateLimitHeaders(rate), ...securityHeadersForRequest(request) },
+        }
       );
     }
 
@@ -70,10 +81,12 @@ export async function POST(request: NextRequest) {
     if (!sessionWallet) {
       return NextResponse.json(
         { error: "Session is not bound to a valid Stellar wallet." },
-        { status: 400, headers: { ...rateLimitHeaders(rate), ...securityHeadersForRequest(request) } }
+        {
+          status: 400,
+          headers: { ...rateLimitHeaders(rate), ...securityHeadersForRequest(request) },
+        }
       );
     }
-
 
     await upsertUserWallet(userId, {
       publicKey: sessionWallet,
@@ -95,7 +108,10 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     if (error instanceof WalletAlreadyBoundError) {
-      return NextResponse.json({ error: error.message }, { status: 409, headers: rateLimitHeaders(rate) });
+      return NextResponse.json(
+        { error: error.message },
+        { status: 409, headers: rateLimitHeaders(rate) }
+      );
     }
 
     return NextResponse.json(

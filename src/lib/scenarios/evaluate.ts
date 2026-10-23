@@ -1,12 +1,7 @@
 import { evaluateDecision } from "@/lib/decision/engine";
 import { defaultPolicyConfig } from "@/lib/policy/engine";
 import { defaultDailyUsage, demoScenarios } from "@/lib/scenarios/seed";
-import type {
-  DecisionResult,
-  DecisionType,
-  PolicyConfig,
-  Scenario,
-} from "@/lib/types/domain";
+import type { DecisionResult, DecisionType, PolicyConfig, Scenario } from "@/lib/types/domain";
 
 /**
  * A seed entry as it may arrive at runtime. TypeScript guarantees
@@ -31,9 +26,7 @@ export interface ScenarioEvaluation {
   matches: boolean;
 }
 
-export type ScenarioPackIssueKind =
-  | "missing-expected-decision"
-  | "decision-mismatch";
+export type ScenarioPackIssueKind = "missing-expected-decision" | "decision-mismatch";
 
 export interface ScenarioPackValidationIssue {
   scenarioId: string;
@@ -69,7 +62,7 @@ export async function evaluateScenario(id: string): Promise<ScenarioEvaluation> 
   const result = await evaluateDecision(
     scenario.action,
     scenarioEvaluationPolicy,
-    scenarioEvaluationUsage,
+    scenarioEvaluationUsage
   );
 
   return {
@@ -87,9 +80,7 @@ export async function evaluateScenario(id: string): Promise<ScenarioEvaluation> 
  * of truth for what the engine currently decides, consumed by both the drift
  * tests and the scenarios page.
  */
-export async function evaluateScenarioCatalog(): Promise<
-  ScenarioEvaluation[]
-> {
+export async function evaluateScenarioCatalog(): Promise<ScenarioEvaluation[]> {
   const evaluations: ScenarioEvaluation[] = [];
   for (const scenario of demoScenarios) {
     evaluations.push(await evaluateScenario(scenario.id));
@@ -100,11 +91,9 @@ export async function evaluateScenarioCatalog(): Promise<
 /** Human-readable drift report for one evaluation, including engine rule ids. */
 export function formatScenarioDrift(evaluation: ScenarioEvaluation): string {
   const policies =
-    evaluation.result.triggeredPolicies.map((trigger) => trigger.code).join(", ") ||
-    "none";
-  const findings = evaluation.result.riskFindings
-    .map((finding) => finding.code)
-    .join(", ") || "none";
+    evaluation.result.triggeredPolicies.map((trigger) => trigger.code).join(", ") || "none";
+  const findings =
+    evaluation.result.riskFindings.map((finding) => finding.code).join(", ") || "none";
 
   return (
     `Scenario "${evaluation.scenario.id}" ("${evaluation.scenario.title}") drift: ` +
@@ -127,9 +116,7 @@ export function validateScenarioPack(params: {
 }): ScenarioPackValidationIssue[] {
   const issues: ScenarioPackValidationIssue[] = [];
   const evaluationById = new Map(
-    (params.evaluations ?? []).map(
-      (evaluation) => [evaluation.scenario.id, evaluation] as const,
-    ),
+    (params.evaluations ?? []).map((evaluation) => [evaluation.scenario.id, evaluation] as const)
   );
 
   for (const scenario of params.scenarios) {

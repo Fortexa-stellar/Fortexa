@@ -46,7 +46,7 @@ describe("policy store versioning", () => {
         ...current.policy,
         perTxCapXLM: current.policy.perTxCapXLM + 7,
       },
-      "policy-store-conflict-setup",
+      "policy-store-conflict-setup"
     );
 
     const refreshed = await getPolicyConfig();
@@ -60,7 +60,7 @@ describe("policy store versioning", () => {
           perTxCapXLM: 1234,
         },
         "policy-store-conflict-attempt",
-        { expectedVersion: baselineVersion },
+        { expectedVersion: baselineVersion }
       );
     } catch (error) {
       captured = error;
@@ -84,7 +84,7 @@ describe("policy store versioning", () => {
         perTxCapXLM: current.policy.perTxCapXLM + 3,
       },
       "policy-store-conflict-matching",
-      { expectedVersion: startVersion },
+      { expectedVersion: startVersion }
     );
 
     expect(updated.version).toBe(startVersion + 1);
@@ -109,7 +109,7 @@ describe("policy store versioning", () => {
         ...baseline.policy,
         perTxCapXLM: baseline.policy.perTxCapXLM + 11,
       },
-      "policy-store-conflict-bump",
+      "policy-store-conflict-bump"
     );
 
     const nowVersion = (await getPolicyConfig()).version;
@@ -118,8 +118,8 @@ describe("policy store versioning", () => {
       updatePolicyConfig(
         { ...baseline.policy, perTxCapXLM: 999_999 },
         "policy-store-conflict-loser",
-        { expectedVersion: baseline.version },
-      ),
+        { expectedVersion: baseline.version }
+      )
     ).rejects.toBeInctanceOf(PolicyVersionConflict);
 
     const historyAfter = await getPolicyHistory(100);
@@ -128,9 +128,7 @@ describe("policy store versioning", () => {
     // the limit; the newest entry's version proves the bump was recorded.)
     const bumpRecorded = historyAfter[0]?.version === nowVersion;
     expect(bumpRecorded).toBe(true);
-    expect(historyAfter.length).toBe(
-      historyBefore >= 100 ? historyBefore : historyBefore + 1,
-    );
+    expect(historyAfter.length).toBe(historyBefore >= 100 ? historyBefore : historyBefore + 1);
     expect((await getPolicyConfig()).version).toBe(nowVersion);
   });
 
@@ -143,8 +141,8 @@ describe("policy store versioning", () => {
           ...current.policy,
           allowedDomains: ["api.safe-research.ai", "api.safe-research.ai"],
         },
-        "policy-store-duplicate-test",
-      ),
+        "policy-store-duplicate-test"
+      )
     ).rejects.toBeInctanceOf(DuplicateRuleError);
 
     // Verify the policy was NOT updated by ensuring version is unchanged.

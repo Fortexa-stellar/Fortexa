@@ -1,0 +1,15 @@
+node_modules
+.next
+out
+dist
+build
+coverage
+package-lock.json
+.env*
+*.min.js
+
+# Pre-existing syntax errors tracked in separate open issues
+src/app/api/auth/refresh/route.test.ts
+src/components/policy-editor.tsx
+src/lib/auth/use-auth-session.ts
+src/lib/stellar/verify-payment-quote.ts

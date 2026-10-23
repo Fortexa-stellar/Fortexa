@@ -1,5 +1,9 @@
 import { defaultPolicyConfig } from "@/lib/policy/engine";
-import { agentPlanSchema, type AgentPlanInput, type AgentPlanRequestInput } from "@/lib/validation/schemas";
+import {
+  agentPlanSchema,
+  type AgentPlanInput,
+  type AgentPlanRequestInput,
+} from "@/lib/validation/schemas";
 import { PLAN_ERRORS, PlanError } from "@/lib/ai/plan-errors";
 
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
@@ -55,14 +59,14 @@ export function parseAgentPlanFromContent(content: PlanCompletionContent): Agent
 }
 
 export async function generateAgentPlanPayloadWithGroq(
-  input: AgentPlanRequestInput,
+  input: AgentPlanRequestInput
 ): Promise<AgentPlanInput> {
   const content = await requestPlanCompletionContent(input);
   return parseAgentPlanFromContent(content);
 }
 
 export async function requestPlanCompletionContent(
-  input: AgentPlanRequestInput,
+  input: AgentPlanRequestInput
 ): Promise<PlanCompletionContent> {
   const apiKey = process.env.GROQ_API_KEY;
 

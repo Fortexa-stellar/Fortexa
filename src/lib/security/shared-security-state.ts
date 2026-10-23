@@ -1,4 +1,13 @@
-import { closeSync, existsSync, mkdirSync, openSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import {
+  closeSync,
+  existsSync,
+  mkdirSync,
+  openSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import path from "node:path";
 import Redis from "ioredis";
 
@@ -208,14 +217,13 @@ export async function consumeSharedRateLimit(
     return { allowed: true, state: next };
   };
 
-  return runWithRedisFallback(
-    async (client) => {
-      const redisKey = `fortexa:rate-limit:${key}`;
-      const now = Date.now();
+  return runWithRedisFallback(async (client) => {
+    const redisKey = `fortexa:rate-limit:${key}`;
+    const now = Date.now();
 
-      // KEYS[1] = bucket key, ARGV: limit, windowMs, now
-      // Returns: { allowed (1/0), count, resetAt }
-      const script = `
+    // KEYS[1] = bucket key, ARGV: limit, windowMs, now
+    // Returns: { allowed (1/0), count, resetAt }
+    const script = `
         local raw = redis.call('GET', KEYS[1])
         local count = 0
         local resetAt = 0
@@ -242,26 +250,27 @@ export async function consumeSharedRateLimit(
         return {1, count, resetAt}
       `;
 
-      const result = (await client.eval(
-        script,
-        1,
-        redisKey,
-        String(config.limit),
-        String(config.windowMs),
-        String(now),
-      )) as [number, number, number];
+    const result = (await client.eval(
+      script,
+      1,
+      redisKey,
+      String(config.limit),
+      String(config.windowMs),
+      String(now)
+    )) as [number, number, number];
 
-      const [allowed, count, resetAt] = result;
-      return {
-        allowed: allowed === 1,
-        state: { count, resetAt },
-      };
-    },
-    runFileOp
-  );
+    const [allowed, count, resetAt] = result;
+    return {
+      allowed: allowed === 1,
+      state: { count, resetAt },
+    };
+  }, runFileOp);
 }
 
-export async function writeSharedRateLimit(key: string, value: SharedRateLimitState): Promise<void> {
+export async function writeSharedRateLimit(
+  key: string,
+  value: SharedRateLimitState
+): Promise<void> {
   await runWithRedisFallback(
     async (client) => {
       const redisKey = `fortexa:rate-limit:${key}`;
@@ -375,7 +384,7 @@ export async function takeSharedChallenge(key: string): Promise<SharedChallengeS
   return runWithRedisFallback(
     async (client) => {
       const raw = await client.getdel(`fortexa:challenge:${key}`);
-      return raw ? JSON.parse(raw) as SharedChallengeState : undefined;
+      return raw ? (JSON.parse(raw) as SharedChallengeState) : undefined;
     },
     () => {
       const filePath = getSharedStatePath();
@@ -475,7 +484,12 @@ export async function writeSharedSessionRevocation(
   await runWithRedisFallback(
     async (client) => {
       const ttlSeconds = Math.max(1, Math.ceil((value.expiresAtMs - Date.now()) / 1000));
-      await client.set(`fortexa:session-revoked:${sessionId}`, JSON.stringify(value), "EX", ttlSeconds);
+      await client.set(
+        `fortexa:session-revoked:${sessionId}`,
+        JSON.stringify(value),
+        "EX",
+        ttlSeconds
+      );
     },
     () => {
       const current = readSharedState();

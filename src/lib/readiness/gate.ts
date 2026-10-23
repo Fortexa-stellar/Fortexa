@@ -65,7 +65,7 @@ export async function checkReadiness(deps: ReadinessDeps): Promise<ReadinessResu
   };
 
   const failing = (Object.keys(checks) as ReadinessCheckName[]).filter(
-    (name) => checks[name] === "fail",
+    (name) => checks[name] === "fail"
   );
 
   return { ready: failing.length === 0, failing, checks };

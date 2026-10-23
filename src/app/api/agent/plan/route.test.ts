@@ -38,7 +38,11 @@ const mockedConsumeUsage = vi.mocked(consumeUsage);
 const mockedAppendAuditEntry = vi.mocked(appendAuditEntry);
 
 const DEFAULT_POLICY = {
-  allowedDomains: ["api.safe-research.ai", "tools.verified-data.dev", "workers.fortexa-demo.stellar"],
+  allowedDomains: [
+    "api.safe-research.ai",
+    "tools.verified-data.dev",
+    "workers.fortexa-demo.stellar",
+  ],
   blockedDomains: ["wallet-drainer.evil", "prompt-pwn.io", "untrusted-mirror.xyz"],
   allowedTools: ["research-pro", "market-feed", "settlement-worker"],
   blockedTools: ["shadow-shell", "autonomous-payout-bypass"],

@@ -2,7 +2,14 @@ declare global {
   var MOCK_SESSION_PUBLIC_KEY: string | undefined;
 }
 
-import { Account, Asset, Keypair, Networks, Operation, TransactionBuilder } from "@stellar/stellar-sdk";
+import {
+  Account,
+  Asset,
+  Keypair,
+  Networks,
+  Operation,
+  TransactionBuilder,
+} from "@stellar/stellar-sdk";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -25,7 +32,7 @@ vi.mock("@/lib/observability/http", () => ({
   jsonWithRequestContext: vi.fn(
     (
       _request: unknown,
-      opts: { status: number; body: unknown; headers?: Record<string, string> },
+      opts: { status: number; body: unknown; headers?: Record<string, string> }
     ) =>
       new Response(JSON.stringify(opts.body), {
         status: opts.status,
@@ -33,7 +40,7 @@ vi.mock("@/lib/observability/http", () => ({
           "Content-Type": "application/json",
           ...(opts.headers ?? {}),
         },
-      }),
+      })
   ),
 }));
 
@@ -64,13 +71,15 @@ vi.mock("@/lib/storage/user-wallet-store", () => ({
   getUserWallet: vi.fn(),
 }));
 
-vi.mock("@/lib/storage/audit-store", () => ({ getAuditEntryById: vi.fn(async () => ({ id: "decision-1" })) }));
+vi.mock("@/lib/storage/audit-store", () => ({
+  getAuditEntryById: vi.fn(async () => ({ id: "decision-1" })),
+}));
 vi.mock("@/lib/stellar/verify-payment-quote", async (importOriginal) => ({
-  ...await importOriginal<typeof import("@/lib/stellar/verify-payment-quote")>(),
+  ...(await importOriginal<typeof import("@/lib/stellar/verify-payment-quote")>()),
   isPaymentDecisionCurrent: vi.fn(() => true),
 }));
 vi.mock("@/lib/stellar/payment-build-authorization", async (importOriginal) => ({
-  ...await importOriginal<typeof import("@/lib/stellar/payment-build-authorization")>(),
+  ...(await importOriginal<typeof import("@/lib/stellar/payment-build-authorization")>()),
   verifyBuildAuthorization: vi.fn(() => true),
 }));
 
@@ -116,7 +125,7 @@ function buildSignedXdr(
   sourcePublicKey: string,
   destinationPublicKey = Keypair.random().publicKey(),
   amount = "1",
-  memo = "approved-memo",
+  memo = "approved-memo"
 ) {
   const account = new Account(sourcePublicKey, "1");
   const tx = new TransactionBuilder(account, {
@@ -128,7 +137,7 @@ function buildSignedXdr(
         destination: destinationPublicKey,
         asset: Asset.native(),
         amount,
-      }),
+      })
     )
     .addMemo(memo ? Memo.text(memo) : undefined)
     .setTimeout(180)
@@ -145,11 +154,7 @@ function buildRequest(body: unknown) {
   });
 }
 
-function makeDecisionReceipt(
-  destination: string,
-  amount = "1",
-  memo = "approved-memo",
-) {
+function makeDecisionReceipt(destination: string, amount = "1", memo = "approved-memo") {
   return buildDecisionReceipt({
     destination,
     amountXLM: amount,
@@ -161,10 +166,16 @@ function makeDecisionReceipt(
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(requireAuth).mockImplementation(() => ({
-    ok: true,
-    session: { userId: "user-1", publicKey: globalThis.MOCK_SESSION_PUBLIC_KEY || "GCDEFAULTTESTWALLET123" },
-  } as ReturnType<typeof requireAuth>));
+  vi.mocked(requireAuth).mockImplementation(
+    () =>
+      ({
+        ok: true,
+        session: {
+          userId: "user-1",
+          publicKey: globalThis.MOCK_SESSION_PUBLIC_KEY || "GCDEFAULTTESTWALLET123",
+        },
+      }) as ReturnType<typeof requireAuth>
+  );
 });
 
 describe("POST /api/stellar/submit-signed - source wallet verification", () => {
@@ -206,13 +217,9 @@ describe("POST /api/stellar/submit-signed - source wallet verification", () => {
       walletKp.publicKey(),
       swappedDestination,
       "1",
-      "approved-memo",
+      "approved-memo"
     );
-    const decisionReceipt = makeDecisionReceipt(
-      authorizedDestination,
-      "1",
-      "approved-memo",
-    );
+    const decisionReceipt = makeDecisionReceipt(authorizedDestination, "1", "approved-memo");
 
     vi.mocked(getUserWallet).mockResolvedValue({
       userId: "user-1",
@@ -234,9 +241,7 @@ describe("POST /api/stellar/submit-signed - source wallet verification", () => {
     const body = await response.json();
 
     expect(response.status).toBe(403);
-    expect(body.error).toMatch(
-      /does not match the authorized payment decision/i,
-    );
+    expect(body.error).toMatch(/does not match the authorized payment decision/i);
   });
 
   it("rejects a submission whose XDR source does not match the session wallet", async () => {
@@ -248,7 +253,7 @@ describe("POST /api/stellar/submit-signed - source wallet verification", () => {
       otherKp.publicKey(),
       destination,
       "1",
-      "approved-memo",
+      "approved-memo"
     );
 
     vi.mocked(getUserWallet).mockResolvedValue({
@@ -258,11 +263,7 @@ describe("POST /api/stellar/submit-signed - source wallet verification", () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
-    const decisionReceipt = makeDecisionReceipt(
-      destination,
-      "1",
-      "approved-memo",
-    );
+    const decisionReceipt = makeDecisionReceipt(destination, "1", "approved-memo");
     vi.mocked(readJsonBody).mockResolvedValue({
       ok: true,
       data: { signedXdr, decisionReceipt },
@@ -321,11 +322,7 @@ describe("POST /api/stellar/submit-signed - source wallet verification", () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
-    const decisionReceipt = makeDecisionReceipt(
-      walletKp.publicKey(),
-      "1",
-      "approved-memo",
-    );
+    const decisionReceipt = makeDecisionReceipt(walletKp.publicKey(), "1", "approved-memo");
     vi.mocked(readJsonBody).mockResolvedValue({
       ok: true,
       data: { signedXdr: "not-valid-xdr", decisionReceipt },
@@ -335,9 +332,7 @@ describe("POST /api/stellar/submit-signed - source wallet verification", () => {
       data: { signedXdr: "not-valid-xdr", decisionReceipt },
     } as ReturnType<typeof stellarSubmitSignedRequestSchema.safeParse>);
 
-    const response = await POST(
-      buildRequest({ signedXdr: "not-valid-xdr", decisionReceipt }),
-    );
+    const response = await POST(buildRequest({ signedXdr: "not-valid-xdr", decisionReceipt }));
     const body = await response.json();
 
     expect(response.status).toBe(400);
@@ -355,9 +350,7 @@ describe("POST /api/stellar/submit-signed - source wallet verification", () => {
       network: "testnet",
     });
 
-    const response = await POST(
-      buildRequest({ signedXdr: "anything", decisionReceipt }),
-    );
+    const response = await POST(buildRequest({ signedXdr: "anything", decisionReceipt }));
     const body = await response.json();
 
     expect(response.status).toBe(401);
@@ -373,22 +366,16 @@ describe("POST /api/stellar/submit-signed authorization", () => {
   it("returns 401 when unauthenticated", async () => {
     vi.mocked(requireAuth).mockReturnValue({
       ok: false,
-      response: new Response(
-        JSON.stringify({ error: "Authentication required." }),
-        {
-          status: 401,
-        },
-      ),
+      response: new Response(JSON.stringify({ error: "Authentication required." }), {
+        status: 401,
+      }),
     } as ReturnType<typeof requireAuth>);
 
-    const request = new NextRequest(
-      "http://localhost/api/stellar/submit-signed",
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ signedXdr: "AAAA" }),
-      },
-    );
+    const request = new NextRequest("http://localhost/api/stellar/submit-signed", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ signedXdr: "AAAA" }),
+    });
 
     const response = await POST(request);
     expect(response.status).toBe(401);
@@ -402,14 +389,11 @@ describe("POST /api/stellar/submit-signed authorization", () => {
       }),
     } as ReturnType<typeof requireAuth>);
 
-    const request = new NextRequest(
-      "http://localhost/api/stellar/submit-signed",
-      {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ signedXdr: "AAAA" }),
-      },
-    );
+    const request = new NextRequest("http://localhost/api/stellar/submit-signed", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ signedXdr: "AAAA" }),
+    });
 
     const response = await POST(request);
     expect(response.status).toBe(403);

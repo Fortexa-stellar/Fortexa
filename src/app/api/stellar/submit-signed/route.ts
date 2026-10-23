@@ -5,21 +5,17 @@ import { requireAuth } from "@/lib/auth/require-auth";
 import { isLoginAuthorizationPayload } from "@/lib/auth/wallet-challenge";
 import { readJsonBody } from "@/lib/http/read-json-body";
 import { jsonWithRequestContext } from "@/lib/observability/http";
-import {
-  getRequestLogContext,
-  logError,
-  logInfo,
-  logWarn,
-} from "@/lib/observability/logger";
+import { getRequestLogContext, logError, logInfo, logWarn } from "@/lib/observability/logger";
 import { recordStellarSubmitResult } from "@/lib/observability/metrics";
 import { getProtectedPaymentFlowReadinessReport } from "@/lib/readiness/production";
 import { consumeRateLimit, rateLimitHeaders } from "@/lib/security/rate-limit";
-import { decodeSignedXdrSourceAccount, submitSignedTransactionXdr, verifySignedXdrSigner } from "@/lib/stellar/client";
-import { getStellarExplorerTransactionUrl } from "@/lib/stellar/network";
 import {
   decodeSignedXdrSourceAccount,
   submitSignedTransactionXdr,
+  verifySignedXdrSigner,
 } from "@/lib/stellar/client";
+import { getStellarExplorerTransactionUrl } from "@/lib/stellar/network";
+import { decodeSignedXdrSourceAccount, submitSignedTransactionXdr } from "@/lib/stellar/client";
 import { getStellarExplorerTransactionUrl } from "@/lib/stellar/network";
 import { assertStellarNetworkConfig } from "@/lib/stellar/network-config";
 import { validateDecisionReceipt } from "@/lib/stellar/verify-payment-quote";
@@ -33,14 +29,8 @@ import {
 } from "@/lib/storage/submit-idempotency-store";
 import { getUserWallet } from "@/lib/storage/user-wallet-store";
 import { getAuditEntryById } from "@/lib/storage/audit-store";
-import {
-  stellarSubmitSignedRequestSchema,
-  validateIdempotencyKey,
-} from "@/lib/validation/schemas";
-import {
-  logValidationFailure,
-  toPublicValidationDetails,
-} from "@/lib/validation/errors";
+import { stellarSubmitSignedRequestSchema, validateIdempotencyKey } from "@/lib/validation/schemas";
+import { logValidationFailure, toPublicValidationDetails } from "@/lib/validation/errors";
 import { normalizeHorizonError } from "@/lib/utils/horizonErrors";
 import { verifyPaymentAgainstQuote } from "@/lib/stellar/verify-payment-quote";
 
@@ -54,9 +44,7 @@ type HorizonErrorContext = {
  * Runs before validation; a malformed envelope simply reports no destination
  * (the strict decode later still returns the route's normal 400).
  */
-function extractSignedXdrDestination(
-  signedXdr: string | undefined,
-): SignedXdrDestinationResult {
+function extractSignedXdrDestination(signedXdr: string | undefined): SignedXdrDestinationResult {
   if (!signedXdr) {
     return { ok: false, reason: "malformed" };
   }
@@ -94,10 +82,8 @@ const HORIZON_OP_ERRORS: Record<string, HorizonErrorContext> = {
     // address itself never reaches logs.
   },
   op_underfunded: {
-    explanation:
-      "The source account lacks sufficient funds for this operation.",
-    nextStep:
-      "Fund the source account with enough XLM to cover the payment and reserves.",
+    explanation: "The source account lacks sufficient funds for this operation.",
+    nextStep: "Fund the source account with enough XLM to cover the payment and reserves.",
   },
 };
 
@@ -110,7 +96,7 @@ function verifySignedXdrMatchesDecisionReceipt(
     memo?: string;
     network: string;
     receiptHash?: string;
-  },
+  }
 ) {
   const validation = validateDecisionReceipt(receipt as any);
   if (!validation.ok) {
@@ -131,8 +117,7 @@ function verifySignedXdrMatchesDecisionReceipt(
     return {
       ok: false,
       status: 400,
-      error:
-        "Signed XDR could not be decoded. It may be malformed or built for the wrong network.",
+      error: "Signed XDR could not be decoded. It may be malformed or built for the wrong network.",
     };
   }
 
@@ -146,10 +131,7 @@ function verifySignedXdrMatchesDecisionReceipt(
     };
   }
 
-  const network =
-    networkPassphrase === "Test SDF Network ; September 2015"
-      ? "testnet"
-      : "testnet";
+  const network = networkPassphrase === "Test SDF Network ; September 2015" ? "testnet" : "testnet";
   const actual = {
     destination: paymentOp.destination?.trim().toUpperCase(),
     amountXLM: String(paymentOp.amount ?? "0"),
@@ -172,8 +154,7 @@ function verifySignedXdrMatchesDecisionReceipt(
     return {
       ok: false,
       status: 403,
-      error:
-        "Signed transaction amount does not match the authorized payment decision receipt.",
+      error: "Signed transaction amount does not match the authorized payment decision receipt.",
       field: "amountXLM",
     };
   }
@@ -182,8 +163,7 @@ function verifySignedXdrMatchesDecisionReceipt(
     return {
       ok: false,
       status: 403,
-      error:
-        "Signed transaction asset does not match the authorized payment decision receipt.",
+      error: "Signed transaction asset does not match the authorized payment decision receipt.",
       field: "asset",
     };
   }
@@ -193,8 +173,7 @@ function verifySignedXdrMatchesDecisionReceipt(
     return {
       ok: false,
       status: 403,
-      error:
-        "Signed transaction memo does not match the authorized payment decision receipt.",
+      error: "Signed transaction memo does not match the authorized payment decision receipt.",
       field: "memo",
     };
   }
@@ -203,23 +182,17 @@ function verifySignedXdrMatchesDecisionReceipt(
     return {
       ok: false,
       status: 403,
-      error:
-        "Signed transaction network does not match the authorized payment decision receipt.",
+      error: "Signed transaction network does not match the authorized payment decision receipt.",
       field: "network",
     };
   }
 
   const expectedHash = validation.normalized.receiptHash;
-  if (
-    expectedHash &&
-    receipt.receiptHash &&
-    expectedHash !== receipt.receiptHash
-  ) {
+  if (expectedHash && receipt.receiptHash && expectedHash !== receipt.receiptHash) {
     return {
       ok: false,
       status: 403,
-      error:
-        "Signed transaction does not match the authorized payment decision receipt.",
+      error: "Signed transaction does not match the authorized payment decision receipt.",
       field: "amountXLM",
     };
   }
@@ -300,8 +273,8 @@ export async function POST(request: NextRequest) {
   if (bodyResult.ok) {
     const destinationPreview = extractSignedXdrDestination(
       typeof (bodyResult.data as { signedXdr?: unknown })?.signedXdr === "string"
-        ? ((bodyResult.data as { signedXdr: string }).signedXdr)
-        : undefined,
+        ? (bodyResult.data as { signedXdr: string }).signedXdr
+        : undefined
     );
     gateDestination = destinationPreview.ok ? destinationPreview.destination : undefined;
   }
@@ -375,16 +348,14 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const parsedPayload = stellarSubmitSignedRequestSchema.safeParse(
-      bodyResult.data,
-    );
+    const parsedPayload = stellarSubmitSignedRequestSchema.safeParse(bodyResult.data);
 
     if (!parsedPayload.success) {
       logValidationFailure(
         "Submit signed validation failed",
         { ...context, userId },
         parsedPayload.error,
-        bodyResult.data,
+        bodyResult.data
       );
       return respond(request, {
         route: "/api/stellar/submit-signed",
@@ -454,7 +425,7 @@ export async function POST(request: NextRequest) {
 
     const receiptCheck = verifySignedXdrMatchesDecisionReceipt(
       payload.signedXdr,
-      payload.decisionReceipt,
+      payload.decisionReceipt
     );
     if (!receiptCheck.ok) {
       logWarn("Submit signed XDR disagrees with decision receipt", {
@@ -491,8 +462,7 @@ export async function POST(request: NextRequest) {
         startedAtMs,
         status: 403,
         body: {
-          error:
-            "Signed transaction source account does not match your session wallet.",
+          error: "Signed transaction source account does not match your session wallet.",
         },
         headers: rateLimitHeaders(rate),
       });
@@ -522,8 +492,7 @@ export async function POST(request: NextRequest) {
 
     let idempotencyKey: string | undefined;
     if (mergedIdempotencyKey) {
-      const idempotencyValidation =
-        validateIdempotencyKey(mergedIdempotencyKey);
+      const idempotencyValidation = validateIdempotencyKey(mergedIdempotencyKey);
       if (!idempotencyValidation.ok) {
         logWarn("Submit signed invalid idempotency key", {
           ...context,
@@ -543,9 +512,7 @@ export async function POST(request: NextRequest) {
     // Identity of the request is the hash of the key plus the canonical payment
     // body, so the store and this route can never disagree about what "the same
     // request" means.
-    const requestHash = idempotencyKey
-      ? hashCanonicalPaymentBody(idempotencyKey, payload)
-      : null;
+    const requestHash = idempotencyKey ? hashCanonicalPaymentBody(idempotencyKey, payload) : null;
 
     if (idempotencyKey && requestHash) {
       const claim = await beginIdempotentSubmit(userId, idempotencyKey, requestHash, {
@@ -583,8 +550,7 @@ export async function POST(request: NextRequest) {
           startedAtMs,
           status: 409,
           body: {
-            error:
-              "Idempotency-Key was already used with a different signed transaction.",
+            error: "Idempotency-Key was already used with a different signed transaction.",
           },
           headers: {
             ...rateLimitHeaders(rate),
@@ -622,7 +588,9 @@ export async function POST(request: NextRequest) {
         route: "/api/stellar/submit-signed",
         startedAtMs,
         status: 403,
-        body: { error: "Payment decision or quote is no longer valid. Please re-evaluate the action." },
+        body: {
+          error: "Payment decision or quote is no longer valid. Please re-evaluate the action.",
+        },
         headers: rateLimitHeaders(rate),
       });
     }
@@ -674,11 +642,14 @@ export async function POST(request: NextRequest) {
     // redactor so secrets, signed XDR, and payment metadata never reach logs.
     // recordStellarSubmitResult("horizon_failure") below is unconditional so
     // stable counters keep incrementing even when the error is fully redacted.
-    logError("Submit signed internal error", redactSensitiveFields({
-      ...context,
-      detail: formatted.message,
-      horizonCategory: category,
-    }));
+    logError(
+      "Submit signed internal error",
+      redactSensitiveFields({
+        ...context,
+        detail: formatted.message,
+        horizonCategory: category,
+      })
+    );
     recordStellarSubmitResult("horizon_failure");
     return respond(request, {
       route: "/api/stellar/submit-signed",

@@ -1,15 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  evaluateDecision,
-  getPrimaryRuleId,
-} from "@/lib/decision/engine";
+import { evaluateDecision, getPrimaryRuleId } from "@/lib/decision/engine";
 import { simulatePolicyChange } from "@/lib/decision/simulate";
-import {
-  parityFixtures,
-  parityPolicy,
-  parityUsage,
-} from "@/lib/decision/decision-parity-fixtures";
+import { parityFixtures, parityPolicy, parityUsage } from "@/lib/decision/decision-parity-fixtures";
 
 /**
  * Drift guard for issue #209.
@@ -29,7 +22,7 @@ describe("simulate / decide parity (issue #209)", () => {
         fixture.action,
         parityPolicy,
         parityUsage,
-        fixture.payment,
+        fixture.payment
       );
 
       // Simulate path: exactly how /api/policy/simulate evaluates.
@@ -52,27 +45,18 @@ describe("simulate / decide parity (issue #209)", () => {
       const simulatedProposed = report.cases[0]!.proposed;
 
       // Expected outcome from the shared fixture.
-      expect(live.decision, `${fixture.id} live decision`).toBe(
-        fixture.expectedDecision,
-      );
-      expect(getPrimaryRuleId(live), `${fixture.id} live rule id`).toBe(
-        fixture.expectedRuleId,
-      );
+      expect(live.decision, `${fixture.id} live decision`).toBe(fixture.expectedDecision);
+      expect(getPrimaryRuleId(live), `${fixture.id} live rule id`).toBe(fixture.expectedRuleId);
 
       // Simulate agrees with live, including the rule id — not just free text.
-      expect(simulated.decision, `${fixture.id} simulated decision`).toBe(
-        live.decision,
+      expect(simulated.decision, `${fixture.id} simulated decision`).toBe(live.decision);
+      expect(getPrimaryRuleId(simulated), `${fixture.id} simulated rule id`).toBe(
+        getPrimaryRuleId(live)
       );
-      expect(
-        getPrimaryRuleId(simulated),
-        `${fixture.id} simulated rule id`,
-      ).toBe(getPrimaryRuleId(live));
-      expect(simulated.primaryRuleId, `${fixture.id} response rule id`).toBe(
-        live.primaryRuleId,
-      );
+      expect(simulated.primaryRuleId, `${fixture.id} response rule id`).toBe(live.primaryRuleId);
       expect(
         simulated.triggeredPolicies.map((t) => t.code),
-        `${fixture.id} trigger codes`,
+        `${fixture.id} trigger codes`
       ).toEqual(live.triggeredPolicies.map((t) => t.code));
 
       // Same-policy simulation must not report a change.
@@ -89,13 +73,13 @@ describe("simulate / decide parity (issue #209)", () => {
       missing.action,
       parityPolicy,
       parityUsage,
-      missing.payment,
+      missing.payment
     );
     const livePresent = await evaluateDecision(
       present.action,
       parityPolicy,
       parityUsage,
-      present.payment,
+      present.payment
     );
 
     expect(liveMissing.decision).toBe("BLOCK");
@@ -165,8 +149,7 @@ describe("simulate / decide parity (issue #209)", () => {
         name: "memo",
         payment: {
           ...base.payment,
-          destination:
-            parityPolicy.memoRequiredDestinations![0]!,
+          destination: parityPolicy.memoRequiredDestinations![0]!,
           memo: "",
         },
         expectedRuleId: "MEMO_REQUIRED_MISSING",
@@ -174,12 +157,7 @@ describe("simulate / decide parity (issue #209)", () => {
     ];
 
     for (const t of tampered) {
-      const live = await evaluateDecision(
-        base.action,
-        parityPolicy,
-        parityUsage,
-        t.payment,
-      );
+      const live = await evaluateDecision(base.action, parityPolicy, parityUsage, t.payment);
       const report = await simulatePolicyChange({
         currentPolicy: parityPolicy,
         proposedPolicy: { ...parityPolicy },
@@ -197,14 +175,11 @@ describe("simulate / decide parity (issue #209)", () => {
       const simulated = report.cases[0]!.current;
 
       expect(live.decision, `tampered ${t.name} live`).toBe("BLOCK");
-      expect(getPrimaryRuleId(live), `tampered ${t.name} live rule`).toBe(
-        t.expectedRuleId,
-      );
+      expect(getPrimaryRuleId(live), `tampered ${t.name} live rule`).toBe(t.expectedRuleId);
       expect(simulated.decision, `tampered ${t.name} simulated`).toBe("BLOCK");
-      expect(
-        getPrimaryRuleId(simulated),
-        `tampered ${t.name} simulated rule`,
-      ).toBe(t.expectedRuleId);
+      expect(getPrimaryRuleId(simulated), `tampered ${t.name} simulated rule`).toBe(
+        t.expectedRuleId
+      );
       expect(simulated.primaryRuleId).toBe(live.primaryRuleId);
     }
   });

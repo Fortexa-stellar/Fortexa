@@ -94,9 +94,9 @@ describe("wallet-auth challenge signing — reviewer evidence fixtures", () => {
 
     // Produce a well-formed 64-byte Ed25519 signature — but from MISMATCHED_KEYPAIR,
     // not from the keypair that owns AUTHORIZED_PUBLIC_KEY.
-    const mismatchedSignature = MISMATCHED_KEYPAIR
-      .sign(hashSep53Message(challenge.message))
-      .toString("base64");
+    const mismatchedSignature = MISMATCHED_KEYPAIR.sign(
+      hashSep53Message(challenge.message)
+    ).toString("base64");
 
     const result = await verifyWalletChallenge({
       challengeId: challenge.id,

@@ -56,7 +56,7 @@ describe("login challenge binding", () => {
         publicKey: AUTHORIZED_PUBLIC_KEY,
         challengeId: challenge.id,
         signature,
-      }),
+      })
     );
     expect(first.status).toBe(200);
     const cookie = first.cookies.get(AUTH_COOKIE_KEY)?.value;
@@ -67,7 +67,7 @@ describe("login challenge binding", () => {
         publicKey: AUTHORIZED_PUBLIC_KEY,
         challengeId: challenge.id,
         signature,
-      }),
+      })
     );
     expect(replay.status).toBe(400);
 
@@ -79,7 +79,7 @@ describe("login challenge binding", () => {
           cookie: `${AUTH_COOKIE_KEY}=${cookie}`,
         },
         body: JSON.stringify({ signedXdr: signature }),
-      }),
+      })
     );
     expect(submitResponse.status).toBe(400);
     const submitPayload = (await submitResponse.json()) as { error: string };
@@ -94,7 +94,7 @@ describe("login challenge binding", () => {
           cookie: `${AUTH_COOKIE_KEY}=${cookie}`,
         },
         body: JSON.stringify({ message: challenge.message, signature }),
-      }),
+      })
     );
     expect(payResponse.status).toBe(400);
 
@@ -106,7 +106,7 @@ describe("login challenge binding", () => {
           cookie: `${AUTH_COOKIE_KEY}=${cookie}`,
         },
         body: JSON.stringify({ note: challenge.message }),
-      }),
+      })
     );
     expect(policyResponse.status).toBe(400);
   });
@@ -132,7 +132,7 @@ describe("login challenge binding", () => {
         publicKey: AUTHORIZED_PUBLIC_KEY,
         challengeId: challenge.id,
         signature: signSep53Message(AUTHORIZED_SECRET, wrongOrigin),
-      }),
+      })
     );
     expect(originResponse.status).toBe(401);
 
@@ -152,7 +152,7 @@ describe("login challenge binding", () => {
         publicKey: AUTHORIZED_PUBLIC_KEY,
         challengeId: second.id,
         signature: signSep53Message(AUTHORIZED_SECRET, wrongNonce),
-      }),
+      })
     );
     expect(nonceResponse.status).toBe(401);
   });
@@ -168,14 +168,17 @@ describe("login challenge binding", () => {
       origin: "https://fortexa.example",
       nonce: "nonce-secret",
     });
-    const signature = signSep53Message(AUTHORIZED_SECRET, "Fortexa wallet login\nnot the stored challenge");
+    const signature = signSep53Message(
+      AUTHORIZED_SECRET,
+      "Fortexa wallet login\nnot the stored challenge"
+    );
 
     const response = await login(
       loginRequest({
         publicKey: AUTHORIZED_PUBLIC_KEY,
         challengeId: challenge.id,
         signature,
-      }),
+      })
     );
     expect(response.status).toBe(401);
 

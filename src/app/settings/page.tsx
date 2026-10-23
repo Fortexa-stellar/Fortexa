@@ -32,8 +32,7 @@ export default async function SettingsPage({
   const session = sessionToken ? verifySessionToken(sessionToken) : null;
   const userId = session?.userId;
   const entries = userId ? await listAuditEntries(userId) : [];
-  const scenarioEvaluations =
-    activeTab === "scenarios" ? await evaluateScenarioCatalog() : [];
+  const scenarioEvaluations = activeTab === "scenarios" ? await evaluateScenarioCatalog() : [];
 
   // Ops dashboard loader: read the in-process metrics snapshot directly so the
   // screen renders the same counters the `/api/metrics` scrape exports.
@@ -56,7 +55,10 @@ export default async function SettingsPage({
       </section>
 
       {activeTab === "policies" ? (
-        <PolicyEditor networkMatches={network.ok} networkFingerprint={getStellarNetworkFingerprint()} />
+        <PolicyEditor
+          networkMatches={network.ok}
+          networkFingerprint={getStellarNetworkFingerprint()}
+        />
       ) : null}
       {activeTab === "wallet" ? (
         <div className="space-y-6">

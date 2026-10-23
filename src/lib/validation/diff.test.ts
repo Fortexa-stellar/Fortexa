@@ -30,9 +30,7 @@ const allowedPayment: OpenAllowDecision = {
 /** Candidate that blocks the domain of a currently allowed payment. */
 const blockingCandidate: PolicyConfig = {
   ...activePolicy,
-  allowedDomains: activePolicy.allowedDomains.filter(
-    (domain) => domain !== "api.safe-research.ai",
-  ),
+  allowedDomains: activePolicy.allowedDomains.filter((domain) => domain !== "api.safe-research.ai"),
   blockedDomains: [...activePolicy.blockedDomains, "api.safe-research.ai"],
 };
 
@@ -42,7 +40,9 @@ const unrelatedCandidate: PolicyConfig = {
   perTxCapXLM: 500,
 };
 
-function entry(overrides: Partial<AuditEntry> & Pick<AuditEntry, "id" | "action" | "decision">): AuditEntry {
+function entry(
+  overrides: Partial<AuditEntry> & Pick<AuditEntry, "id" | "action" | "decision">
+): AuditEntry {
   return {
     timestamp: new Date().toISOString(),
     explanation: "seed",

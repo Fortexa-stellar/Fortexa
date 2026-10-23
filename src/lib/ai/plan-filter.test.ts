@@ -13,7 +13,9 @@ vi.mock("@/lib/decision/engine", () => ({
 }));
 
 vi.mock("@/lib/storage/audit-store", () => ({
-  getDailyUsage: vi.fn().mockResolvedValue({ spentXLM: 0, toolCalls: 0, lastUpdated: new Date().toISOString() }),
+  getDailyUsage: vi
+    .fn()
+    .mockResolvedValue({ spentXLM: 0, toolCalls: 0, lastUpdated: new Date().toISOString() }),
   consumeUsage: vi.fn().mockResolvedValue(undefined),
   appendAuditEntry: vi.fn().mockResolvedValue(undefined),
 }));
@@ -46,7 +48,11 @@ function buildPlanItem(overrides?: Partial<AgentPlanInput["action"]>): AgentPlan
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockedGetPolicyConfig.mockResolvedValue({ policy: "default" as never, updatedAt: null, version: 1 });
+  mockedGetPolicyConfig.mockResolvedValue({
+    policy: "default" as never,
+    updatedAt: null,
+    version: 1,
+  });
   mockedEvaluateDecision.mockResolvedValue({
     decision: "APPROVE",
     explanation: "ok",

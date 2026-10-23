@@ -9,8 +9,7 @@ vi.mock("@/lib/readiness/checks", () => ({
 
 import { readinessBlockResponse } from "./guard";
 
-const request = () =>
-  new NextRequest("http://localhost/api/decision", { method: "POST" });
+const request = () => new NextRequest("http://localhost/api/decision", { method: "POST" });
 
 const readyResult = {
   ready: true,
@@ -24,26 +23,18 @@ describe("readinessBlockResponse", () => {
   });
 
   it("does nothing outside production", async () => {
-    const res = await readinessBlockResponse(
-      request(),
-      "/api/decision",
-      Date.now(),
-      undefined,
-      { NODE_ENV: "development" } as NodeJS.ProcessEnv,
-    );
+    const res = await readinessBlockResponse(request(), "/api/decision", Date.now(), undefined, {
+      NODE_ENV: "development",
+    } as NodeJS.ProcessEnv);
     expect(res).toBeNull();
     expect(getReadiness).not.toHaveBeenCalled();
   });
 
   it("lets the request through in production when ready", async () => {
     getReadiness.mockResolvedValue(readyResult);
-    const res = await readinessBlockResponse(
-      request(),
-      "/api/decision",
-      Date.now(),
-      undefined,
-      { NODE_ENV: "production" } as NodeJS.ProcessEnv,
-    );
+    const res = await readinessBlockResponse(request(), "/api/decision", Date.now(), undefined, {
+      NODE_ENV: "production",
+    } as NodeJS.ProcessEnv);
     expect(res).toBeNull();
   });
 
@@ -54,13 +45,9 @@ describe("readinessBlockResponse", () => {
       checks: { migration: "pass", policy_store: "pass", network: "fail" },
     });
 
-    const res = await readinessBlockResponse(
-      request(),
-      "/api/decision",
-      Date.now(),
-      undefined,
-      { NODE_ENV: "production" } as NodeJS.ProcessEnv,
-    );
+    const res = await readinessBlockResponse(request(), "/api/decision", Date.now(), undefined, {
+      NODE_ENV: "production",
+    } as NodeJS.ProcessEnv);
 
     expect(res).not.toBeNull();
     expect(res!.status).toBe(503);
@@ -76,13 +63,9 @@ describe("readinessBlockResponse", () => {
       checks: { migration: "fail", policy_store: "pass", network: "pass" },
     });
 
-    const res = await readinessBlockResponse(
-      request(),
-      "/api/decision",
-      Date.now(),
-      undefined,
-      { NODE_ENV: "production" } as NodeJS.ProcessEnv,
-    );
+    const res = await readinessBlockResponse(request(), "/api/decision", Date.now(), undefined, {
+      NODE_ENV: "production",
+    } as NodeJS.ProcessEnv);
 
     const body = await res!.json();
     expect(res!.status).toBe(503);

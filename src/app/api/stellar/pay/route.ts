@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       request,
       "/api/stellar/pay",
       Date.now(),
-      rateLimitHeaders(rate),
+      rateLimitHeaders(rate)
     );
     if (notReady) {
       return notReady;
@@ -43,20 +43,28 @@ export async function POST(request: NextRequest) {
     if (isLoginAuthorizationPayload(rawPayload)) {
       return NextResponse.json(
         { error: "Login signatures cannot authorize a payment." },
-        { status: 400, headers: rateLimitHeaders(rate) },
+        { status: 400, headers: rateLimitHeaders(rate) }
       );
     }
 
     const parsedPayload = stellarBuildPaymentRequestSchema.safeParse(rawPayload);
 
     if (!parsedPayload.success) {
-      logValidationFailure("Stellar pay validation failed", { route: "/api/stellar/pay", userId }, parsedPayload.error, rawPayload);
+      logValidationFailure(
+        "Stellar pay validation failed",
+        { route: "/api/stellar/pay", userId },
+        parsedPayload.error,
+        rawPayload
+      );
       return NextResponse.json(
         {
           error: "Invalid pay request body.",
           details: toPublicValidationDetails(parsedPayload.error),
         },
-        { status: 400, headers: { ...rateLimitHeaders(rate), ...securityHeadersForRequest(request) } }
+        {
+          status: 400,
+          headers: { ...rateLimitHeaders(rate), ...securityHeadersForRequest(request) },
+        }
       );
     }
 

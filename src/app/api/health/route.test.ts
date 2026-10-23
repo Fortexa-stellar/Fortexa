@@ -125,7 +125,11 @@ describe("GET /api/health", () => {
     async function readiness() {
       const response = await GET(new NextRequest("http://localhost:3000/api/health"));
       expect(response.status).toBe(200);
-      return (await response.json()) as { ready: boolean; failingChecks: string[]; checks: unknown[] };
+      return (await response.json()) as {
+        ready: boolean;
+        failingChecks: string[];
+        checks: unknown[];
+      };
     }
 
     it("reports ready when the configured database and Horizon answer", async () => {

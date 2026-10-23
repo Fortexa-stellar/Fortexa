@@ -26,7 +26,7 @@ export const idempotencyKeySchema = z
   .regex(IDEMPOTENCY_KEY_PATTERN, { message: IDEMPOTENCY_KEY_ERROR });
 
 export function validateIdempotencyKey(
-  key: string | undefined,
+  key: string | undefined
 ): { ok: true; key: string } | { ok: false; error: string } {
   const trimmed = key?.trim() ?? "";
   if (trimmed.length === 0) {
@@ -41,12 +41,7 @@ export function validateIdempotencyKey(
   return { ok: true, key: parsed.data };
 }
 
-const actionKindSchema = z.enum([
-  "api_payment",
-  "tool_access",
-  "transfer",
-  "endpoint_call",
-]);
+const actionKindSchema = z.enum(["api_payment", "tool_access", "transfer", "endpoint_call"]);
 
 const metadataValueSchema = z.union([z.string(), z.number(), z.boolean()]);
 
@@ -92,16 +87,11 @@ export const decisionRequestSchema = z
   })
   .refine(
     (data) =>
-      Boolean(
-        data.scenarioId ||
-        data.action ||
-        data.paymentQuote ||
-        data.paymentQuoteInput,
-      ),
+      Boolean(data.scenarioId || data.action || data.paymentQuote || data.paymentQuoteInput),
     {
       message: "Either scenarioId, action, or paymentQuote must be provided.",
       path: ["scenarioId"],
-    },
+    }
   );
 
 export const stellarSetupRequestSchema = z.object({
@@ -115,7 +105,7 @@ export const stellarBuildPaymentRequestSchema = z.object({
     .string()
     .regex(
       /^\d+(\.\d{1,7})?$/,
-      "amountXLM must be a positive decimal string with up to 7 decimals",
+      "amountXLM must be a positive decimal string with up to 7 decimals"
     ),
   asset: z.enum(["native"]).default("native"),
   memo: z.string().max(28).optional(),
@@ -210,6 +200,4 @@ export type AgentActionInput = z.infer<typeof agentActionSchema>;
 export type AgentPlanInput = z.infer<typeof agentPlanSchema>;
 export type DecisionRequestInput = z.infer<typeof decisionRequestSchema>;
 export type AgentPlanRequestInput = z.infer<typeof agentPlanRequestSchema>;
-export type PolicySimulateRequestInput = z.infer<
-  typeof policySimulateRequestSchema
->;
+export type PolicySimulateRequestInput = z.infer<typeof policySimulateRequestSchema>;

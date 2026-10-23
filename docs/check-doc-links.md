@@ -12,12 +12,12 @@ npm run check:docs
 
 ## What it checks
 
-| Link type | Checked by default | Notes |
-|-----------|-------------------|-------|
-| Local file links (e.g. `[label](#local-file)`) | ✅ Yes | Exits non-zero if file is missing |
-| Reference-style links (`[label]: ./path`) | ✅ Yes | Same file-existence check |
-| Anchor-only links (`[label](#heading)`) | ⬜ Skipped | Heading normalisation is renderer-specific |
-| External URLs (`https://…`) | ⬜ Opt-in | See below |
+| Link type                                      | Checked by default | Notes                                      |
+| ---------------------------------------------- | ------------------ | ------------------------------------------ |
+| Local file links (e.g. `[label](#local-file)`) | ✅ Yes             | Exits non-zero if file is missing          |
+| Reference-style links (`[label]: ./path`)      | ✅ Yes             | Same file-existence check                  |
+| Anchor-only links (`[label](#heading)`)        | ⬜ Skipped         | Heading normalisation is renderer-specific |
+| External URLs (`https://…`)                    | ⬜ Opt-in          | See below                                  |
 
 ## Output
 

@@ -23,7 +23,9 @@ describe("login lockout shared state", () => {
     await firstModule.registerLoginFailure("operator@fortexa.local", "10.9.0.1");
     await firstModule.registerLoginFailure("operator@fortexa.local", "10.9.0.1");
 
-    expect((await firstModule.isLoginLocked("operator@fortexa.local", "10.9.0.1")).locked).toBe(true);
+    expect((await firstModule.isLoginLocked("operator@fortexa.local", "10.9.0.1")).locked).toBe(
+      true
+    );
 
     vi.resetModules();
 

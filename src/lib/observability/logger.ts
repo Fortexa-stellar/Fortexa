@@ -21,7 +21,7 @@ function serialize(level: LogLevel, message: string, context?: LogContext) {
       level,
       message,
       ...context,
-    }),
+    })
   );
 }
 

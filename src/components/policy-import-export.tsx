@@ -7,7 +7,12 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { PolicyConfig } from "@/lib/types/domain";
-import { exportPolicyDocument, parsePolicyImport, policyImportMatchesActive, type PolicyExport } from "@/lib/policy/import-export";
+import {
+  exportPolicyDocument,
+  parsePolicyImport,
+  policyImportMatchesActive,
+  type PolicyExport,
+} from "@/lib/policy/import-export";
 import { generatePolicyDiff, groupDiffChanges } from "@/lib/validation/diff";
 
 interface PolicyImportExportProps {
@@ -41,7 +46,7 @@ export function PolicyImportExport({
   async function loadActivePolicy(): Promise<{ policy: PolicyConfig; version: number }> {
     const response = await fetch("/api/policy", { cache: "no-store" });
     if (!response.ok) throw new Error("Failed to load the active policy.");
-    const active = await response.json() as { policy?: PolicyConfig; version?: number };
+    const active = (await response.json()) as { policy?: PolicyConfig; version?: number };
     if (!active.policy || typeof active.version !== "number") {
       throw new Error("Active policy is unavailable.");
     }
@@ -62,7 +67,10 @@ export function PolicyImportExport({
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (error) {
-      setImportState({ status: "error", error: error instanceof Error ? error.message : "Export failed." });
+      setImportState({
+        status: "error",
+        error: error instanceof Error ? error.message : "Export failed.",
+      });
     }
   }
 
@@ -92,7 +100,10 @@ export function PolicyImportExport({
         }
 
         if (hasSensitiveField(parsed)) {
-          setImportState({ status: "error", error: "Policy contains a sensitive field and cannot be saved." });
+          setImportState({
+            status: "error",
+            error: "Policy contains a sensitive field and cannot be saved.",
+          });
           return;
         }
 
@@ -148,7 +159,10 @@ export function PolicyImportExport({
       await onImportApproved(importState.document);
       setImportState({ status: "idle" });
     } catch (error) {
-      setImportState({ status: "error", error: error instanceof Error ? error.message : "Import failed." });
+      setImportState({
+        status: "error",
+        error: error instanceof Error ? error.message : "Import failed.",
+      });
     } finally {
       setImporting(false);
     }
@@ -228,9 +242,7 @@ export function PolicyImportExport({
           <Alert className="border-red-500/40 bg-red-500/10">
             <AlertTitle>Validation Error</AlertTitle>
             <AlertDescription>
-              <pre className="whitespace-pre-wrap break-words text-xs">
-                {importState.error}
-              </pre>
+              <pre className="whitespace-pre-wrap break-words text-xs">{importState.error}</pre>
             </AlertDescription>
           </Alert>
           <Button onClick={cancelImport} variant="outline">
@@ -310,11 +322,7 @@ export function PolicyImportExport({
 
           {/* Action buttons */}
           <div className="flex gap-2 pt-4">
-            <Button
-              onClick={approveImport}
-              disabled={importing || !isOperator}
-              className="gap-2"
-            >
+            <Button onClick={approveImport} disabled={importing || !isOperator} className="gap-2">
               {importing ? "Importing..." : "Import & Save"}
             </Button>
             <Button onClick={cancelImport} variant="outline" disabled={importing}>

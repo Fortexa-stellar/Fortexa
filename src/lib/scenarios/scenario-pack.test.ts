@@ -98,9 +98,7 @@ describe("policy pack regression suite", () => {
       const result = await evaluateDecision(scenario.action, noTimePolicy, deterministicUsage);
       expect(result.decision).toBe("REQUIRE_APPROVAL");
       expect(result.requiresManualApproval).toBe(true);
-      expect(
-        result.triggeredPolicies.some((t) => t.code === "DAILY_CAP_EXCEEDED")
-      ).toBe(true);
+      expect(result.triggeredPolicies.some((t) => t.code === "DAILY_CAP_EXCEEDED")).toBe(true);
     });
 
     it("unlisted-domain-risk-threshold warns for unlisted domain with suspicious TLD", async () => {
@@ -109,9 +107,7 @@ describe("policy pack regression suite", () => {
       expect(result.decision).toBe("WARN");
       expect(result.requiresManualApproval).toBe(false);
       expect(result.riskFindings.some((f) => f.code === "SUSPICIOUS_TLD")).toBe(true);
-      expect(
-        result.triggeredPolicies.some((t) => t.code === "UNLISTED_DOMAIN")
-      ).toBe(true);
+      expect(result.triggeredPolicies.some((t) => t.code === "UNLISTED_DOMAIN")).toBe(true);
       expect(result.explanation).toContain("allows this action with caution");
     });
 
@@ -120,9 +116,7 @@ describe("policy pack regression suite", () => {
       const result = await evaluateDecision(scenario.action, noTimePolicy, deterministicUsage);
       expect(result.decision).toBe("REQUIRE_APPROVAL");
       expect(result.requiresManualApproval).toBe(true);
-      expect(
-        result.triggeredPolicies.some((t) => t.code === "PER_TX_CAP_EXCEEDED")
-      ).toBe(true);
+      expect(result.triggeredPolicies.some((t) => t.code === "PER_TX_CAP_EXCEEDED")).toBe(true);
     });
 
     it("repeated-attempts-rate-limit warns when daily tool-call and risk penalties accumulate", async () => {
@@ -132,9 +126,7 @@ describe("policy pack regression suite", () => {
       expect(result.requiresManualApproval).toBe(false);
       expect(result.riskScore).toBeGreaterThan(10);
       expect(result.riskFindings.some((f) => f.code === "SUSPICIOUS_TLD")).toBe(true);
-      expect(
-        result.triggeredPolicies.some((t) => t.code === "TOOL_CALL_LIMIT_REACHED")
-      ).toBe(true);
+      expect(result.triggeredPolicies.some((t) => t.code === "TOOL_CALL_LIMIT_REACHED")).toBe(true);
       expect(result.explanation).toContain("allows this action with caution");
     });
   });
@@ -145,9 +137,7 @@ describe("policy pack regression suite", () => {
       const result = await evaluateDecision(scenario.action, noTimePolicy, deterministicUsage);
       expect(result.decision).toBe("BLOCK");
       expect(result.requiresManualApproval).toBe(false);
-      expect(
-        result.triggeredPolicies.some((t) => t.code === "BLOCKED_DOMAIN")
-      ).toBe(true);
+      expect(result.triggeredPolicies.some((t) => t.code === "BLOCKED_DOMAIN")).toBe(true);
       expect(result.explanation).toContain("blocked");
     });
 
@@ -155,9 +145,7 @@ describe("policy pack regression suite", () => {
       const scenario = demoScenarios.find((s) => s.id === "prompt-injection-output")!;
       const result = await evaluateDecision(scenario.action, noTimePolicy, deterministicUsage);
       expect(result.decision).toBe("BLOCK");
-      expect(result.riskFindings.some((f) => f.code === "PROMPT_INJECTION_PATTERN")).toBe(
-        true
-      );
+      expect(result.riskFindings.some((f) => f.code === "PROMPT_INJECTION_PATTERN")).toBe(true);
       expect(result.explanation).toContain("blocked");
     });
 
@@ -174,9 +162,7 @@ describe("policy pack regression suite", () => {
       const result = await evaluateDecision(scenario.action, noTimePolicy, deterministicUsage);
       expect(result.decision).toBe("BLOCK");
       expect(result.riskFindings.every((f) => f.severity !== "high")).toBe(true);
-      expect(
-        result.triggeredPolicies.some((t) => t.code === "BLOCKED_TOOL")
-      ).toBe(true);
+      expect(result.triggeredPolicies.some((t) => t.code === "BLOCKED_TOOL")).toBe(true);
       expect(result.explanation).toContain("blocked");
     });
   });
@@ -184,9 +170,10 @@ describe("policy pack regression suite", () => {
   describe("reviewer-facing descriptions", () => {
     it("every scenario has a non-empty description", () => {
       for (const scenario of demoScenarios) {
-        expect(scenario.description.trim().length, `scenario ${scenario.id} missing description`).toBeGreaterThan(
-          0
-        );
+        expect(
+          scenario.description.trim().length,
+          `scenario ${scenario.id} missing description`
+        ).toBeGreaterThan(0);
       }
     });
   });
@@ -217,10 +204,7 @@ describe("scenario pack drift guard", () => {
     expect(evaluations).toHaveLength(demoScenarios.length);
 
     const issues = validateScenarioPack({ scenarios: demoScenarios, evaluations });
-    expect(
-      issues,
-      issues.map((issue) => issue.message).join("\n")
-    ).toEqual([]);
+    expect(issues, issues.map((issue) => issue.message).join("\n")).toEqual([]);
 
     for (const evaluation of evaluations) {
       expect(evaluation.matches, `scenario ${evaluation.scenario.id} drifted`).toBe(true);
@@ -247,9 +231,7 @@ describe("scenario pack drift guard", () => {
   });
 
   it("fails when a seed entry has no expected decision", () => {
-    const broken: SeedScenarioInput[] = [
-      { ...demoScenarios[0]!, expectedDecision: undefined },
-    ];
+    const broken: SeedScenarioInput[] = [{ ...demoScenarios[0]!, expectedDecision: undefined }];
 
     const issues = validateScenarioPack({ scenarios: broken });
     expect(issues).toHaveLength(1);

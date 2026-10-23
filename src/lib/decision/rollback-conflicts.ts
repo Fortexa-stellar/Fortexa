@@ -14,7 +14,11 @@ export interface RollbackConflict {
   reasonCode: RollbackConflictReason;
 }
 
-const IN_FLIGHT_USAGE: DailyUsage = { spentXLM: 0, toolCalls: 0, lastUpdated: new Date(0).toISOString() };
+const IN_FLIGHT_USAGE: DailyUsage = {
+  spentXLM: 0,
+  toolCalls: 0,
+  lastUpdated: new Date(0).toISOString(),
+};
 
 /** An allow that authorized a payment which has not been submitted yet. */
 export function isInFlightAllow(entry: AuditEntry): boolean {
@@ -54,7 +58,9 @@ export function findRollbackConflicts(params: {
 }
 
 /** Load every in-flight allow and run the shared conflict check. Never writes. */
-export async function collectRollbackConflicts(candidatePolicy: PolicyConfig): Promise<RollbackConflict[]> {
+export async function collectRollbackConflicts(
+  candidatePolicy: PolicyConfig
+): Promise<RollbackConflict[]> {
   const byUser = await listAllAuditEntriesByUser();
   return findRollbackConflicts({ candidatePolicy, entries: Object.values(byUser).flat() });
 }

@@ -10,11 +10,18 @@ import { z } from "zod";
 
 import { DuplicateRuleError, validateNoDuplicateRules } from "@/lib/policy/engine";
 import { parsePolicyImport, policyImportMatchesActive } from "@/lib/policy/import-export";
-import { getPolicyConfig, PolicyVersionConflict, updatePolicyConfig } from "@/lib/storage/policy-store";
+import {
+  getPolicyConfig,
+  PolicyVersionConflict,
+  updatePolicyConfig,
+} from "@/lib/storage/policy-store";
 import { policyConfigSchema } from "@/lib/validation/schemas";
 import { logValidationFailure, toPublicValidationDetails } from "@/lib/validation/errors";
 import { hasSensitiveField } from "@/lib/settings/save-safety";
-import { getStellarNetworkFingerprint, resolveStellarNetworkConfig } from "@/lib/stellar/network-config";
+import {
+  getStellarNetworkFingerprint,
+  resolveStellarNetworkConfig,
+} from "@/lib/stellar/network-config";
 
 export async function GET(request: NextRequest) {
   const startedAtMs = Date.now();
@@ -111,8 +118,11 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    if (typeof bodyResult.data === "object" && bodyResult.data !== null &&
-        "format" in bodyResult.data) {
+    if (
+      typeof bodyResult.data === "object" &&
+      bodyResult.data !== null &&
+      "format" in bodyResult.data
+    ) {
       const imported = parsePolicyImport(bodyResult.data);
       if (!imported.ok) {
         return jsonWithRequestContext(request, {
@@ -180,12 +190,20 @@ export async function POST(request: NextRequest) {
     const parsed = policyConfigSchema.safeParse(bodyResult.data);
 
     if (!parsed.success) {
-      logValidationFailure("Policy update validation failed", { ...context, userId: auth.session.userId }, parsed.error, bodyResult.data);
+      logValidationFailure(
+        "Policy update validation failed",
+        { ...context, userId: auth.session.userId },
+        parsed.error,
+        bodyResult.data
+      );
       return jsonWithRequestContext(request, {
         route: "/api/policy",
         startedAtMs,
         status: 400,
-        body: { error: "Invalid policy payload.", details: toPublicValidationDetails(parsed.error) },
+        body: {
+          error: "Invalid policy payload.",
+          details: toPublicValidationDetails(parsed.error),
+        },
         headers: rateLimitHeaders(rate),
       });
     }
@@ -219,17 +237,27 @@ export async function POST(request: NextRequest) {
       throw error;
     }
 
-    const versionMeta = z.object({
-      expectedVersion: z.number().int().positive().optional(),
-    }).safeParse(bodyResult.data);
+    const versionMeta = z
+      .object({
+        expectedVersion: z.number().int().positive().optional(),
+      })
+      .safeParse(bodyResult.data);
 
     if (!versionMeta.success) {
-      logValidationFailure("Policy update invalid expectedVersion", { ...context, userId: auth.session.userId }, versionMeta.error, bodyResult.data);
+      logValidationFailure(
+        "Policy update invalid expectedVersion",
+        { ...context, userId: auth.session.userId },
+        versionMeta.error,
+        bodyResult.data
+      );
       return jsonWithRequestContext(request, {
         route: "/api/policy",
         startedAtMs,
         status: 400,
-        body: { error: "Invalid policy payload.", details: toPublicValidationDetails(versionMeta.error) },
+        body: {
+          error: "Invalid policy payload.",
+          details: toPublicValidationDetails(versionMeta.error),
+        },
         headers: rateLimitHeaders(rate),
       });
     }

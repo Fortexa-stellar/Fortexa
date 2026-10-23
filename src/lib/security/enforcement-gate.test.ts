@@ -5,17 +5,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 import { resetBlocklistCache } from "@/lib/security/blocklist";
-import {
-  enforceRequestGate,
-  extractDestinationDomain,
-} from "@/lib/security/enforcement-gate";
+import { enforceRequestGate, extractDestinationDomain } from "@/lib/security/enforcement-gate";
 import { resetRateLimitStore } from "@/lib/security/rate-limit";
 
-const sharedStatePath = path.join(
-  process.cwd(),
-  ".fortexa",
-  "enforcement-gate-shared.test.json",
-);
+const sharedStatePath = path.join(process.cwd(), ".fortexa", "enforcement-gate-shared.test.json");
 
 function requestFromIp(ip: string, body?: unknown): NextRequest {
   return new NextRequest("http://localhost/api/decision", {
@@ -30,18 +23,12 @@ function requestFromIp(ip: string, body?: unknown): NextRequest {
 
 describe("extractDestinationDomain", () => {
   it("extracts the host from URL-style targets", () => {
-    expect(extractDestinationDomain("https://api.gateway.com/pay")).toBe(
-      "api.gateway.com",
-    );
-    expect(extractDestinationDomain("http://Evil.Example.ORG/path")).toBe(
-      "evil.example.org",
-    );
+    expect(extractDestinationDomain("https://api.gateway.com/pay")).toBe("api.gateway.com");
+    expect(extractDestinationDomain("http://Evil.Example.ORG/path")).toBe("evil.example.org");
   });
 
   it("extracts the domain from SEP-2 federated addresses", () => {
-    expect(extractDestinationDomain("alice*stellar.example.com")).toBe(
-      "stellar.example.com",
-    );
+    expect(extractDestinationDomain("alice*stellar.example.com")).toBe("stellar.example.com");
   });
 
   it("returns bare domains unchanged (lowercased)", () => {
@@ -49,9 +36,7 @@ describe("extractDestinationDomain", () => {
   });
 
   it("strips a port suffix", () => {
-    expect(extractDestinationDomain("https://host.example.com:8080/x")).toBe(
-      "host.example.com",
-    );
+    expect(extractDestinationDomain("https://host.example.com:8080/x")).toBe("host.example.com");
   });
 
   it("returns an empty string for empty input", () => {
@@ -116,7 +101,7 @@ describe("enforceRequestGate", () => {
   it("denies a blocklisted destination with code BLOCKLISTED and 403", async () => {
     process.env.FORTEXA_BLOCKLIST_URL = "https://example.com/blocklist.json";
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response(JSON.stringify(["bad-actor.com"]), { status: 200 }),
+      new Response(JSON.stringify(["bad-actor.com"]), { status: 200 })
     );
 
     const result = await enforceRequestGate(requestFromIp("10.9.0.2"), {
@@ -171,7 +156,7 @@ describe("enforceRequestGate", () => {
         rateLimitKey: "gate-concurrent-test",
         limit,
         windowMs: 60_000,
-      }),
+      })
     );
 
     const results = await Promise.all(requests);
@@ -190,7 +175,7 @@ describe("enforceRequestGate", () => {
   it("applies the same verdict to different route keys for one destination", async () => {
     process.env.FORTEXA_BLOCKLIST_URL = "https://example.com/blocklist.json";
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(JSON.stringify(["shared-bad.com"]), { status: 200 }),
+      new Response(JSON.stringify(["shared-bad.com"]), { status: 200 })
     );
 
     for (const key of ["decision", "stellar-build-payment", "stellar-submit-signed"]) {
@@ -210,9 +195,7 @@ describe("enforceRequestGate", () => {
 
   it("degrades open when the feed is unavailable", async () => {
     process.env.FORTEXA_BLOCKLIST_URL = "https://example.com/blocklist.json";
-    vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(
-      new Error("Connection refused"),
-    );
+    vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("Connection refused"));
 
     const result = await enforceRequestGate(requestFromIp("10.9.0.6"), {
       rateLimitKey: "gate-test",
@@ -241,9 +224,7 @@ describe("enforceRequestGate", () => {
     process.env.FORTEXA_BLOCKLIST_URL = "https://example.com/blocklist.json";
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
-      .mockResolvedValue(
-        new Response(JSON.stringify(["cache-gated.com"]), { status: 200 }),
-      );
+      .mockResolvedValue(new Response(JSON.stringify(["cache-gated.com"]), { status: 200 }));
 
     await enforceRequestGate(requestFromIp("10.9.0.8"), {
       rateLimitKey: "gate-cache-test",

@@ -13,10 +13,7 @@ import { getAuditEntryById } from "@/lib/storage/audit-store";
 import { getPolicyConfig } from "@/lib/storage/policy-store";
 import { getUserWallet } from "@/lib/storage/user-wallet-store";
 import { stellarBuildPaymentRequestSchema } from "@/lib/validation/schemas";
-import {
-  logValidationFailure,
-  toPublicValidationDetails,
-} from "@/lib/validation/errors";
+import { logValidationFailure, toPublicValidationDetails } from "@/lib/validation/errors";
 
 export async function POST(request: NextRequest) {
   // Read the body first so the gate can blocklist-check the destination in
@@ -39,7 +36,7 @@ export async function POST(request: NextRequest) {
   if (!gate.ok) {
     return NextResponse.json(
       { error: "Rate limit exceeded for payment build endpoint." },
-      { status: 429, headers: { ...rateLimitHeaders(rate), ...securityHeadersForRequest(request) } },
+      { status: 429, headers: { ...rateLimitHeaders(rate), ...securityHeadersForRequest(request) } }
     );
   }
 
@@ -61,14 +58,14 @@ export async function POST(request: NextRequest) {
           issues: readinessReport.issues,
           command: "npm run check:production-readiness",
         },
-        { status: 503, headers: rateLimitHeaders(rate) },
+        { status: 503, headers: rateLimitHeaders(rate) }
       );
     }
     const notReady = await readinessBlockResponse(
       request,
       "/api/stellar/build-payment",
       Date.now(),
-      rateLimitHeaders(rate),
+      rateLimitHeaders(rate)
     );
     if (notReady) {
       return notReady;
@@ -79,34 +76,38 @@ export async function POST(request: NextRequest) {
     if (assignedWallet && "expired" in assignedWallet) {
       return NextResponse.json(
         { error: "Session wallet mapping has expired." },
-        { status: 401, headers: rateLimitHeaders(rate) },
+        { status: 401, headers: rateLimitHeaders(rate) }
       );
     }
 
     if (!bodyResult.ok) {
       return NextResponse.json(
         { error: bodyResult.error },
-        { status: 413, headers: { ...rateLimitHeaders(rate), ...securityHeadersForRequest(request) } },
+        {
+          status: 413,
+          headers: { ...rateLimitHeaders(rate), ...securityHeadersForRequest(request) },
+        }
       );
     }
 
-    const parsedPayload = stellarBuildPaymentRequestSchema.safeParse(
-      bodyResult.data,
-    );
+    const parsedPayload = stellarBuildPaymentRequestSchema.safeParse(bodyResult.data);
 
     if (!parsedPayload.success) {
       logValidationFailure(
         "Stellar build payment validation failed",
         { route: "/api/stellar/build-payment", userId },
         parsedPayload.error,
-        bodyResult.data,
+        bodyResult.data
       );
       return NextResponse.json(
         {
           error: "Invalid payment build request.",
           details: parsedPayload.error.flatten(),
         },
-        { status: 400, headers: { ...rateLimitHeaders(rate), ...securityHeadersForRequest(request) } },
+        {
+          status: 400,
+          headers: { ...rateLimitHeaders(rate), ...securityHeadersForRequest(request) },
+        }
       );
     }
 
@@ -117,10 +118,12 @@ export async function POST(request: NextRequest) {
     if (!sourcePublicKey || assignedWallet?.source !== "external") {
       return NextResponse.json(
         {
-          error:
-            "A linked Stellar wallet is required before building transactions.",
+          error: "A linked Stellar wallet is required before building transactions.",
         },
-        { status: 400, headers: { ...rateLimitHeaders(rate), ...securityHeadersForRequest(request) } },
+        {
+          status: 400,
+          headers: { ...rateLimitHeaders(rate), ...securityHeadersForRequest(request) },
+        }
       );
     }
 
@@ -139,7 +142,10 @@ export async function POST(request: NextRequest) {
           error: verification.error,
           field: verification.field,
         },
-        { status: verification.status, headers: { ...rateLimitHeaders(rate), ...securityHeadersForRequest(request) } },
+        {
+          status: verification.status,
+          headers: { ...rateLimitHeaders(rate), ...securityHeadersForRequest(request) },
+        }
       );
     }
 
@@ -150,7 +156,7 @@ export async function POST(request: NextRequest) {
           error: "Payment amount exceeds the allowing policy cap.",
           field: "amountXLM",
         },
-        { status: 403, headers: rateLimitHeaders(rate) },
+        { status: 403, headers: rateLimitHeaders(rate) }
       );
     }
 
@@ -160,7 +166,7 @@ export async function POST(request: NextRequest) {
         amountXLM: payload.amountXLM,
         memo: verification.quote.memo,
       },
-      sourcePublicKey,
+      sourcePublicKey
     );
 
     const quoteExpiresAt = getQuoteExpiresAt(auditEntry!);
@@ -183,17 +189,14 @@ export async function POST(request: NextRequest) {
         decisionReceipt: verification.quote,
         paymentQuote: verification.quote,
       },
-      { headers: { ...rateLimitHeaders(rate), ...securityHeadersForRequest(request) } },
+      { headers: { ...rateLimitHeaders(rate), ...securityHeadersForRequest(request) } }
     );
   } catch (error) {
     return NextResponse.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to build payment transaction.",
+        error: error instanceof Error ? error.message : "Failed to build payment transaction.",
       },
-      { status: 500, headers: { ...rateLimitHeaders(rate), ...securityHeadersForRequest(request) } },
+      { status: 500, headers: { ...rateLimitHeaders(rate), ...securityHeadersForRequest(request) } }
     );
   }
 }

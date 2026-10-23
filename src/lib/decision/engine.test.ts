@@ -22,134 +22,83 @@ describe("Fortexa decision engine", () => {
       const result: DecisionResult = await evaluateDecision(
         scenario.action,
         testPolicy,
-        defaultDailyUsage,
+        defaultDailyUsage
       );
       expect(
         result.decision,
-        `Scenario "${scenario.id}" ("${scenario.title}"): expected ${scenario.expectedDecision} but got ${result.decision}`,
+        `Scenario "${scenario.id}" ("${scenario.title}"): expected ${scenario.expectedDecision} but got ${result.decision}`
       ).toBe(scenario.expectedDecision);
     }
   });
 
   it("approves safe scenario", async () => {
     const action = demoScenarios.find(
-      (scenario) => scenario.id === "safe-research-payment",
+      (scenario) => scenario.id === "safe-research-payment"
     )!.action;
-    const result: DecisionResult = await evaluateDecision(
-      action,
-      testPolicy,
-      defaultDailyUsage,
-    );
+    const result: DecisionResult = await evaluateDecision(action, testPolicy, defaultDailyUsage);
     expect(result.decision).toBe("APPROVE");
   });
 
   it("blocks malicious endpoint", async () => {
     const action = demoScenarios.find(
-      (scenario) => scenario.id === "blocked-malicious-endpoint",
+      (scenario) => scenario.id === "blocked-malicious-endpoint"
     )!.action;
-    const result: DecisionResult = await evaluateDecision(
-      action,
-      testPolicy,
-      defaultDailyUsage,
-    );
+    const result: DecisionResult = await evaluateDecision(action, testPolicy, defaultDailyUsage);
     expect(result.decision).toBe("BLOCK");
   });
 
   it("requires approval for over-budget payment", async () => {
-    const action = demoScenarios.find(
-      (scenario) => scenario.id === "over-budget-transfer",
-    )!.action;
-    const result: DecisionResult = await evaluateDecision(
-      action,
-      testPolicy,
-      defaultDailyUsage,
-    );
+    const action = demoScenarios.find((scenario) => scenario.id === "over-budget-transfer")!.action;
+    const result: DecisionResult = await evaluateDecision(action, testPolicy, defaultDailyUsage);
     expect(result.decision).toBe("REQUIRE_APPROVAL");
   });
 
   it("blocks prompt injection payload", async () => {
     const action = demoScenarios.find(
-      (scenario) => scenario.id === "prompt-injection-output",
+      (scenario) => scenario.id === "prompt-injection-output"
     )!.action;
-    const result: DecisionResult = await evaluateDecision(
-      action,
-      testPolicy,
-      defaultDailyUsage,
-    );
+    const result: DecisionResult = await evaluateDecision(action, testPolicy, defaultDailyUsage);
     expect(result.decision).toBe("BLOCK");
-    expect(
-      result.riskFindings.some(
-        (finding) => finding.code === "PROMPT_INJECTION_PATTERN",
-      ),
-    ).toBe(true);
+    expect(result.riskFindings.some((finding) => finding.code === "PROMPT_INJECTION_PATTERN")).toBe(
+      true
+    );
   });
-
 
   it("warns for typosquat domains with suspicious TLDs", async () => {
     const action = demoScenarios.find(
-      (scenario) => scenario.id === "typosquat-domain-risk",
+      (scenario) => scenario.id === "typosquat-domain-risk"
     )!.action;
-    const result: DecisionResult = await evaluateDecision(
-      action,
-      testPolicy,
-      defaultDailyUsage,
-    );
+    const result: DecisionResult = await evaluateDecision(action, testPolicy, defaultDailyUsage);
     expect(result.decision).toBe("WARN");
-    expect(
-      result.triggeredPolicies.some(
-        (trigger) => trigger.code === "UNLISTED_DOMAIN",
-      ),
-    ).toBe(true);
-    expect(
-      result.riskFindings.some((finding) => finding.code === "SUSPICIOUS_TLD"),
-    ).toBe(true);
+    expect(result.triggeredPolicies.some((trigger) => trigger.code === "UNLISTED_DOMAIN")).toBe(
+      true
+    );
+    expect(result.riskFindings.some((finding) => finding.code === "SUSPICIOUS_TLD")).toBe(true);
   });
 
   it("snapshot - approver decision explanation (should not change without manual update)", async () => {
-    const action = demoScenarios.find(
-      (s) => s.id === "safe-research-payment",
-    )!.action;
-    const result = await evaluateDecision(
-      action,
-      testPolicy,
-      defaultDailyUsage,
-    );
+    const action = demoScenarios.find((s) => s.id === "safe-research-payment")!.action;
+    const result = await evaluateDecision(action, testPolicy, defaultDailyUsage);
     expect(result.decision).toBe("APPROVE");
     expect(result.explanation).toMatchSnapshot();
   });
 
   it("requires approval when an allowlisted transfer breaches spend caps", async () => {
-    const action = demoScenarios.find(
-      (scenario) => scenario.id === "daily-cap-breach",
-    )!.action;
-    const result: DecisionResult = await evaluateDecision(
-      action,
-      testPolicy,
-      defaultDailyUsage,
-    );
+    const action = demoScenarios.find((scenario) => scenario.id === "daily-cap-breach")!.action;
+    const result: DecisionResult = await evaluateDecision(action, testPolicy, defaultDailyUsage);
     expect(result.decision).toBe("REQUIRE_APPROVAL");
-    expect(
-      result.triggeredPolicies.some(
-        (trigger) => trigger.code === "DAILY_CAP_EXCEEDED",
-      ),
-    ).toBe(true);
+    expect(result.triggeredPolicies.some((trigger) => trigger.code === "DAILY_CAP_EXCEEDED")).toBe(
+      true
+    );
   });
 
   it("blocks outputs that try to exfiltrate wallet secrets", async () => {
     const action = demoScenarios.find(
-      (scenario) => scenario.id === "secret-exfiltration-output",
+      (scenario) => scenario.id === "secret-exfiltration-output"
     )!.action;
-    const result: DecisionResult = await evaluateDecision(
-      action,
-      testPolicy,
-      defaultDailyUsage,
-    );
+    const result: DecisionResult = await evaluateDecision(action, testPolicy, defaultDailyUsage);
     expect(result.decision).toBe("BLOCK");
-    expect(
-      result.riskFindings.some(
-        (finding) => finding.code === "SECRET_TARGETING",
-      ),
-    ).toBe(true);
+    expect(result.riskFindings.some((finding) => finding.code === "SECRET_TARGETING")).toBe(true);
   });
 
   describe("degraded analyzer handling", () => {
@@ -170,14 +119,8 @@ describe("Fortexa decision engine", () => {
     });
 
     it("surfaces analyzer status in decision result", async () => {
-      const action = demoScenarios.find(
-        (s) => s.id === "safe-research-payment",
-      )!.action;
-      const result = await evaluateDecision(
-        action,
-        testPolicy,
-        defaultDailyUsage,
-      );
+      const action = demoScenarios.find((s) => s.id === "safe-research-payment")!.action;
+      const result = await evaluateDecision(action, testPolicy, defaultDailyUsage);
       expect(result.analyzerStatus).toBeDefined();
       expect(result.analyzerStatus?.isDegraded).toBeDefined();
     });

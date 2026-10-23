@@ -29,7 +29,7 @@ describe("diffLists", () => {
       expect.arrayContaining([
         { value: "x", status: "unchanged" },
         { value: "y", status: "unchanged" },
-      ]),
+      ])
     );
   });
 });

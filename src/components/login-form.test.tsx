@@ -38,9 +38,12 @@ vi.mock("react", async () => {
       const index = stateIndex;
       stateIndex += 1;
       if (states.length <= index) {
-        states.push(typeof initialValue === "function" ? (initialValue as () => unknown)() : initialValue);
+        states.push(
+          typeof initialValue === "function" ? (initialValue as () => unknown)() : initialValue
+        );
         setters.push((next: unknown) => {
-          states[index] = typeof next === "function" ? (next as (prev: unknown) => unknown)(states[index]) : next;
+          states[index] =
+            typeof next === "function" ? (next as (prev: unknown) => unknown)(states[index]) : next;
         });
       }
       return [states[index], setters[index]];
@@ -59,7 +62,11 @@ vi.mock("react", async () => {
 
 import { AlertDescription } from "@/components/ui/alert";
 import { LoginForm } from "./login-form";
-import { loginWithFreighter, type LoginChallenge, type LoginChallengeSlot } from "@/lib/auth/freighter";
+import {
+  loginWithFreighter,
+  type LoginChallenge,
+  type LoginChallengeSlot,
+} from "@/lib/auth/freighter";
 
 const WALLET = "GBXFXNDLV4LSWA4VB7YIL5GBD7BVNR22SGBTDKMO2SBZZHDXSKZYCP7L";
 const NOW = Date.parse("2026-09-29T12:00:00.000Z");
@@ -92,7 +99,10 @@ function stubAuthRoutes(url: string, init?: RequestInit) {
   }
   if (url === "/api/auth/login") {
     routes.loginBodies.push(JSON.parse(String(init?.body)));
-    const reply = routes.loginReplies.shift() ?? { status: 200, body: { ok: true, role: "operator", wallet: WALLET } };
+    const reply = routes.loginReplies.shift() ?? {
+      status: 200,
+      body: { ok: true, role: "operator", wallet: WALLET },
+    };
     return jsonResponse(reply.status, reply.body);
   }
   return Promise.reject(new Error(`Unexpected fetch: ${url}`));
@@ -288,7 +298,10 @@ describe("LoginForm single-use challenge handling", () => {
   it("shows the API error code without the signed payload", async () => {
     routes.loginReplies.push({
       status: 400,
-      body: { error: "Login challenge was already used. Request a new challenge and sign again.", code: "replayed" },
+      body: {
+        error: "Login challenge was already used. Request a new challenge and sign again.",
+        code: "replayed",
+      },
     });
 
     await clickSignIn();
@@ -305,7 +318,10 @@ describe("LoginForm single-use challenge handling", () => {
       if (url === "/api/auth/login") {
         const body = JSON.parse(String(init?.body)) as { signature: string };
         routes.loginBodies.push(body as never);
-        return jsonResponse(401, { error: `Bad signature ${body.signature}`, code: "invalid_signature" });
+        return jsonResponse(401, {
+          error: `Bad signature ${body.signature}`,
+          code: "invalid_signature",
+        });
       }
       return jsonResponse(200, {
         challengeId: "00000000-0000-4000-8000-000000000009",
@@ -416,7 +432,9 @@ describe("loginWithFreighter challenge slot", () => {
   });
 
   it("reports the challenge route's status as the code when it fails", async () => {
-    fetchMock.mockImplementation(() => jsonResponse(429, { error: "Too many challenge requests. Try again later." }));
+    fetchMock.mockImplementation(() =>
+      jsonResponse(429, { error: "Too many challenge requests. Try again later." })
+    );
     const slot: LoginChallengeSlot = { current: null };
 
     const result = await loginWithFreighter({ challengeSlot: slot });

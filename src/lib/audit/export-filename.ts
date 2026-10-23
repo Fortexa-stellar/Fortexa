@@ -27,7 +27,7 @@ export function sanitizeFilenameSegment(value: string): string {
 export function buildAuditExportFilename(
   scope: AuditExportScope,
   format: AuditExportFormat = "csv",
-  date: Date = new Date(),
+  date: Date = new Date()
 ): string {
   const safeScope = sanitizeFilenameSegment(scope);
   const safeFormat = sanitizeFilenameSegment(format);

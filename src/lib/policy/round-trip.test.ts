@@ -13,11 +13,7 @@ const loadFixture = (name: string): unknown => {
   return JSON.parse(raw);
 };
 
-const VALID_FIXTURES = [
-  "default.json",
-  "strict.json",
-  "permissive.json",
-] as const;
+const VALID_FIXTURES = ["default.json", "strict.json", "permissive.json"] as const;
 
 describe("policy import/export round trip", () => {
   for (const fixtureName of VALID_FIXTURES) {
@@ -29,22 +25,20 @@ describe("policy import/export round trip", () => {
       const normalized = normalizePolicy(imported);
 
       const exported = JSON.stringify(normalized);
-      const reimported = normalizePolicy(
-        policyConfigSchema.parse(JSON.parse(exported)),
-      );
+      const reimported = normalizePolicy(policyConfigSchema.parse(JSON.parse(exported)));
 
       expect(reimported).toEqual(normalized);
       expect(JSON.stringify(normalized)).toBe(exported);
     });
   }
 
-    it("rejects invalid fixture missing allowedHours", () => {
-      const raw = loadFixture("invalid-missing-hours.json");
-      const result = policyConfigSchema.safeParse(raw);
+  it("rejects invalid fixture missing allowedHours", () => {
+    const raw = loadFixture("invalid-missing-hours.json");
+    const result = policyConfigSchema.safeParse(raw);
 
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.issues.some((issue) => issue.path.includes("allowedHours"))).toBe(true);
-      }
-    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues.some((issue) => issue.path.includes("allowedHours"))).toBe(true);
+    }
+  });
 });

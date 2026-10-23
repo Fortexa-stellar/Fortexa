@@ -49,12 +49,7 @@ export const CURRENT_POLICY_SCHEMA_VERSION = 1 as const;
  * changes a rule's type silently (i.e. without going through an explicit
  * migration step) is rejected.
  */
-export const POLICY_RULE_TYPES = [
-  "allow",
-  "deny",
-  "require_approval",
-  "rate_limit",
-] as const;
+export const POLICY_RULE_TYPES = ["allow", "deny", "require_approval", "rate_limit"] as const;
 
 export type PolicyRuleType = (typeof POLICY_RULE_TYPES)[number];
 
@@ -76,10 +71,7 @@ export interface PolicyDocument {
  * Returns true when the given value is a known policy rule type.
  */
 export function isPolicyRuleType(value: unknown): value is PolicyRuleType {
-  return (
-    typeof value === "string" &&
-    (POLICY_RULE_TYPES as readonly string[]).includes(value)
-  );
+  return typeof value === "string" && (POLICY_RULE_TYPES as readonly string[]).includes(value);
 }
 
 /**
@@ -115,9 +107,7 @@ export function isValidPolicyRule(value: unknown): value is PolicyRule {
 /**
  * Validates the shape of a policy document at the current schema version.
  */
-export function isValidPolicyDocument(
-  value: unknown,
-): value is PolicyDocument {
+export function isValidPolicyDocument(value: unknown): value is PolicyDocument {
   if (!value || typeof value !== "object") {
     return false;
   }

@@ -23,9 +23,7 @@ const denyFixture: EngineDecisionResult = {
   riskScore: 95,
   reasonCode: "BLOCKLIST_MATCH",
   triggeredPolicies: [{ code: "DOMAIN_DENYLIST", message: "Domain is denied." }],
-  riskFindings: [
-    { code: "SECRET_TARGETING", detail: `Output contained ${STELLAR_SECRET}` },
-  ],
+  riskFindings: [{ code: "SECRET_TARGETING", detail: `Output contained ${STELLAR_SECRET}` }],
 };
 
 function render(result: EngineDecisionResult | null) {
@@ -55,7 +53,9 @@ describe("DecisionResultView", () => {
   it("shows the engine decision and reason code for a deny, not a generic failure", () => {
     const html = render(denyFixture);
     expect(html).toContain('data-decision="BLOCK"');
-    expect(html).toMatch(/data-testid="decision-reason-codes"[^>]*>BLOCKLIST_MATCH, SECRET_TARGETING</);
+    expect(html).toMatch(
+      /data-testid="decision-reason-codes"[^>]*>BLOCKLIST_MATCH, SECRET_TARGETING</
+    );
     expect(html).toMatch(/data-testid="decision-rule-ids"[^>]*>DOMAIN_DENYLIST</);
     expect(html).not.toMatch(/failed/i);
   });
@@ -74,7 +74,7 @@ describe("DecisionResultView", () => {
 
   it("leaves text without secrets unchanged", () => {
     expect(redactVisibleReason("Domain api.example.com matched rule R-7.")).toBe(
-      "Domain api.example.com matched rule R-7.",
+      "Domain api.example.com matched rule R-7."
     );
   });
 });

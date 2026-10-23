@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   if (!session) {
     return NextResponse.json(
       { authenticated: false },
-      { status: 200, headers: securityHeadersForRequest(request, { noStore: true }) },
+      { status: 200, headers: securityHeadersForRequest(request, { noStore: true }) }
     );
   }
 
@@ -22,6 +22,6 @@ export async function GET(request: NextRequest) {
         exp: session.exp,
       },
     },
-    { headers: securityHeadersForRequest(request, { noStore: true }) },
+    { headers: securityHeadersForRequest(request, { noStore: true }) }
   );
 }

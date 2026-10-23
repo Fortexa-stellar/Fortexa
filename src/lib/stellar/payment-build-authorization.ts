@@ -32,11 +32,15 @@ export function verifyBuildAuthorization(token: string, expected: BuildAuthoriza
   const wanted = Buffer.from(sign(payload));
   if (actual.length !== wanted.length || !timingSafeEqual(actual, wanted)) return false;
   try {
-    const decoded = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as BuildAuthorization;
-    return decoded.userId === expected.userId &&
+    const decoded = JSON.parse(
+      Buffer.from(payload, "base64url").toString("utf8")
+    ) as BuildAuthorization;
+    return (
+      decoded.userId === expected.userId &&
       decoded.decisionId === expected.decisionId &&
       decoded.quoteExpiresAt === expected.quoteExpiresAt &&
-      decoded.transactionHash === expected.transactionHash;
+      decoded.transactionHash === expected.transactionHash
+    );
   } catch {
     return false;
   }

@@ -76,7 +76,10 @@ export function scenarioCases(): SimulationInputCase[] {
  * payment so the simulation re-evaluates the exact asset/amount/destination/
  * memo the live decision authorized — same engine, same inputs.
  */
-export function auditSampleCases(entries: AuditEntry[], sampleSize: number = DEFAULT_AUDIT_SAMPLE_SIZE): SimulationInputCase[] {
+export function auditSampleCases(
+  entries: AuditEntry[],
+  sampleSize: number = DEFAULT_AUDIT_SAMPLE_SIZE
+): SimulationInputCase[] {
   const size = Math.max(0, Math.min(sampleSize, MAX_AUDIT_SAMPLE_SIZE));
   return entries.slice(0, size).map((entry) => ({
     id: `audit:${entry.id}`,

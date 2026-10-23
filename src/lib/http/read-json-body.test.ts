@@ -27,10 +27,9 @@ describe("readJsonBody", () => {
   });
 
   it("returns 413 when Content-Length exceeds the limit", async () => {
-    const result = await readJsonBody(
-      requestWithBody("{}", DEFAULT_JSON_BODY_MAX_BYTES + 1),
-      { maxBytes: 1024 },
-    );
+    const result = await readJsonBody(requestWithBody("{}", DEFAULT_JSON_BODY_MAX_BYTES + 1), {
+      maxBytes: 1024,
+    });
 
     expect(result.ok).toBe(false);
     if (!result.ok) {
