@@ -697,3 +697,17 @@ Fortexa ensures that all interactive components share a consistent, high-contras
 - **Button Component**: [`src/components/ui/button.tsx`](src/components/ui/button.tsx) aligns with this standard via `focus-visible:ring-2` and `focus-visible:ring-offset-2`.
 
 Verified via `scripts/focus-visible-audit.test.ts` (`npx vitest run scripts/focus-visible-audit.test.ts`).
+
+
+---
+
+## 22) 📜 Production Dependency License Compliance
+
+Fortexa enforces open-source license compliance by scanning all production dependencies in CI and verifying them against [`license-allowlist.json`](license-allowlist.json):
+
+- **Approved licenses:** Permissive OSI/FSF-approved licenses (`MIT`, `Apache-2.0`, `ISC`, `BSD-2-Clause`, `BSD-3-Clause`, `0BSD`, `Unlicense`, `CC-BY-4.0`, etc.).
+- **Prohibited licenses:** Viral/copyleft licenses (`GPL`, `AGPL`, `SSPL`, `BUSL`) and unidentifiable/`UNKNOWN` licenses.
+- **Report & Verification:**
+  ```bash
+  npm run check:licenses
+  ```
