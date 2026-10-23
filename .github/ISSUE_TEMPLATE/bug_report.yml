@@ -1,0 +1,80 @@
+name: Bug Report
+description: Report a reproducible bug or unexpected behavior in Fortexa
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🔒 Security Notice & Guidelines
+        > ⚠️ **DO NOT POST SECRETS OR PRIVATE KEYS:** Never share Stellar private keys (`S...`), session tokens, database credentials, or API secrets in public GitHub issues. Ensure all logs, payloads, and environment configurations are strictly redacted before submitting.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of the bug and what went wrong.
+      placeholder: Describe the problem clearly, including expected vs actual behavior...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: Steps to Reproduce
+      description: Step-by-step instructions to reproduce the behavior.
+      placeholder: |
+        1. Go to '/console'
+        2. Set destination to '...'
+        3. Attempt to build unsigned XDR
+        4. Observe the failure
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deployment-mode
+    attributes:
+      label: Deployment Mode
+      description: What runtime deployment mode is Fortexa running in?
+      options:
+        - Local Development (`next dev` / file storage)
+        - Self-Hosted Docker / Standalone Server
+        - Vercel Deployment
+        - Other (specify in description)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: network
+    attributes:
+      label: Stellar Network
+      description: Which network was targeted when the issue occurred?
+      options:
+        - Stellar Testnet
+        - Stellar Mainnet
+        - Stellar Futurenet
+        - Local Standalone / Mock Horizon
+        - N/A (Not network-related)
+    validations:
+      required: true
+
+  - type: textarea
+    id: redacted-logs
+    attributes:
+      label: Redacted Logs & Error Traces
+      description: Paste relevant server logs, browser console errors, or Horizon failure messages. Confirm all keys are redacted.
+      render: shell
+      placeholder: Paste redacted logs or error stack traces here...
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: security-confirmation
+    attributes:
+      label: Security & Redaction Confirmation
+      description: Confirm that your submission adheres to Fortexa security hygiene.
+      options:
+        - label: I confirm that no private keys, session tokens, or unredacted secrets are included in this report.
+          required: true
+        - label: I searched open issues to confirm this problem has not already been reported.
+          required: false
