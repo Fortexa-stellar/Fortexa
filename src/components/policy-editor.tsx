@@ -224,6 +224,10 @@ export function PolicyEditor({
       return;
     }
 
+    const nextPolicy = buildDraftPolicy(policy);
+    await postPolicyUpdate(nextPolicy, "Policy saved.");
+  }
+
   /**
    * POST the given document to /api/policy and apply the response.
    * Shared by the gated activation flow and the import flow.
