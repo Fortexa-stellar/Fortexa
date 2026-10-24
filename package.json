@@ -18,6 +18,7 @@
     "check:env-example": "tsx scripts/check-env-example.ts",
     "check:docs": "node scripts/check-doc-links.mjs",
     "check:malware": "node scripts/check-repo-malware.mjs",
+    "check:deps:sources": "node scripts/check-dependency-sources.mjs",
     "check:docs:external": "node scripts/check-doc-links.mjs --external"
   },
   "keywords": [

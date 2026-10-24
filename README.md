@@ -697,3 +697,15 @@ Fortexa ensures that all interactive components share a consistent, high-contras
 - **Button Component**: [`src/components/ui/button.tsx`](src/components/ui/button.tsx) aligns with this standard via `focus-visible:ring-2` and `focus-visible:ring-offset-2`.
 
 Verified via `scripts/focus-visible-audit.test.ts` (`npx vitest run scripts/focus-visible-audit.test.ts`).
+
+---
+
+## 21) 📦 Dependency Source Policy
+
+Fortexa requires all dependencies in `package.json` and `package-lock.json` to resolve from standard registry releases rather than unreviewed `git+`, GitHub shorthand (`github:owner/repo` or `owner/repo`), `file:`, or `link:` sources:
+
+```bash
+npm run check:deps:sources
+```
+
+This stdlib-only check (`scripts/check-dependency-sources.mjs`) runs in CI before `npm ci` and is covered by `scripts/check-dependency-sources.test.ts`. Any reviewed exception must be explicitly added to `REVIEWED_DEPENDENCY_SOURCES` in `scripts/check-dependency-sources.mjs`.
