@@ -697,3 +697,12 @@ Fortexa ensures that all interactive components share a consistent, high-contras
 - **Button Component**: [`src/components/ui/button.tsx`](src/components/ui/button.tsx) aligns with this standard via `focus-visible:ring-2` and `focus-visible:ring-offset-2`.
 
 Verified via `scripts/focus-visible-audit.test.ts` (`npx vitest run scripts/focus-visible-audit.test.ts`).
+
+---
+
+## 21) 📋 Security Changelog
+
+Security-relevant behavior changes across **Auth**, **Policy**, **Audit**, and **Payment** are tracked in [`CHANGELOG.md`](CHANGELOG.md).
+
+- Contributors modifying any security-sensitive area listed in [`.github/pull_request_template.md`](.github/pull_request_template.md) should add a concise entry under `## [Unreleased]` in [`CHANGELOG.md`](CHANGELOG.md).
+- Structure and baseline coverage are verified by `scripts/changelog.test.ts` (`npx vitest run scripts/changelog.test.ts`).
