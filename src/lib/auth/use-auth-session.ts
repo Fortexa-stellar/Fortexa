@@ -91,7 +91,7 @@ export function useAuthSession() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- initial session refresh on mount

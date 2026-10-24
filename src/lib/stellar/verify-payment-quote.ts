@@ -202,6 +202,26 @@ export function getQuoteExpiresAt(auditEntry: AuditEntry): string {
   return Number.isFinite(legacyExpiryMs) ? new Date(legacyExpiryMs).toISOString() : "";
 }
 
+export function validateDecisionReceipt(
+  receipt: PaymentQuote,
+):
+  | { ok: true; normalized: PaymentQuote }
+  | { ok: false; error: string; field?: PaymentQuoteField } {
+  if (
+    !receipt?.destination ||
+    !receipt?.amountXLM ||
+    !receipt?.asset ||
+    !receipt?.memo ||
+    !receipt?.network
+  ) {
+    return {
+      ok: false,
+      status: 400,
+      error: "Payment decision receipt is missing required fields.",
+      field: "memo",
+    } as any;
+  }
+
   try {
     const normalized = {
       destination: receipt.destination.trim().toUpperCase(),
