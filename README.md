@@ -697,3 +697,17 @@ Fortexa ensures that all interactive components share a consistent, high-contras
 - **Button Component**: [`src/components/ui/button.tsx`](src/components/ui/button.tsx) aligns with this standard via `focus-visible:ring-2` and `focus-visible:ring-offset-2`.
 
 Verified via `scripts/focus-visible-audit.test.ts` (`npx vitest run scripts/focus-visible-audit.test.ts`).
+
+---
+
+## 21) 🛡️ Production Dependency Audit
+
+Fortexa enforces a blocking production-only dependency vulnerability audit (`npm audit --omit=dev --json`) via `scripts/audit-production-deps.mjs`:
+
+```bash
+npm run audit:prod
+```
+
+- **Severity threshold**: Defaults to `high` (`DEFAULT_SEVERITY_THRESHOLD = "high"`), blocking any unexcepted `high` or `critical` advisory in production dependencies while ignoring `devDependencies` and lower-severity advisories.
+- **Exception update path**: Temporary reviewed exceptions are tracked in [`scripts/audit-exceptions.json`](scripts/audit-exceptions.json). Every exception must declare `ghsaId`, `package`, `severity`, `reason`, and a concrete `updatePath`. When upgrading a dependency (`npm update <pkg>` or `npm audit fix`), remove the corresponding entry from `scripts/audit-exceptions.json` and re-run `npm run audit:prod`.
+- Covered in CI by `scripts/audit-production-deps.test.ts`.
