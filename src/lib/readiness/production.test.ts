@@ -12,6 +12,25 @@ const VALID_OPERATOR_WALLET =
   "GBXFXNDLV4LSWA4VB7YIL5GBD7BVNR22SGBTDKMO2SBZZHDXSKZYCP7L";
 
 describe("production readiness", () => {
+  it("passes for a safe CI fixture with a valid production configuration and no real secrets", () => {
+    const report = checkProductionReadiness(
+      {
+        NODE_ENV: "production",
+        DATABASE_URL: "postgres://fortexa:ci-placeholder@db.ci.invalid:5432/fortexa",
+        FORTEXA_AUTH_SECRET: "0123456789abcdef0123456789abcdef",
+        FORTEXA_BLOCKLIST_URL: "https://blocklist.ci.invalid/list.json",
+        FORTEXA_OPERATOR_WALLETS: VALID_OPERATOR_WALLET,
+        FORTEXA_SHARED_STATE_PATH: "shared/security-state.json",
+        STELLAR_HORIZON_URL: "https://horizon.stellar.org",
+        STELLAR_NETWORK_PASSPHRASE: Networks.PUBLIC,
+      } as unknown as NodeJS.ProcessEnv,
+      { cwd: "/srv/fortexa", appliedMigrationId: "005_audit_chain_sequence" }
+    );
+
+    expect(report.ok).toBe(true);
+    expect(report.issues).toEqual([]);
+  });
+
   it("passes for a valid production configuration", () => {
     const report = checkProductionReadiness(
       {
@@ -29,6 +48,27 @@ describe("production readiness", () => {
 
     expect(report.ok).toBe(true);
     expect(report.issues).toEqual([]);
+  });
+
+  it("fails the CI fixture with one expected failure when the Stellar passphrase is testnet", () => {
+    const report = checkProductionReadiness(
+      {
+        NODE_ENV: "production",
+        DATABASE_URL: "postgres://fortexa:ci-placeholder@db.ci.invalid:5432/fortexa",
+        FORTEXA_AUTH_SECRET: "0123456789abcdef0123456789abcdef",
+        FORTEXA_BLOCKLIST_URL: "https://blocklist.ci.invalid/list.json",
+        FORTEXA_OPERATOR_WALLETS: VALID_OPERATOR_WALLET,
+        FORTEXA_SHARED_STATE_PATH: "shared/security-state.json",
+        STELLAR_HORIZON_URL: "https://horizon.stellar.org",
+        STELLAR_NETWORK_PASSPHRASE: Networks.TESTNET,
+      } as unknown as NodeJS.ProcessEnv,
+      { cwd: "/srv/fortexa", appliedMigrationId: "005_audit_chain_sequence" }
+    );
+
+    expect(report.ok).toBe(false);
+    expect(report.issues.map((issue) => issue.setting)).toEqual(
+      expect.arrayContaining(["NODE_ENV, STELLAR_NETWORK_PASSPHRASE"])
+    );
   });
 
   it("reports missing required production variables", () => {
