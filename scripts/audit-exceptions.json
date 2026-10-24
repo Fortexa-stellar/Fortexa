@@ -1,0 +1,124 @@
+{
+  "severityThreshold": "high",
+  "exceptions": [
+    {
+      "ghsaId": "GHSA-c29m-xwm3-cm6r",
+      "package": "axios",
+      "severity": "high",
+      "reason": "Transitive dependency via @stellar/stellar-sdk; Fortexa does not pass untrusted data: URIs to axios.",
+      "updatePath": "Run `npm update @stellar/stellar-sdk axios` once upstream releases axios >=1.20.0 support, then remove this entry."
+    },
+    {
+      "ghsaId": "GHSA-mghh-pgcx-3jjj",
+      "package": "axios",
+      "severity": "high",
+      "reason": "Transitive dependency via @stellar/stellar-sdk; Horizon requests use fixed configured origin without untrusted proxy redirects.",
+      "updatePath": "Run `npm update @stellar/stellar-sdk axios` once upstream releases axios >=1.20.0 support, then remove this entry."
+    },
+    {
+      "ghsaId": "GHSA-x97p-jq2g-jp4f",
+      "package": "axios",
+      "severity": "high",
+      "reason": "Transitive dependency via @stellar/stellar-sdk; Fortexa does not use axios.toFormData.",
+      "updatePath": "Run `npm update @stellar/stellar-sdk axios` once upstream releases axios >=1.20.0 support, then remove this entry."
+    },
+    {
+      "ghsaId": "GHSA-3pq3-5fj3-cg6v",
+      "package": "axios",
+      "severity": "high",
+      "reason": "Transitive dependency via @stellar/stellar-sdk; HTTP/2 adapter is not enabled.",
+      "updatePath": "Run `npm update @stellar/stellar-sdk axios` once upstream releases axios >=1.20.0 support, then remove this entry."
+    },
+    {
+      "ghsaId": "GHSA-542g-h47m-68v8",
+      "package": "axios",
+      "severity": "high",
+      "reason": "Transitive dependency via @stellar/stellar-sdk; HTTP/2 adapter is not enabled.",
+      "updatePath": "Run `npm update @stellar/stellar-sdk axios` once upstream releases axios >=1.20.0 support, then remove this entry."
+    },
+    {
+      "ghsaId": "GHSA-m8m8-qj5v-23w3",
+      "package": "axios",
+      "severity": "high",
+      "reason": "Transitive dependency via @stellar/stellar-sdk; Object.prototype is not polluted by validated Zod schemas.",
+      "updatePath": "Run `npm update @stellar/stellar-sdk axios` once upstream releases axios >=1.20.0 support, then remove this entry."
+    },
+    {
+      "ghsaId": "GHSA-r4gj-5m52-g5wh",
+      "package": "axios",
+      "severity": "high",
+      "reason": "Transitive dependency via @stellar/stellar-sdk; Horizon client connects only to configured Horizon URL.",
+      "updatePath": "Run `npm update @stellar/stellar-sdk axios` once upstream releases axios >=1.20.0 support, then remove this entry."
+    },
+    {
+      "ghsaId": "GHSA-q3jh-wrc6-jgq8",
+      "package": "follow-redirects",
+      "severity": "high",
+      "reason": "Transitive dependency via axios/@stellar/stellar-sdk; array-form credential headers are not used.",
+      "updatePath": "Run `npm update follow-redirects` (>=1.16.1) and remove this entry."
+    },
+    {
+      "ghsaId": "GHSA-8r9p-f939-6h3c",
+      "package": "follow-redirects",
+      "severity": "high",
+      "reason": "Transitive dependency via axios/@stellar/stellar-sdk; custom sensitiveHeaders regexes are not used.",
+      "updatePath": "Run `npm update follow-redirects` (>=1.16.1) and remove this entry."
+    },
+    {
+      "ghsaId": "GHSA-vcvr-r3jv-pc5j",
+      "package": "next",
+      "severity": "critical",
+      "reason": "Fortexa does not use next/og ImageResponse routes.",
+      "updatePath": "Upgrade `next` and `eslint-config-next` to >=16.4.1 via `npm install next@latest eslint-config-next@latest` and remove this entry."
+    },
+    {
+      "ghsaId": "GHSA-cjq9-62q9-8jv4",
+      "package": "next",
+      "severity": "high",
+      "reason": "Fortexa serves static local assets from public/ and does not proxy external image optimization domains.",
+      "updatePath": "Upgrade `next` and `eslint-config-next` to >=16.4.1 via `npm install next@latest eslint-config-next@latest` and remove this entry."
+    },
+    {
+      "ghsaId": "GHSA-2464-fhr4-w9xw",
+      "package": "next",
+      "severity": "critical",
+      "reason": "Fortexa does not enable SVG image optimization on untrusted remote images.",
+      "updatePath": "Upgrade `next` and `eslint-config-next` to >=16.4.1 via `npm install next@latest eslint-config-next@latest` and remove this entry."
+    },
+    {
+      "ghsaId": "GHSA-p3m5-59mp-jv5r",
+      "package": "next",
+      "severity": "high",
+      "reason": "Fortexa uses explicit REST API route handlers with body size caps (`readJsonBodyWithLimit`) rather than Server Actions.",
+      "updatePath": "Upgrade `next` and `eslint-config-next` to >=16.4.1 via `npm install next@latest eslint-config-next@latest` and remove this entry."
+    },
+    {
+      "ghsaId": "GHSA-673q-mjm6-r5xr",
+      "package": "next",
+      "severity": "critical",
+      "reason": "Fortexa does not use `'use cache'` directives.",
+      "updatePath": "Upgrade `next` and `eslint-config-next` to >=16.4.1 via `npm install next@latest eslint-config-next@latest` and remove this entry."
+    },
+    {
+      "ghsaId": "GHSA-wq5f-xc86-pv6w",
+      "package": "sharp",
+      "severity": "high",
+      "reason": "Transitive optional dependency of Next.js; untrusted SVG rendering via librsvg is not used.",
+      "updatePath": "Run `npm update sharp` (>=0.35.5) and remove this entry."
+    },
+    {
+      "ghsaId": "GHSA-68fv-2mgg-jv7q",
+      "package": "source-map-js",
+      "severity": "high",
+      "reason": "Transitive build-time PostCSS dependency; untrusted source maps are never parsed at runtime.",
+      "updatePath": "Run `npm update source-map-js` (>=1.2.2) and remove this entry."
+    },
+    {
+      "ghsaId": "GHSA-mrhx-c7xc-m3w5",
+      "package": "zod",
+      "severity": "high",
+      "reason": "All JSON request bodies are bounded to 64 KiB (`FORTEXA_JSON_BODY_MAX_BYTES`) before Zod parsing.",
+      "updatePath": "Run `npm update zod` (>=4.6.6) and remove this entry."
+    }
+  ]
+}
