@@ -6,6 +6,9 @@ import { getRequestLogContext, logError, logInfo, logWarn } from "@/lib/observab
 import { readJsonBody } from "@/lib/http/read-json-body";
 import { collectRollbackConflicts } from "@/lib/decision/rollback-conflicts";
 import { getPolicyVersionByNumber, rollbackPolicyVersion } from "@/lib/storage/policy-store";
+import { getAllIdempotencyRecords } from "@/lib/storage/submit-idempotency-store";
+import { getAuditEntryById, getDailyUsage } from "@/lib/storage/audit-store";
+import { evaluateDecision } from "@/lib/decision/engine";
 import { policyRollbackSchema } from "@/lib/validation/schemas";
 import { logValidationFailure, toPublicValidationDetails } from "@/lib/validation/errors";
 import { hasSensitiveField } from "@/lib/settings/save-safety";
@@ -70,41 +73,20 @@ export async function POST(request: NextRequest) {
     const targetEntry = await getPolicyVersionByNumber(parsed.data.targetVersion);
     const conflicts = await collectRollbackConflicts(targetEntry.policy);
 
-    const records = await getAllIdempotencyRecords();
-    const conflictingIds: string[] = [];
-
-    for (const record of records) {
-      const entry = await getAuditEntryById(record.userId, record.idempotencyKey);
-      if (!entry) continue;
-
-      const currentAllowed = entry.decision === "APPROVE" || entry.decision === "WARN";
-      if (!currentAllowed) continue;
-
-      const usage = await getDailyUsage(record.userId);
-      const proposed = await evaluateDecision(entry.action, targetPolicy, usage);
-      const proposedAllowed = proposed.decision === "APPROVE" || proposed.decision === "WARN";
-
-      // Also reject if destination, amount, or memo changes. In Fortexa those are dictated by the action/quote, 
-      // but to satisfy strict requirements, we consider any case where allow -> deny to be a conflict.
-      if (!proposedAllowed) {
-        conflictingIds.push(record.idempotencyKey);
-      }
-    }
-
-    if (conflictingIds.length > 0) {
+    if (conflicts.length > 0) {
       logWarn("Policy rollback rejected due to conflicts", {
         ...context,
         userId: auth.session.userId,
         targetVersion: parsed.data.targetVersion,
-        conflictingIds,
+        conflicts: conflicts.length,
       });
       return jsonWithRequestContext(request, {
         route: "/api/policy/rollback",
         startedAtMs,
-        status: 409, // Using 409 Conflict as the rollback would conflict with in-flight payments
+        status: 409,
         body: {
           error: "Rollback rejected: would change decisions for in-flight payments.",
-          conflictingPaymentIds: conflictingIds,
+          conflicts,
         },
       });
     }
@@ -122,7 +104,10 @@ export async function POST(request: NextRequest) {
       route: "/api/policy/rollback",
       startedAtMs,
       status: 200,
-      body: rolled,
+      body: {
+        ...rolled,
+        conflicts: [],
+      },
     });
   } catch (error) {
     logError("Policy rollback internal error", {
