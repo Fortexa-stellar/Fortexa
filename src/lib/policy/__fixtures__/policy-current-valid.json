@@ -1,4 +1,5 @@
 {
+  "schemaVersion": 1,
   "allowedDomains": [
     "api.safe-research.ai",
     "tools.verified-data.dev",

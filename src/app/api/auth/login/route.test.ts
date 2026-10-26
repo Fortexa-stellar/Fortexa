@@ -1,3 +1,4 @@
+import { buildSecurityHeaders } from "@/lib/security/headers";
 import { Keypair } from "@stellar/stellar-sdk";
 import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -120,7 +121,7 @@ describe("/api/auth/login challenge-signature flow", () => {
     const challenge = await issueChallenge(AUTHORIZED_PUBLIC_KEY);
     const signature = signSep53Message(AUTHORIZED_SECRET, challenge.message);
 
-    vi.advanceTimesBy(61_000);
+    vi.advanceTimersByTime(61_000);
 
     const response = await login(
       loginRequest({

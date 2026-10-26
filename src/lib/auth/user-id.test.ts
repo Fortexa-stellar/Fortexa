@@ -23,7 +23,7 @@ import { POST as decision } from "@/app/api/decision/route";
 import { POST as login } from "@/app/api/auth/login/route";
 import { AUTH_COOKIE_KEY, verifySessionToken } from "@/lib/auth/session";
 import { userIdForWallet } from "@/lib/auth/user-id";
-import { canPassDecisionGate } from "@/lib/decision/engine";
+import { canPassDecisionGate } from "@/lib/decision/gate";
 import {
   findUserWalletByPublicKey,
   revokeUserWallet,

@@ -35,6 +35,7 @@ describe("login challenge binding", () => {
   afterEach(async () => {
     vi.restoreAllMocks();
     delete process.env.FORTEXA_OPERATOR_WALLETS;
+delete process.env.FORTEXA_SIGNER_WALLETS;
     delete process.env.FORTEXA_AUTH_SECRET;
     await resetWalletChallengeStore();
     await resetLoginLockoutStore();
@@ -43,6 +44,7 @@ describe("login challenge binding", () => {
   it("accepts a signature over the current challenge once and rejects it on submit-signed", async () => {
     process.env.FORTEXA_AUTH_SECRET = "login-challenge-binding-secret";
     process.env.FORTEXA_OPERATOR_WALLETS = AUTHORIZED_PUBLIC_KEY;
+process.env.FORTEXA_SIGNER_WALLETS = AUTHORIZED_PUBLIC_KEY;
     const submit = vi.spyOn(stellarClient, "submitSignedTransactionXdr");
 
     const challenge = await createWalletChallenge(AUTHORIZED_PUBLIC_KEY, {
