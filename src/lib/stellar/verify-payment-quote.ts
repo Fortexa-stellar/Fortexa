@@ -1,3 +1,5 @@
+import { FeeBumpTransaction, Transaction, TransactionBuilder, Memo, MemoText } from "@stellar/stellar-sdk";
+import { getStellarNetworkPassphrase } from "@/lib/stellar/network";
 import { createHash } from "node:crypto";
 
 import { validateRequestTimestamp } from "@/lib/stellar/request-timestamp-skew";
@@ -19,7 +21,12 @@ export type PaymentQuoteField =
   | "amountXLM"
   | "asset"
   | "memo"
-  | "network";
+  | "network"
+  | "requestTimestampMs"
+  | "expiresAt"
+  | "amountStroops"
+  | "operations"
+  | "signedXdr";
 
 export type PaymentBuildParams = {
   destination: string;
@@ -27,6 +34,7 @@ export type PaymentBuildParams = {
   asset: StellarAssetId;
   memo?: string;
   network: StellarNetworkId;
+  requestTimestampMs?: number;
 };
 
 export type VerifyPaymentQuoteResult =
@@ -98,7 +106,7 @@ const DEFAULT_QUOTE_TTL_SECONDS = 300;
  * Reads FORTEXA_PAYMENT_QUOTE_TTL_SECONDS; falls back to 300 s when the
  * value is absent, non-numeric, or less than 1.
  */
-export function getQuoteTtlMs(): number {
+export function getQuoteTtlSeconds(): number {
   const parsed = Number(
     process.env.FORTEXA_PAYMENT_QUOTE_TTL_SECONDS ?? DEFAULT_QUOTE_TTL_SECONDS,
   );
@@ -106,6 +114,22 @@ export function getQuoteTtlMs(): number {
     return DEFAULT_QUOTE_TTL_SECONDS;
   }
   return Math.floor(parsed);
+}
+export function getQuoteTtlMs(): number {
+  return getQuoteTtlSeconds() * 1000;
+}
+
+export function isPaymentDecisionCurrent(
+  auditEntry: AuditEntry | undefined,
+  decisionId: string,
+  quoteExpiresAt: string,
+  nowMs = Date.now(),
+): boolean {
+  if (!auditEntry?.paymentQuote || auditEntry.id !== decisionId ||
+      !EXECUTABLE_DECISIONS.has(auditEntry.decision)) return false;
+  const storedExpiry = getQuoteExpiresAt(auditEntry);
+  const expiryMs = Date.parse(storedExpiry);
+  return storedExpiry === quoteExpiresAt && Number.isFinite(expiryMs) && nowMs < expiryMs;
 }
 
 /**
@@ -188,12 +212,19 @@ export function buildPaymentQuoteFromDecision(input: {
   network?: StellarNetworkId;
   nowMs?: number;
 }): PaymentQuote {
-  return buildDecisionReceipt({
+  const quote = buildDecisionReceipt({
     destination: input.destination,
     amountXLM: input.amountXLM,
     memo: input.memo ?? `fortexa:${input.actionId}`,
     network: input.network,
   });
+  const now = input.nowMs ?? Date.now();
+  const quoteExpiresAt = new Date(now + getQuoteTtlMs()).toISOString();
+  return {
+    ...quote,
+    quoteExpiresAt,
+    expiresAt: quoteExpiresAt,
+  };
 }
 
 export function getQuoteExpiresAt(auditEntry: AuditEntry): string {
@@ -308,7 +339,14 @@ export function verifyPaymentAgainstQuote(
     };
   }
 
-  const { quote } = gate;
+  if (!auditEntry.paymentQuote) {
+    return {
+      ok: false,
+      status: 403,
+      error: "Decision is missing an authorized payment quote.",
+    };
+  }
+  const quote = auditEntry.paymentQuote;
 
   const normalizedRequest = {
     destination: request.destination.trim().toUpperCase(),
@@ -376,13 +414,7 @@ export function verifyPaymentAgainstQuote(
 }
 
 /** Fields a signed-transaction verification can point at on failure. */
-export type SignedPaymentField =
-  | "amountStroops"
-  | "asset"
-  | "destination"
-  | "memo"
-  | "operations"
-  | "signedXdr";
+export type SignedPaymentField = PaymentQuoteField;
 
 export type VerifySignedPaymentQuoteResult =
   | { ok: true; quote: PaymentQuote; amountStroops: bigint }

@@ -16,7 +16,7 @@ import { POST } from "./route";
 function operatorCookie() {
   const token = createSessionToken({
     email: "submit-headers@fortexa.local",
-    role: "operator",
+    role: "signer",
     userId: "submit-headers-user",
     expiresInSeconds: 120,
   });
