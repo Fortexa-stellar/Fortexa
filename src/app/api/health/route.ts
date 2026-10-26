@@ -38,7 +38,17 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const blocklistData = getBlocklistHealth();
+  let blocklistData: ReturnType<typeof getBlocklistHealth>;
+  try {
+    blocklistData = getBlocklistHealth();
+  } catch (err) {
+    blocklistData = {
+      configured: false,
+      lastRefreshAt: null,
+      domainCount: 0,
+      lastError: err instanceof Error ? err.message : "unconfigured",
+    };
+  }
   let blocklistStatus = "unconfigured";
   if (blocklistData.configured) {
     blocklistStatus = blocklistData.lastError ? "degraded" : "healthy";
