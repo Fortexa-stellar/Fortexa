@@ -122,7 +122,7 @@ describe("DELETE /api/auth/wallet/revoke route boundary tests (#352)", () => {
       // Verify wallet is bound
       const before = await getUserWallet(TEST_OPERATOR_ID);
       expect(before).not.toBeNull();
-      expect((before as any)?.publicKey).toBe(VALID_PUBLIC_KEY);
+      expect((before as { publicKey?: string } | null)?.publicKey).toBe(VALID_PUBLIC_KEY);
 
       // 2. Call DELETE /api/auth/wallet/revoke
       const operatorCookie = createAuthCookie("operator", TEST_OPERATOR_ID);
@@ -165,7 +165,7 @@ describe("DELETE /api/auth/wallet/revoke route boundary tests (#352)", () => {
       // Operator 2 wallet remains bound and untouched
       const otherWallet = await getUserWallet(TEST_OTHER_OPERATOR_ID);
       expect(otherWallet).not.toBeNull();
-      expect((otherWallet as any)?.publicKey).toBe(OTHER_PUBLIC_KEY);
+      expect((otherWallet as { publicKey?: string } | null)?.publicKey).toBe(OTHER_PUBLIC_KEY);
     });
   });
 
@@ -240,13 +240,13 @@ describe("DELETE /api/auth/wallet/revoke route boundary tests (#352)", () => {
       const operatorCookie = createAuthCookie("operator", TEST_OPERATOR_ID);
 
       // Route rate limit is 10 requests per minute
-      let lastResponse: any;
+      let lastResponse: Response | null = null;
       for (let i = 0; i < 11; i++) {
         lastResponse = await revokeWallet(buildRevokeRequest(operatorCookie));
       }
 
-      expect(lastResponse.status).toBe(429);
-      const json = await lastResponse.json();
+      expect(lastResponse?.status).toBe(429);
+      const json = (await lastResponse?.json()) as { error: string };
       expect(json.error).toMatch(/rate limit/i);
     });
   });

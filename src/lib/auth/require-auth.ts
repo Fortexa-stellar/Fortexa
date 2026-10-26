@@ -83,7 +83,7 @@ export async function requireActiveAuth(
   }
 
   const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
-  const revoked = await isSessionRevoked(base.session);
+  const revoked = await isSessionRevoked(base.session.sid);
   if (revoked) {
     return {
       ok: false as const,
