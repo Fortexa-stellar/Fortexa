@@ -255,15 +255,15 @@ describe("POST /api/auth/challenge direct route tests (#350)", () => {
 
     it("enforces rate limits on excessive challenge requests", async () => {
       // Route rate limit is 30 requests per minute
-      let lastResponse: any;
+      let lastResponse: Response | null = null;
       for (let i = 0; i < 31; i++) {
         lastResponse = await POST(
           buildPostRequest({ publicKey: VALID_STELLAR_KEY }),
         );
       }
 
-      expect(lastResponse.status).toBe(429);
-      const json = await lastResponse.json();
+      expect(lastResponse?.status).toBe(429);
+      const json = (await lastResponse?.json()) as { error: string };
       expect(json.error).toMatch(/too many challenge requests/i);
     });
   });
