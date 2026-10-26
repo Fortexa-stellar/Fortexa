@@ -11,8 +11,10 @@ vi.mock("@/lib/stellar/client", () => ({
 }));
 
 const mockGetDatabaseMigrationStatus = vi.fn();
+const mockRunWithDatabase = vi.fn();
 vi.mock("@/lib/storage/db", () => ({
   getDatabaseMigrationStatus: (...args: unknown[]) => mockGetDatabaseMigrationStatus(...args),
+  runWithDatabase: (...args: unknown[]) => mockRunWithDatabase(...args),
 }));
 
 const mockGetBlocklistHealth = vi.fn();
@@ -29,6 +31,7 @@ describe("GET /api/health", () => {
       appliedId: null,
       expectedId: "004_wallet_expiration",
     });
+    mockRunWithDatabase.mockResolvedValue({ available: true });
     delete process.env.GROQ_API_KEY;
     delete process.env.FORTEXA_AUTH_SECRET;
     delete process.env.STELLAR_HORIZON_URL;

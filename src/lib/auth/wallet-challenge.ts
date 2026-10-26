@@ -30,21 +30,14 @@ const challenges = new Map<string, StoredChallenge>();
 const challengeVerificationLocks = new Map<string, Promise<void>>();
 const consumedLoginSignatures = new Set<string>();
 
-async function withChallengeVerificationLock<T>(
-  challengeId: string,
-  operation: () => Promise<T>,
-): Promise<T> {
-  const previous =
-    challengeVerificationLocks.get(challengeId) ?? Promise.resolve();
+async function withChallengeVerificationLock<T>(challengeId: string, operation: () => Promise<T>): Promise<T> {
+  const previous = challengeVerificationLocks.get(challengeId) ?? Promise.resolve();
   let release: (() => void) | undefined;
   const current = new Promise<void>((resolve) => {
     release = resolve;
   });
 
-  challengeVerificationLocks.set(
-    challengeId,
-    previous.then(() => current),
-  );
+  challengeVerificationLocks.set(challengeId, previous.then(() => current));
   await previous;
 
   try {
@@ -62,10 +55,7 @@ async function withChallengeVerificationLock<T>(
  *
  * Expiry is inclusive: `expiresAtMs` is the first instant the challenge is invalid.
  */
-export function isChallengeExpired(
-  expiresAtMs: number,
-  nowMs: number = Date.now(),
-) {
+export function isChallengeExpired(expiresAtMs: number, nowMs: number = Date.now()) {
   return expiresAtMs <= nowMs;
 }
 
@@ -114,9 +104,7 @@ export function isLoginAuthorizationPayload(value: unknown): boolean {
   }
 
   if (value !== null && typeof value === "object") {
-    return Object.values(value as Record<string, unknown>).some((item) =>
-      isLoginAuthorizationPayload(item),
-    );
+    return Object.values(value as Record<string, unknown>).some((item) => isLoginAuthorizationPayload(item));
   }
 
   return false;
@@ -130,11 +118,7 @@ export function hashSep53Message(message: string) {
   return createHash("sha256").update(payload).digest();
 }
 
-export function verifyWalletSignature(
-  publicKey: string,
-  message: string,
-  signatureBase64: string,
-) {
+export function verifyWalletSignature(publicKey: string, message: string, signatureBase64: string) {
   try {
     const keypair = Keypair.fromPublicKey(normalizeWalletPublicKey(publicKey));
     const signature = Buffer.from(signatureBase64, "base64");
@@ -148,9 +132,7 @@ export function verifyWalletSignature(
   }
 }
 
-async function readChallenge(
-  challengeId: string,
-): Promise<StoredChallenge | undefined> {
+async function readChallenge(challengeId: string): Promise<StoredChallenge | undefined> {
   const shared = await readSharedChallenge(challengeId);
   if (shared) {
     return {
@@ -176,10 +158,7 @@ function nonceFromMessage(message: string) {
 }
 
 async function writeChallenge(record: StoredChallenge) {
-  const ttlSeconds = Math.max(
-    1,
-    Math.ceil((record.expiresAtMs - Date.now()) / 1000),
-  );
+  const ttlSeconds = Math.max(1, Math.ceil((record.expiresAtMs - Date.now()) / 1000));
   await writeSharedChallenge(
     record.id,
     {
@@ -239,15 +218,7 @@ export async function createWalletChallenge(
 
 export type ChallengeVerificationResult =
   | { ok: true; challenge: WalletChallengeRecord }
-  | {
-      ok: false;
-      code:
-        | "missing"
-        | "expired"
-        | "replayed"
-        | "wallet_mismatch"
-        | "invalid_signature";
-    };
+  | { ok: false; code: "missing" | "expired" | "replayed" | "wallet_mismatch" | "invalid_signature" };
 
 export async function verifyWalletChallenge(input: {
   challengeId: string;
@@ -276,11 +247,9 @@ export async function verifyWalletChallenge(input: {
       return { ok: false, code: "replayed" };
     }
 
-    const messageMatches =
-      input.message === undefined || input.message === challenge.message;
+    const messageMatches = input.message === undefined || input.message === challenge.message;
     const signatureValid =
-      messageMatches &&
-      verifyWalletSignature(normalizedKey, challenge.message, input.signature);
+      messageMatches && verifyWalletSignature(normalizedKey, challenge.message, input.signature);
     challenge.consumed = true;
     await writeChallenge(challenge);
 

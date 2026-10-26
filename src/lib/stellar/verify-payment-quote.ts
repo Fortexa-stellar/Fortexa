@@ -1,14 +1,7 @@
+import { FeeBumpTransaction, Transaction, TransactionBuilder, Memo, MemoText } from "@stellar/stellar-sdk";
+import { getStellarNetworkPassphrase } from "@/lib/stellar/network";
 import { createHash } from "node:crypto";
 
-import {
-  FeeBumpTransaction,
-  Memo,
-  MemoText,
-  Transaction,
-  TransactionBuilder,
-} from "@stellar/stellar-sdk";
-
-import { getStellarNetworkPassphrase } from "@/lib/stellar/network-config";
 import { validateRequestTimestamp } from "@/lib/stellar/request-timestamp-skew";
 import {
   parseXlmNumberToStroops,
@@ -24,7 +17,16 @@ import type {
 } from "@/lib/types/domain";
 
 export type PaymentQuoteField =
-  "destination" | "amountXLM" | "asset" | "memo" | "network";
+  | "destination"
+  | "amountXLM"
+  | "asset"
+  | "memo"
+  | "network"
+  | "requestTimestampMs"
+  | "expiresAt"
+  | "amountStroops"
+  | "operations"
+  | "signedXdr";
 
 export type PaymentBuildParams = {
   destination: string;
@@ -32,6 +34,7 @@ export type PaymentBuildParams = {
   asset: StellarAssetId;
   memo?: string;
   network: StellarNetworkId;
+  requestTimestampMs?: number;
 };
 
 export type VerifyPaymentQuoteResult =
@@ -112,9 +115,21 @@ export function getQuoteTtlSeconds(): number {
   }
   return Math.floor(parsed);
 }
-
 export function getQuoteTtlMs(): number {
   return getQuoteTtlSeconds() * 1000;
+}
+
+export function isPaymentDecisionCurrent(
+  auditEntry: AuditEntry | undefined,
+  decisionId: string,
+  quoteExpiresAt: string,
+  nowMs = Date.now(),
+): boolean {
+  if (!auditEntry?.paymentQuote || auditEntry.id !== decisionId ||
+      !EXECUTABLE_DECISIONS.has(auditEntry.decision)) return false;
+  const storedExpiry = getQuoteExpiresAt(auditEntry);
+  const expiryMs = Date.parse(storedExpiry);
+  return storedExpiry === quoteExpiresAt && Number.isFinite(expiryMs) && nowMs < expiryMs;
 }
 
 /**
@@ -125,9 +140,7 @@ export function getQuoteTtlMs(): number {
  * of the payment flow uses. A quote timestamp that is unparseable, or dated
  * implausibly far in the future, is refused for the same reason.
  */
-function assertQuoteFreshAndPresent(
-  auditEntry: AuditEntry,
-): VerifyPaymentQuoteResult {
+function assertQuoteFreshAndPresent(auditEntry: AuditEntry): VerifyPaymentQuoteResult {
   const freshness = validateRequestTimestamp(Date.parse(auditEntry.timestamp), {
     maxPastSkewSeconds: getQuoteTtlSeconds(),
   });
@@ -143,8 +156,7 @@ function assertQuoteFreshAndPresent(
     return {
       ok: false,
       status: 403,
-      error:
-        "Payment quote has an invalid timestamp. Please re-evaluate the action.",
+      error: "Payment quote has an invalid timestamp. Please re-evaluate the action.",
       field: "requestTimestampMs",
     };
   }
@@ -162,8 +174,7 @@ function assertQuoteFreshAndPresent(
 }
 
 export function normalizeAmountXLM(amount: number | string): string {
-  const parsed =
-    typeof amount === "number" ? amount : Number.parseFloat(amount);
+  const parsed = typeof amount === "number" ? amount : Number.parseFloat(amount);
   if (!Number.isFinite(parsed) || parsed <= 0) {
     throw new Error("Invalid XLM amount.");
   }
@@ -201,56 +212,34 @@ export function buildPaymentQuoteFromDecision(input: {
   network?: StellarNetworkId;
   nowMs?: number;
 }): PaymentQuote {
-  const receipt = buildDecisionReceipt({
+  const quote = buildDecisionReceipt({
     destination: input.destination,
     amountXLM: input.amountXLM,
     memo: input.memo ?? `fortexa:${input.actionId}`,
     network: input.network,
   });
+  const now = input.nowMs ?? Date.now();
+  const quoteExpiresAt = new Date(now + getQuoteTtlMs()).toISOString();
   return {
-    ...receipt,
-    expiresAt: new Date(
-      (input.nowMs ?? Date.now()) + getQuoteTtlMs(),
-    ).toISOString(),
+    ...quote,
+    quoteExpiresAt,
+    expiresAt: quoteExpiresAt,
   };
 }
 
 export function getQuoteExpiresAt(auditEntry: AuditEntry): string {
-  if (auditEntry.paymentQuote?.expiresAt)
-    return auditEntry.paymentQuote.expiresAt;
+  if (auditEntry.paymentQuote?.expiresAt) return auditEntry.paymentQuote.expiresAt;
   const legacyExpiryMs = Date.parse(auditEntry.timestamp) + getQuoteTtlMs();
-  return Number.isFinite(legacyExpiryMs)
-    ? new Date(legacyExpiryMs).toISOString()
-    : "";
+  return Number.isFinite(legacyExpiryMs) ? new Date(legacyExpiryMs).toISOString() : "";
 }
 
-/** Rechecks the persisted decision and its original expiry at submission time. */
-export function isPaymentDecisionCurrent(
-  auditEntry: AuditEntry | undefined,
-  decisionId: string,
-  quoteExpiresAt: string,
-  nowMs = Date.now(),
-): boolean {
-  if (
-    !auditEntry?.paymentQuote ||
-    auditEntry.id !== decisionId ||
-    !EXECUTABLE_DECISIONS.has(auditEntry.decision)
-  )
-    return false;
-  const storedExpiry = getQuoteExpiresAt(auditEntry);
-  const expiryMs = Date.parse(storedExpiry);
-  return (
-    storedExpiry === quoteExpiresAt &&
-    Number.isFinite(expiryMs) &&
-    nowMs < expiryMs
-  );
-}
+export type ValidateDecisionReceiptResult =
+  | { ok: true; normalized: PaymentQuote }
+  | { ok: false; status?: number; error: string; field?: PaymentQuoteField };
 
 export function validateDecisionReceipt(
   receipt: PaymentQuote,
-):
-  | { ok: true; normalized: PaymentQuote }
-  | { ok: false; error: string; field?: PaymentQuoteField } {
+): ValidateDecisionReceiptResult {
   if (
     !receipt?.destination ||
     !receipt?.amountXLM ||
@@ -260,10 +249,10 @@ export function validateDecisionReceipt(
   ) {
     return {
       ok: false,
-      status: 403,
+      status: 400,
       error: "Payment decision receipt is missing required fields.",
       field: "memo",
-    } as any;
+    };
   }
 
   try {
@@ -285,7 +274,7 @@ export function validateDecisionReceipt(
         status: 403,
         error: "Payment decision receipt is corrupted or tampered.",
         field: "amountXLM",
-      } as any;
+      };
     }
 
     return {
@@ -298,7 +287,7 @@ export function validateDecisionReceipt(
       status: 400,
       error: PAYMENT_AMOUNT_ERROR,
       field: "amountXLM",
-    } as any;
+    };
   }
 }
 
@@ -324,9 +313,7 @@ export function verifyPaymentAgainstQuote(
   }
 
   if (request.requestTimestampMs !== undefined) {
-    const skewResult = validateRequestTimestamp(request.requestTimestampMs, {
-      nowMs,
-    });
+    const skewResult = validateRequestTimestamp(request.requestTimestampMs, { nowMs });
     if (!skewResult.ok) {
       const reason =
         skewResult.code === "stale"
@@ -352,11 +339,14 @@ export function verifyPaymentAgainstQuote(
     };
   }
 
-  const gate = assertQuoteFreshAndPresent(auditEntry);
-  if (!gate.ok) {
-    return gate;
+  if (!auditEntry.paymentQuote) {
+    return {
+      ok: false,
+      status: 403,
+      error: "Decision is missing an authorized payment quote.",
+    };
   }
-  const { quote } = gate;
+  const quote = auditEntry.paymentQuote;
 
   const normalizedRequest = {
     destination: request.destination.trim().toUpperCase(),
@@ -424,13 +414,7 @@ export function verifyPaymentAgainstQuote(
 }
 
 /** Fields a signed-transaction verification can point at on failure. */
-export type SignedPaymentField =
-  | "amountStroops"
-  | "asset"
-  | "destination"
-  | "memo"
-  | "operations"
-  | "signedXdr";
+export type SignedPaymentField = PaymentQuoteField;
 
 export type VerifySignedPaymentQuoteResult =
   | { ok: true; quote: PaymentQuote; amountStroops: bigint }

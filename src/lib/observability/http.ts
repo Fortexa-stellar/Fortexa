@@ -46,7 +46,8 @@ export function jsonWithRequestContext(
     logExchange?: boolean;
     requestBody?: unknown;
     requestBodyTooLarge?: boolean;
-  },
+    noStore?: boolean;
+  }
 ) {
   if (input.logExchange) {
     logHttpExchange({

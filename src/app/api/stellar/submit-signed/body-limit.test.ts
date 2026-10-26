@@ -22,6 +22,18 @@ function signerCookie() {
   return `${AUTH_COOKIE_KEY}=${token}`;
 }
 
+function operatorCookie() {
+  process.env.FORTEXA_AUTH_SECRET = "submit-signed-body-limit-secret";
+  const token = createSessionToken({
+    email: "operator@fortexa.local",
+    role: "operator",
+    userId: "submit-signed-body-limit-operator",
+    expiresInSeconds: 120,
+  });
+
+  return `${AUTH_COOKIE_KEY}=${token}`;
+}
+
 describe("POST /api/stellar/submit-signed body limits", () => {
   it("returns 413 for oversized JSON payloads", async () => {
     const padding = "x".repeat(DEFAULT_JSON_BODY_MAX_BYTES);
