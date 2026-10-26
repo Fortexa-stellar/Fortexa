@@ -115,21 +115,11 @@ function getBlocklistTimeout(): number {
 
 /** Return current blocklist feed health without triggering a refresh. */
 export function getBlocklistHealth(): BlocklistHealth {
-  let configured = false;
-  let lastError = lastErrorSummary;
-  try {
-    configured = Boolean(readConfiguredBlocklistUrl());
-  } catch (err) {
-    configured = false;
-    if (!lastError) {
-      lastError = err instanceof Error ? err.message : "Invalid blocklist configuration";
-    }
-  }
   return {
-    configured,
+    configured: Boolean(readConfiguredBlocklistUrl()),
     lastRefreshAt,
     domainCount: cachedDomains.length,
-    lastError,
+    lastError: lastErrorSummary,
   };
 }
 
