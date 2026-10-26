@@ -49,6 +49,14 @@ export function requireAuth(
   const sessionRoles = session.roles ?? [session.role];
 
   if (!allowedRoles.some((role) => sessionRoles.includes(role))) {
+    const response = NextResponse.json(
+      { error: "Forbidden. Insufficient role permissions." },
+      {
+        status: 403,
+        headers: { "x-request-id": requestId },
+      }
+    );
+
     return {
       ok: false as const,
       response: forbiddenResponse(requestId),

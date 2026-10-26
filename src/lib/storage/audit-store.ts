@@ -1,7 +1,8 @@
 import { promises as fs } from "node:fs";
+import path from "node:path";
 import { randomUUID } from "node:crypto";
 
-import { GENESIS_HASH, computeEntryHash } from "@/lib/audit/hash-chain";
+import { GENESIS_HASH, computeEntryHash, verifyHashChain } from "@/lib/audit/hash-chain";
 import { runWithDatabase, runWithDatabaseStrict } from "@/lib/storage/db";
 import { getFortexaStoreDir, getFortexaStorePath, resolveContainedStorePath } from "@/lib/storage/paths";
 import type { ContainedStorePath } from "@/lib/storage/paths";
@@ -106,7 +107,7 @@ export function verifyAndRedactExport(
     return {
       ok: false,
       code: "CHAIN_INVALID",
-      error: verification.error ?? "Audit hash chain failed verification.",
+      error: verification.reason ?? "Audit hash chain failed verification.",
     };
   }
 
@@ -170,6 +171,7 @@ export async function openAuditFileStore(fileName: string = AUDIT_STORE_FILE_NAM
       auditByUser: {},
       usageByUser: {},
     };
+    await fs.mkdir(path.dirname(storePath), { recursive: true });
     await fs.writeFile(storePath, JSON.stringify(initial, null, 2), "utf8");
   }
   return storePath;
@@ -182,10 +184,11 @@ async function readStore(): Promise<AuditStoreFile> {
 }
 
 async function writeStore(store: AuditStoreFile) {
-  const tempPath = `${storePath}.${randomUUID()}.tmp`;
+  const currentStorePath = await openAuditFileStore();
+  const tempPath = `${currentStorePath}.${randomUUID()}.tmp`;
   try {
     await fs.writeFile(tempPath, JSON.stringify(store, null, 2), "utf8");
-    await fs.rename(tempPath, storePath);
+    await fs.rename(tempPath, currentStorePath);
   } catch (error) {
     await fs.unlink(tempPath).catch(() => undefined);
     throw error;
