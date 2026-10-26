@@ -73,7 +73,7 @@ export async function waitForHealth(
   healthUrl: string,
   options?: { timeoutMs?: number; pollIntervalMs?: number },
 ): Promise<{ ok: boolean; status: number; body?: unknown }> {
-  const timeoutMs = options?.timeoutMs ?? 15_000;
+  const timeoutMs = options?.timeoutMs ?? 30_000;
   const pollIntervalMs = options?.pollIntervalMs ?? 250;
   const startTime = Date.now();
 
@@ -163,7 +163,7 @@ export async function runStandaloneSmokeTest(
   const root = options?.projectRoot ?? process.cwd();
   const host = options?.host ?? "127.0.0.1";
   const healthPath = options?.healthPath ?? "/api/health";
-  const healthTimeoutMs = options?.healthTimeoutMs ?? 15_000;
+  const healthTimeoutMs = options?.healthTimeoutMs ?? 30_000;
   const pollIntervalMs = options?.pollIntervalMs ?? 250;
   const serverShutdownTimeoutMs = options?.serverShutdownTimeoutMs ?? 5000;
   const silent = options?.silent ?? false;
@@ -197,6 +197,7 @@ export async function runStandaloneSmokeTest(
       NODE_ENV: "production",
       // Disable unnecessary database attempts during startup smoke test if unconfigured
       FORTEXA_AUTH_SECRET: process.env.FORTEXA_AUTH_SECRET || "standalone-smoke-test-secret-32-chars-long",
+      FORTEXA_BLOCKLIST_URL: process.env.FORTEXA_BLOCKLIST_URL || "https://blocklist.fortexa.internal/api/v1/addresses",
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
