@@ -1,3 +1,4 @@
+import { parseStoredPolicy } from "@/lib/policy/migrations";
 import { promises as fs } from "node:fs";
 
 import { defaultPolicyConfig, readAmountStroops, validateNoDuplicateRules } from "@/lib/policy/engine";
@@ -137,28 +138,8 @@ async function readHistoryStore() {
   }
 }
 
-function stroopField(displayXlm: number): string | undefined {
-  const stroops = readAmountStroops(displayXlm);
-  return stroops === null ? undefined : stroops.toString();
-}
-
-export function normalizePolicy(policy?: Partial<PolicyConfig>): PolicyConfig {
-  return {
-    allowedDomains: policy?.allowedDomains ?? defaultPolicyConfig.allowedDomains,
-    blockedDomains: policy?.blockedDomains ?? defaultPolicyConfig.blockedDomains,
-    allowedTools: policy?.allowedTools ?? defaultPolicyConfig.allowedTools,
-    blockedTools: policy?.blockedTools ?? defaultPolicyConfig.blockedTools,
-    perTxCapXLM: policy?.perTxCapXLM ?? defaultPolicyConfig.perTxCapXLM,
-    dailyCapXLM: policy?.dailyCapXLM ?? defaultPolicyConfig.dailyCapXLM,
-    perTxCapStroops: stroopField(policy?.perTxCapXLM ?? defaultPolicyConfig.perTxCapXLM),
-    dailyCapStroops: stroopField(policy?.dailyCapXLM ?? defaultPolicyConfig.dailyCapXLM),
-    maxToolCallsPerDay: policy?.maxToolCallsPerDay ?? defaultPolicyConfig.maxToolCallsPerDay,
-    riskThreshold: policy?.riskThreshold ?? defaultPolicyConfig.riskThreshold,
-    allowedHours: policy?.allowedHours ?? defaultPolicyConfig.allowedHours,
-    memoRequiredDestinations:
-      policy?.memoRequiredDestinations ?? defaultPolicyConfig.memoRequiredDestinations ?? [],
-  };
-}
+import { normalizePolicy } from "@/lib/policy/normalize";
+export { normalizePolicy };
 
 /**
  * Run the migration chain on a candidate document before any write.
@@ -471,6 +452,17 @@ export async function getPolicyHistory(limit = 20) {
     updatedBy: entry.updatedBy,
     policy: normalizePolicy(entry.policy),
   }));
+}
+
+export async function getPolicyVersionByNumber(targetVersion: number) {
+  const history = await getPolicyHistory(1000);
+  const matched = history.find((entry) => entry.version === targetVersion);
+
+  if (!matched) {
+    throw new Error(`Policy version ${targetVersion} not found.`);
+  }
+
+  return matched;
 }
 
 export async function rollbackPolicyVersion(version: number, updatedBy?: string) {

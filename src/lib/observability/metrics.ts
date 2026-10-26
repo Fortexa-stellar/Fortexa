@@ -10,7 +10,8 @@ export type StellarSubmitResult =
   | "idempotency_replay"
   | "idempotency_conflict"
   | "source_wallet_mismatch"
-  | "signer_wallet_mismatch";
+  | "signer_wallet_mismatch"
+  | "decision_receipt_mismatch";
 
 export const ALLOWED_ROUTES = new Set<string>([
   "/api/auth/challenge",
@@ -117,6 +118,10 @@ export const ALLOWED_METRIC_NAMES: ReadonlySet<string> = new Set<string>([
   "fortexa_request_duration_ms_p95",
   "fortexa_decision_outcomes_total",
   "fortexa_stellar_submit_results_total",
+  "fortexa_decisions_allowed_total",
+  "fortexa_decisions_denied_total",
+  "fortexa_rate_limit_rejections_total",
+  "fortexa_stellar_submit_failures_total",
 ]);
 
 /**
@@ -359,20 +364,43 @@ export function toPrometheusText() {
   const snapshot = getMetricsSnapshot();
   const lines: string[] = [];
 
-  const push = (...candidates: Array<string | null>) => {
-    for (const line of candidates) {
-      if (line !== null) {
-        lines.push(line);
-      }
-    }
-  };
+  lines.push("# HELP fortexa_requests_total Total API requests by route/method");
+  lines.push("# TYPE fortexa_requests_total counter");
 
-  push(renderHelpLine("fortexa_requests_total", "Total API requests by route/method"));
-  push(renderTypeLine("fortexa_requests_total", "counter"));
   for (const route of snapshot.routes) {
-    push(
-      renderMetricLine("fortexa_requests_total", { route: route.route, method: route.method }, route.totalCount)
+    lines.push(
+      `fortexa_requests_total{route="${escapePrometheusLabelValue(route.route)}",method="${escapePrometheusLabelValue(route.method)}"} ${route.totalCount}`
     );
+  }
+
+  lines.push("# HELP fortexa_request_errors_total Total API errors by route/method");
+  lines.push("# TYPE fortexa_request_errors_total counter");
+
+  for (const route of snapshot.routes) {
+    lines.push(
+      `fortexa_request_errors_total{route="${escapePrometheusLabelValue(route.route)}",method="${escapePrometheusLabelValue(route.method)}"} ${route.errorCount}`
+    );
+  }
+
+  lines.push("# HELP fortexa_request_duration_ms_p95 P95 request duration in milliseconds");
+  lines.push("# TYPE fortexa_request_duration_ms_p95 gauge");
+
+  for (const route of snapshot.routes) {
+    lines.push(
+      `fortexa_request_duration_ms_p95{route="${escapePrometheusLabelValue(route.route)}",method="${escapePrometheusLabelValue(route.method)}"} ${route.p95DurationMs.toFixed(2)}`
+    );
+  }
+
+  lines.push("# HELP fortexa_decision_outcomes_total Total decision evaluations by outcome");
+  lines.push("# TYPE fortexa_decision_outcomes_total counter");
+  for (const [outcome, count] of decisionOutcomeCounts) {
+    lines.push(`fortexa_decision_outcomes_total{outcome="${escapePrometheusLabelValue(outcome)}"} ${count}`);
+  }
+
+  lines.push("# HELP fortexa_stellar_submit_results_total Total Stellar submission attempts by result");
+  lines.push("# TYPE fortexa_stellar_submit_results_total counter");
+  for (const [result, count] of stellarSubmitResultCounts) {
+    lines.push(`fortexa_stellar_submit_results_total{result="${escapePrometheusLabelValue(result)}"} ${count}`);
   }
 
   // Rolled-up enforcement counters. These are always emitted (zero-initialised) so
@@ -390,11 +418,9 @@ export function toPrometheusText() {
   lines.push("# TYPE fortexa_rate_limit_rejections_total counter");
   lines.push(`fortexa_rate_limit_rejections_total ${snapshot.counters.rateLimit}`);
 
-  push(renderHelpLine("fortexa_stellar_submit_results_total", "Total Stellar submission attempts by result"));
-  push(renderTypeLine("fortexa_stellar_submit_results_total", "counter"));
-  for (const [result, count] of stellarSubmitResultCounts) {
-    push(renderMetricLine("fortexa_stellar_submit_results_total", { result }, count));
-  }
+  lines.push("# HELP fortexa_stellar_submit_failures_total Total Stellar submissions that did not settle on-chain");
+  lines.push("# TYPE fortexa_stellar_submit_failures_total counter");
+  lines.push(`fortexa_stellar_submit_failures_total ${snapshot.counters.submitFailures}`);
 
   return `${lines.join("\n")}\n`;
 }

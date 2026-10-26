@@ -8,6 +8,7 @@ const { getUserWalletMock, evaluateDecisionMock } = vi.hoisted(() => ({
 
 vi.mock("@/lib/storage/user-wallet-store", () => ({
   getUserWallet: getUserWalletMock,
+isUserWalletRevoked: vi.fn().mockResolvedValue(false),
 }));
 vi.mock("@/lib/decision/engine", () => ({
   evaluateDecision: evaluateDecisionMock,
