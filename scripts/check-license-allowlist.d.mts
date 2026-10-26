@@ -28,5 +28,5 @@ export interface LicenseAuditResult {
 
 export function normalizeLicense(rawLicense: unknown): string;
 export function loadLicensePolicy(configPath?: string): LicensePolicy;
-export function auditDependencyLicenses(lock: any, policy: LicensePolicy): LicenseAuditResult;
+export function auditDependencyLicenses(lock: unknown, policy: LicensePolicy): LicenseAuditResult;
 export function runLicenseCheck(options?: { rootDir?: string; configPath?: string }): number;
