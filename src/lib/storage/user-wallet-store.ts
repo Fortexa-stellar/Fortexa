@@ -15,6 +15,7 @@ export type UserWallet = {
 
 type WalletStoreFile = {
   wallets: Record<string, UserWallet | { [key: string]: unknown }>;
+  revokedUserIds?: string[];
 };
 
 const storePath = getFortexaStorePath("wallets.json");
@@ -243,7 +244,7 @@ export async function upsertUserWallet(
     const store = await readStore();
     const now = new Date().toISOString();
     const current = store.wallets[userId] as UserWallet | undefined;
-    const currentIsActive = Boolean(current) && (!current.expiresAt || new Date(current.expiresAt).getTime() >= Date.now());
+    const currentIsActive = Boolean(current) && (!current?.expiresAt || new Date(current.expiresAt).getTime() >= Date.now());
     const owner = Object.values(store.wallets).find((wallet) => {
       if (!wallet || typeof wallet !== "object" || !("publicKey" in wallet)) return false;
       const candidate = wallet as UserWallet;
@@ -254,7 +255,7 @@ export async function upsertUserWallet(
       throw new WalletAlreadyBoundError();
     }
 
-    const createdAt = currentIsActive ? current.createdAt : now;
+    const createdAt = currentIsActive && current ? current.createdAt : now;
     const expiresAt = payload.expiresAt ?? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
     const next: UserWallet = {
       userId,
@@ -272,7 +273,76 @@ export async function upsertUserWallet(
   });
 }
 
+export async function findUserWalletByPublicKey(publicKey: string): Promise<UserWallet | null> {
+  const db = await runWithDatabase("findUserWalletByPublicKey", async (pool) => {
+    const result = await pool.query<{
+      user_id: string;
+      public_key: string;
+      source: string;
+      provider: string | null;
+      created_at: string;
+      updated_at: string;
+      expires_at: string | null;
+    }>(
+      `
+        SELECT user_id, public_key, source, provider, created_at, updated_at, expires_at
+        FROM fortexa_wallets
+        WHERE public_key = $1
+        ORDER BY created_at ASC
+        LIMIT 1
+      `,
+      [publicKey],
+    );
+
+    const row = result.rows[0];
+    if (!row) {
+      return null;
+    }
+
+    return {
+      userId: row.user_id,
+      publicKey: row.public_key,
+      source: "external" as const,
+      provider: row.provider ?? undefined,
+      createdAt: new Date(row.created_at).toISOString(),
+      updatedAt: new Date(row.updated_at).toISOString(),
+      expiresAt: row.expires_at ? new Date(row.expires_at).toISOString() : undefined,
+    };
+  });
+
+  if (db.available) {
+    return db.value;
+  }
+
+  const store = await readStore();
+  for (const wallet of Object.values(store.wallets)) {
+    if (!wallet || typeof wallet !== "object" || !("publicKey" in wallet) || !("userId" in wallet)) {
+      continue;
+    }
+    const userWallet = wallet as UserWallet;
+    if (userWallet.publicKey === publicKey) {
+      return userWallet;
+    }
+  }
+
+  return null;
+}
+
+export async function isUserWalletRevoked(userId: string): Promise<boolean> {
+  const store = await readStore();
+  return (store.revokedUserIds ?? []).includes(userId);
+}
+
+async function rememberRevokedUser(userId: string) {
+  const store = await readStore();
+  const revoked = new Set(store.revokedUserIds ?? []);
+  revoked.add(userId);
+  store.revokedUserIds = [...revoked];
+  await writeStore(store);
+}
+
 export async function revokeUserWallet(userId: string): Promise<void> {
+  await rememberRevokedUser(userId);
   const db = await runWithDatabase("revokeUserWallet", async (pool) => {
     await pool.query(
       `

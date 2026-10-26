@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 
 import { AUTH_COOKIE_KEY, createSessionToken } from "@/lib/auth/session";
 import {
+  recordApiMetric,
   recordDecisionOutcome,
   recordRateLimitRejection,
   recordStellarSubmitResult,

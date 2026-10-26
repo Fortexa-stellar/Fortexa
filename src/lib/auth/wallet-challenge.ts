@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 
 import { Keypair } from "@stellar/stellar-sdk";
 
@@ -11,12 +11,15 @@ import {
 } from "@/lib/security/shared-security-state";
 
 const SEP53_PREFIX = "Stellar Signed Message:\n";
+const DEFAULT_LOGIN_ORIGIN = "http://localhost";
 
 export type WalletChallengeRecord = {
   id: string;
   publicKey: string;
   message: string;
   expiresAtMs: number;
+  origin: string;
+  nonce: string;
 };
 
 type StoredChallenge = WalletChallengeRecord & {
@@ -25,6 +28,7 @@ type StoredChallenge = WalletChallengeRecord & {
 
 const challenges = new Map<string, StoredChallenge>();
 const challengeVerificationLocks = new Map<string, Promise<void>>();
+const consumedLoginSignatures = new Set<string>();
 
 async function withChallengeVerificationLock<T>(challengeId: string, operation: () => Promise<T>): Promise<T> {
   const previous = challengeVerificationLocks.get(challengeId) ?? Promise.resolve();
@@ -49,12 +53,7 @@ async function withChallengeVerificationLock<T>(challengeId: string, operation: 
 /**
  * Whether a challenge is expired at `nowMs`.
  *
- * Expiry is **inclusive**: a challenge whose `expiresAtMs` equals the current
- * time is already expired. `expiresAtMs` is the first instant at which the
- * challenge is no longer valid, not the last instant at which it still is.
- * Exclusive comparison (`<`) would leave a one-millisecond window in which a
- * challenge past its stated deadline still authenticates, so the boundary is
- * closed on the expired side.
+ * Expiry is inclusive: `expiresAtMs` is the first instant the challenge is invalid.
  */
 export function isChallengeExpired(expiresAtMs: number, nowMs: number = Date.now()) {
   return expiresAtMs <= nowMs;
@@ -72,14 +71,43 @@ export function buildChallengeMessage(input: {
   challengeId: string;
   publicKey: string;
   expiresAtMs: number;
+  origin: string;
+  nonce: string;
 }) {
   const expiresAt = new Date(input.expiresAtMs).toISOString();
   return [
     "Fortexa wallet login",
     `Challenge: ${input.challengeId}`,
     `Wallet: ${input.publicKey}`,
+    `Origin: ${input.origin}`,
+    `Nonce: ${input.nonce}`,
     `Expires: ${expiresAt}`,
   ].join("\n");
+}
+
+export function isWalletLoginMessage(value: string) {
+  return (
+    value.startsWith("Fortexa wallet login\n") &&
+    value.includes("\nOrigin: ") &&
+    value.includes("\nNonce: ") &&
+    value.includes("\nExpires: ")
+  );
+}
+
+export function isLoginAuthorizationPayload(value: unknown): boolean {
+  if (typeof value === "string") {
+    return isWalletLoginMessage(value) || consumedLoginSignatures.has(value);
+  }
+
+  if (Array.isArray(value)) {
+    return value.some((item) => isLoginAuthorizationPayload(item));
+  }
+
+  if (value !== null && typeof value === "object") {
+    return Object.values(value as Record<string, unknown>).some((item) => isLoginAuthorizationPayload(item));
+  }
+
+  return false;
 }
 
 export function hashSep53Message(message: string) {
@@ -112,11 +140,21 @@ async function readChallenge(challengeId: string): Promise<StoredChallenge | und
       publicKey: shared.publicKey,
       message: shared.message,
       expiresAtMs: shared.expiresAtMs,
+      origin: originFromMessage(shared.message),
+      nonce: nonceFromMessage(shared.message),
       consumed: shared.consumed,
     };
   }
 
   return challenges.get(challengeId);
+}
+
+function originFromMessage(message: string) {
+  return message.match(/^Origin: (.+)$/m)?.[1] ?? DEFAULT_LOGIN_ORIGIN;
+}
+
+function nonceFromMessage(message: string) {
+  return message.match(/^Nonce: (.+)$/m)?.[1] ?? "";
 }
 
 async function writeChallenge(record: StoredChallenge) {
@@ -129,7 +167,7 @@ async function writeChallenge(record: StoredChallenge) {
       expiresAtMs: record.expiresAtMs,
       consumed: record.consumed,
     },
-    ttlSeconds
+    ttlSeconds,
   );
   challenges.set(record.id, record);
 }
@@ -139,14 +177,21 @@ async function removeChallenge(challengeId: string) {
   challenges.delete(challengeId);
 }
 
-export async function createWalletChallenge(publicKey: string): Promise<WalletChallengeRecord> {
+export async function createWalletChallenge(
+  publicKey: string,
+  options?: { origin?: string; nonce?: string },
+): Promise<WalletChallengeRecord> {
   const normalizedKey = normalizeWalletPublicKey(publicKey);
   const challengeId = randomUUID();
   const expiresAtMs = Date.now() + getChallengeTtlSeconds() * 1000;
+  const origin = options?.origin?.trim() || DEFAULT_LOGIN_ORIGIN;
+  const nonce = options?.nonce?.trim() || randomBytes(16).toString("hex");
   const message = buildChallengeMessage({
     challengeId,
     publicKey: normalizedKey,
     expiresAtMs,
+    origin,
+    nonce,
   });
 
   const record: StoredChallenge = {
@@ -154,6 +199,8 @@ export async function createWalletChallenge(publicKey: string): Promise<WalletCh
     publicKey: normalizedKey,
     message,
     expiresAtMs,
+    origin,
+    nonce,
     consumed: false,
   };
 
@@ -164,6 +211,8 @@ export async function createWalletChallenge(publicKey: string): Promise<WalletCh
     publicKey: record.publicKey,
     message: record.message,
     expiresAtMs: record.expiresAtMs,
+    origin: record.origin,
+    nonce: record.nonce,
   };
 }
 
@@ -175,6 +224,7 @@ export async function verifyWalletChallenge(input: {
   challengeId: string;
   publicKey: string;
   signature: string;
+  message?: string;
 }): Promise<ChallengeVerificationResult> {
   return withChallengeVerificationLock(input.challengeId, async () => {
     const normalizedKey = normalizeWalletPublicKey(input.publicKey);
@@ -184,7 +234,6 @@ export async function verifyWalletChallenge(input: {
       return { ok: false, code: "missing" };
     }
 
-    // Expired challenges are dead regardless of the presenting wallet.
     if (isChallengeExpired(challenge.expiresAtMs)) {
       await removeChallenge(input.challengeId);
       return { ok: false, code: "expired" };
@@ -198,7 +247,9 @@ export async function verifyWalletChallenge(input: {
       return { ok: false, code: "replayed" };
     }
 
-    const signatureValid = verifyWalletSignature(normalizedKey, challenge.message, input.signature);
+    const messageMatches = input.message === undefined || input.message === challenge.message;
+    const signatureValid =
+      messageMatches && verifyWalletSignature(normalizedKey, challenge.message, input.signature);
     challenge.consumed = true;
     await writeChallenge(challenge);
 
@@ -206,6 +257,7 @@ export async function verifyWalletChallenge(input: {
       return { ok: false, code: "invalid_signature" };
     }
 
+    consumedLoginSignatures.add(input.signature);
     return {
       ok: true,
       challenge: {
@@ -213,6 +265,8 @@ export async function verifyWalletChallenge(input: {
         publicKey: challenge.publicKey,
         message: challenge.message,
         expiresAtMs: challenge.expiresAtMs,
+        origin: challenge.origin,
+        nonce: challenge.nonce,
       },
     };
   });
@@ -220,5 +274,6 @@ export async function verifyWalletChallenge(input: {
 
 export async function resetWalletChallengeStore() {
   challenges.clear();
+  consumedLoginSignatures.clear();
   await clearSharedChallenges();
 }
