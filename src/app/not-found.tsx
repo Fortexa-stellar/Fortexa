@@ -2,7 +2,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Compass, ShieldAlert } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils/cn";
 
 export const metadata = {
   title: "404 - Page Not Found | Fortexa",
@@ -48,18 +49,22 @@ export default function NotFound() {
         </div>
 
         <div className="flex w-full flex-col gap-3 pt-2 sm:flex-row">
-          <Button asChild variant="outline" className="flex-1 gap-2 border-white/10 text-white hover:bg-white/10">
-            <Link href="/" aria-label="Return to Fortexa homepage">
-              <ArrowLeft className="h-4 w-4" />
-              <span>Home</span>
-            </Link>
-          </Button>
-          <Button asChild className="flex-1 gap-2 bg-emerald-500 text-black hover:bg-emerald-400 font-medium">
-            <Link href="/console" aria-label="Go to Fortexa decision and payment console">
-              <Compass className="h-4 w-4" />
-              <span>Console</span>
-            </Link>
-          </Button>
+          <Link
+            href="/"
+            aria-label="Return to Fortexa homepage"
+            className={cn(buttonVariants({ variant: "outline" }), "flex-1 gap-2 border-white/10 text-white hover:bg-white/10")}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Home</span>
+          </Link>
+          <Link
+            href="/console"
+            aria-label="Go to Fortexa decision and payment console"
+            className={cn(buttonVariants(), "flex-1 gap-2 bg-emerald-500 text-black hover:bg-emerald-400 font-medium")}
+          >
+            <Compass className="h-4 w-4" />
+            <span>Console</span>
+          </Link>
         </div>
       </div>
     </main>

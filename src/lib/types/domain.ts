@@ -104,6 +104,7 @@ export interface DecisionResult {
   analyzerStatus?: AnalyzerStatus;
   /** Reason code of the security check (analyzer or blocklist) that denied the action. */
   reasonCode?: string;
+  primaryRuleId?: string | null;
 }
 
 export interface Scenario {
@@ -128,6 +129,8 @@ export interface PaymentQuote {
   memo: string;
   network: StellarNetworkId;
   receiptHash?: string;
+  expiresAt?: string;
+  quoteExpiresAt?: string;
 }
 
 export interface AuditEntry {

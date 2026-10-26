@@ -446,7 +446,7 @@ describe("observability metrics", () => {
             return line.split(" ")[2];
           }
           if (line.startsWith("fortexa_")) {
-            return line.split("{")[0];
+            return line.split(/[{ ]/)[0];
           }
           return null;
         })
