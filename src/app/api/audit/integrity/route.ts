@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 
-import { AuditChainError, verifyAuditChain } from "@/lib/audit/hash-chain";
+import { verifyHashChain } from "@/lib/audit/hash-chain";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { jsonWithRequestContext } from "@/lib/observability/http";
 import { getRequestLogContext, logInfo, logWarn } from "@/lib/observability/logger";
@@ -60,51 +60,27 @@ export async function GET(request: NextRequest) {
 
   const timestamp = nowIso();
 
-  try {
-    if (!wantAll) {
-      const entries = await listAuditEntries(auth.session.userId);
-      const { result } = verifyAuditChain(entries);
+  if (!wantAll) {
+    const entries = await listAuditEntries(auth.session.userId);
+    const result = verifyHashChain(entries);
 
-      if (result.valid) {
-        logInfo("Audit integrity verified (mine)", {
-          ...context,
-          userId: auth.session.userId,
-          checkedEntries: result.checkedCount,
-          legacyEntries: result.legacyCount,
-        });
-        return jsonWithRequestContext(request, {
-          route: "/api/audit/integrity",
-          startedAtMs,
-          status: 200,
-          body: {
-            valid: true,
-            checkedEntries: result.checkedCount,
-            legacyEntries: result.legacyCount,
-            firstBrokenEntryId: null,
-            reason: null,
-            scope: "mine",
-            userId: auth.session.userId,
-            timestamp,
-          } satisfies IntegrityResponse,
-        });
-      }
-
-      logWarn("Audit integrity tampered (mine)", {
+    if (result.valid) {
+      logInfo("Audit integrity verified (mine)", {
         ...context,
         userId: auth.session.userId,
-        reason: result.reason,
-        firstBrokenEntryId: result.entryId ?? null,
+        checkedEntries: result.checkedCount,
+        legacyEntries: result.legacyCount,
       });
       return jsonWithRequestContext(request, {
         route: "/api/audit/integrity",
         startedAtMs,
         status: 200,
         body: {
-          valid: false,
+          valid: true,
           checkedEntries: result.checkedCount,
           legacyEntries: result.legacyCount,
-          firstBrokenEntryId: result.entryId ?? null,
-          reason: result.reason,
+          firstBrokenEntryId: null,
+          reason: null,
           scope: "mine",
           userId: auth.session.userId,
           timestamp,
@@ -112,85 +88,86 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const allByUser = await listAllAllUditEntriesByUser();
-    let checkedEntries = 0;
-    let legacyEntries = 0;
-    let firstBroken: { entryId: string | null; reason: string } | null = null;
-
-    for (const entries of Object.values(allByUser)) {
-      const { result } = verifyAuditChain(entries);
-      checkedEntries += result.checkedCount;
-      legacyEntries += result.legacyCount;
-      if (!result.valid && !firstBroken) {
-        firstBroken = {
-          entryId: result.entryId ?? null,
-          reason: result.reason,
-        };
-      }
-    }
-
-    const responseBody = (firstBroken
-      ? {
-          valid: false,
-          checkedEntries,
-          legacyEntries,
-          firstBrokenEntryId: firstBroken.entryId,
-          reason: firstBroken.reason,
-          scope: "all" as const,
-          timestamp,
-        }
-      : {
-          valid: true,
-          checkedEntries,
-          legacyEntries,
-          firstBrokenEntryId: null,
-          reason: null,
-          scope: "all" as const,
-          timestamp,
-        }) satisfies IntegrityResponse;
-
-    if (firstBroken) {
-      logWarn("Audit integrity tampered (all)", {
-        ...context,
-        userId: auth.session.userId,
-        reason: firstBroken.reason,
-        firstBrokenEntryId: firstBroken.entryId,
-      });
-    } else {
-      logInfo("Audit integrity verified (all)", {
-        ...context,
-        userId: auth.session.userId,
-        checkedEntries,
-        legacyEntries,
-      });
-    }
-
+    logWarn("Audit integrity tampered (mine)", {
+      ...context,
+      userId: auth.session.userId,
+      reason: result.reason,
+      firstBrokenEntryId: result.entryId ?? null,
+    });
     return jsonWithRequestContext(request, {
       route: "/api/audit/integrity",
       startedAtMs,
       status: 200,
-      body: responseBody,
-    });
-  } catch (error) {
-    if (error instanceof AuditChainError) {
-      const status = error.code === "audit_chain_row_cap_exceeded" ? 413 : 422;
-      logWarn("Audit integrity blocked by chain verification", {
-        ...context,
+      body: {
+        valid: false,
+        checkedEntries: result.checkedCount,
+        legacyEntries: result.legacyCount,
+        firstBrokenEntryId: result.entryId ?? null,
+        reason: result.reason,
+        scope: "mine",
         userId: auth.session.userId,
-        code: error.code,
-        detail: error.message,
-      });
-      return jsonWithRequestContext(request, {
-        route: "/api/audit/integrity",
-        startedAtMs,
-        status,
-        body: {
-          error: error.message,
-          code: error.code,
-          ...(error.details ?? {}),
-        },
-      });
-    }
-    throw error;
+        timestamp,
+      } satisfies IntegrityResponse,
+    });
   }
+
+  const allByUser = await listAllAuditEntriesByUser();
+  let checkedEntries = 0;
+  let legacyEntries = 0;
+  let firstBroken: { entryId: string | null; reason: string } | null = null;
+
+  for (const entries of Object.values(allByUser)) {
+    const result = verifyHashChain(entries);
+    checkedEntries += result.checkedCount;
+    legacyEntries += result.legacyCount;
+    if (!result.valid && !firstBroken) {
+      firstBroken = {
+        entryId: result.entryId ?? null,
+        reason: result.reason,
+      };
+    }
+  }
+
+  const responseBody = (firstBroken
+    ? {
+        valid: false,
+        checkedEntries,
+        legacyEntries,
+        firstBrokenEntryId: firstBroken.entryId,
+        reason: firstBroken.reason,
+        scope: "all" as const,
+        timestamp,
+      }
+    : {
+        valid: true,
+        checkedEntries,
+        legacyEntries,
+        firstBrokenEntryId: null,
+        reason: null,
+        scope: "all" as const,
+        timestamp,
+      }) satisfies IntegrityResponse;
+
+  if (firstBroken) {
+    logWarn("Audit integrity tampered (all)", {
+      ...context,
+      userId: auth.session.userId,
+      reason: firstBroken.reason,
+      firstBrokenEntryId: firstBroken.entryId,
+    });
+  } else {
+    logInfo("Audit integrity verified (all)", {
+      ...context,
+      userId: auth.session.userId,
+      checkedEntries,
+      legacyEntries,
+    });
+  }
+
+  return jsonWithRequestContext(request, {
+    route: "/api/audit/integrity",
+    startedAtMs,
+    status: 200,
+    body: responseBody,
+  });
 }
