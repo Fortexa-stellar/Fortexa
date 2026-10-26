@@ -1,5 +1,7 @@
+import { randomUUID } from "node:crypto";
+
 import { defaultPolicyConfig } from "@/lib/policy/engine";
-import { agentPlanSchema, type AgentPlanInput, type AgentPlanRequestInput } from "@/lib/validation/schemas";
+import { agentActionSchema, type AgentActionInput, type AgentPlanInput, type AgentPlanRequestInput } from "@/lib/validation/schemas";
 import { PLAN_ERRORS, PlanError } from "@/lib/ai/plan-errors";
 
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
@@ -32,7 +34,7 @@ function extractJsonObject(text: string) {
  * No `id` fallback is injected here: the model output is either a complete,
  * schema-valid plan or it is rejected.
  */
-export function parseAgentPlanFromContent(content: PlanCompletionContent): AgentPlanInput {
+export function parseAgentPlanFromContent(content: PlanCompletionContent): AgentPlanInput & AgentActionInput {
   let parsed: unknown;
   try {
     parsed = JSON.parse(extractJsonObject(content));
@@ -45,13 +47,45 @@ export function parseAgentPlanFromContent(content: PlanCompletionContent): Agent
     throw new PlanError(PLAN_ERRORS.SCHEMA_MISMATCH);
   }
 
-  const result = agentPlanSchema.safeParse(parsed);
+  const rawObj = parsed as Record<string, unknown>;
+  const rawAction =
+    typeof rawObj.action === "object" && rawObj.action !== null && !Array.isArray(rawObj.action)
+      ? (rawObj.action as Record<string, unknown>)
+      : rawObj;
 
-  if (!result.success) {
+  const actionId =
+    typeof rawAction.id === "string" && rawAction.id
+      ? rawAction.id
+      : typeof rawObj.id === "string" && rawObj.id
+        ? rawObj.id
+        : randomUUID();
+
+  const actionResult = agentActionSchema.safeParse({
+    ...rawAction,
+    id: actionId,
+  });
+
+  if (!actionResult.success) {
     throw new PlanError(PLAN_ERRORS.SCHEMA_MISMATCH);
   }
 
-  return result.data;
+  const validatedAction = actionResult.data;
+
+  if (validatedAction.tool && defaultPolicyConfig.blockedTools.includes(validatedAction.tool)) {
+    throw new PlanError(PLAN_ERRORS.UNSAFE_TOOL);
+  }
+
+  if (defaultPolicyConfig.blockedDomains.includes(validatedAction.domain)) {
+    throw new PlanError(PLAN_ERRORS.UNSAFE_DOMAIN);
+  }
+
+  const planId = typeof rawObj.id === "string" && rawObj.id ? rawObj.id : validatedAction.id;
+
+  return {
+    ...validatedAction,
+    id: planId,
+    action: validatedAction,
+  };
 }
 
 export async function generateAgentPlanPayloadWithGroq(
