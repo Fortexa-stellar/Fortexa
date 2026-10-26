@@ -3,7 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/require-auth";
 import { getWalletFromSession } from "@/lib/auth/session-wallet";
 import { checkBlocklist } from "@/lib/security/blocklist";
+import { securityHeadersForRequest } from "@/lib/security/headers";
 import { getNativeBalance } from "@/lib/stellar/client";
+import { resolveStellarNetworkConfig } from "@/lib/stellar/network-config";
 import { getUserWallet, upsertUserWallet } from "@/lib/storage/user-wallet-store";
 
 export async function GET(request: NextRequest) {
@@ -38,43 +40,54 @@ export async function GET(request: NextRequest) {
   }
 
   let publicKey = assignedWallet?.publicKey;
-
-  if (!publicKey || assignedWallet?.source !== "external") {
+  if (!publicKey) {
     const sessionWallet = await getWalletFromSession(auth.session);
     if (sessionWallet) {
-      assignedWallet = await upsertUserWallet(userId, {
-        publicKey: sessionWallet,
-        source: "external",
-        provider: assignedWallet?.provider ?? "login",
-      });
-      publicKey = assignedWallet.publicKey;
+      publicKey = sessionWallet;
     }
   }
 
-  if (!publicKey || assignedWallet?.source !== "external") {
+  if (!publicKey) {
     return NextResponse.json(
       {
         configured: false,
         userId,
         network,
-        message: "Link your Stellar wallet address to continue with real on-chain transactions.",
+        publicKey: null,
+        balance: null,
+        warning:
+          "No wallet assigned to current user. Connect Freighter or configure operator wallet.",
       },
       { status: 200, headers: securityHeadersForRequest(request) }
     );
   }
 
-  if (!(await checkBlocklist(publicKey)).allow) {
-    return NextResponse.json({ error: "Wallet address is blocklisted." }, { status: 403 });
-  }
-
-  try {
-    const balance = await getNativeBalance(publicKey);
+  const blocklistCheck = await checkBlocklist(publicKey);
+  if (!blocklistCheck.allow) {
     return NextResponse.json(
       {
         configured: true,
         userId,
-        source: assignedWallet.source,
-        provider: assignedWallet.provider ?? "unknown",
+        network,
+        publicKey,
+        balance: "0",
+        warning: "Wallet address is blocked by security policy.",
+        riskLevel: "CRITICAL",
+        error: "Wallet address is blocked by security policy.",
+      },
+      { status: 403, headers: securityHeadersForRequest(request) }
+    );
+  }
+
+  try {
+    const balance = await getNativeBalance(publicKey);
+
+    return NextResponse.json(
+      {
+        configured: true,
+        userId,
+        source: assignedWallet ? assignedWallet.source : "session",
+        provider: assignedWallet ? (assignedWallet.provider ?? "freighter") : "freighter",
         network,
         publicKey,
         balance,
@@ -86,8 +99,8 @@ export async function GET(request: NextRequest) {
       {
         configured: true,
         userId,
-        source: assignedWallet.source,
-        provider: assignedWallet.provider ?? "unknown",
+        source: assignedWallet ? assignedWallet.source : "session",
+        provider: assignedWallet ? (assignedWallet.provider ?? "unknown") : "unknown",
         network,
         publicKey,
         error: error instanceof Error ? error.message : "Failed to load balance.",

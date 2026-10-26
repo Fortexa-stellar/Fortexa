@@ -4,16 +4,22 @@ import { requireAuth } from "@/lib/auth/require-auth";
 import { readJsonBody } from "@/lib/http/read-json-body";
 import { getProtectedPaymentFlowReadinessReport } from "@/lib/readiness/production";
 import { readinessBlockResponse } from "@/lib/readiness/guard";
-import { consumeRateLimit, rateLimitHeaders } from "@/lib/security/rate-limit";
+import { enforceRequestGate, gateErrorHeaders } from "@/lib/security/enforcement-gate";
+import { logWarn } from "@/lib/observability/logger";
+import { rateLimitHeaders } from "@/lib/security/rate-limit";
 import { securityHeadersForRequest } from "@/lib/security/headers";
 import { buildUnsignedPaymentTransaction } from "@/lib/stellar/client";
-import { verifyPaymentAgainstQuote } from "@/lib/stellar/verify-payment-quote";
+import {
+  createBuildAuthorization,
+  getTransactionHash,
+} from "@/lib/stellar/payment-build-authorization";
+import { verifyPaymentAgainstQuote, getQuoteExpiresAt } from "@/lib/stellar/verify-payment-quote";
 import { paymentExceedsPerTxCap } from "@/lib/policy/engine";
 import { getAuditEntryById } from "@/lib/storage/audit-store";
 import { getPolicyConfig } from "@/lib/storage/policy-store";
 import { getUserWallet } from "@/lib/storage/user-wallet-store";
 import { stellarBuildPaymentRequestSchema } from "@/lib/validation/schemas";
-import { logValidationFailure, toPublicValidationDetails } from "@/lib/validation/errors";
+import { logValidationFailure } from "@/lib/validation/errors";
 
 export async function POST(request: NextRequest) {
   // Read the body first so the gate can blocklist-check the destination in
@@ -21,9 +27,9 @@ export async function POST(request: NextRequest) {
   const bodyResult = await readJsonBody(request);
 
   let gateDestination: string | undefined;
-  if (bodyResult.ok) {
-    const preview = stellarBuildPaymentRequestSchema.safeParse(bodyResult.data);
-    gateDestination = preview.success ? preview.data.destination : undefined;
+  if (bodyResult.ok && typeof bodyResult.data === "object" && bodyResult.data !== null) {
+    const raw = bodyResult.data as Record<string, unknown>;
+    gateDestination = typeof raw.destination === "string" ? raw.destination : undefined;
   }
 
   const gate = await enforceRequestGate(request, {
@@ -34,13 +40,23 @@ export async function POST(request: NextRequest) {
   });
 
   if (!gate.ok) {
+    logWarn("Build payment route blocked by enforcement gate", {
+      route: "/api/stellar/build-payment",
+      gateCode: gate.code,
+    });
     return NextResponse.json(
-      { error: "Rate limit exceeded for payment build endpoint." },
-      { status: 429, headers: { ...rateLimitHeaders(rate), ...securityHeadersForRequest(request) } }
+      { error: gate.error, code: gate.code },
+      {
+        status: gate.status,
+        headers: {
+          ...gateErrorHeaders(gate),
+          ...securityHeadersForRequest(request),
+        },
+      }
     );
   }
 
-  const rate = gate.rate;
+  const rate = gate.rate ?? { ok: true, limit: 30, remaining: 30, resetMs: 60000 };
 
   try {
     const auth = requireAuth(request, { allowedRoles: ["signer"] });
@@ -169,7 +185,8 @@ export async function POST(request: NextRequest) {
       sourcePublicKey
     );
 
-    const quoteExpiresAt = getQuoteExpiresAt(auditEntry!);
+    const quoteExpiresAt =
+      auditEntry!.paymentQuote?.quoteExpiresAt ?? getQuoteExpiresAt(auditEntry!);
     const buildAuthorization = createBuildAuthorization({
       userId,
       decisionId: auditEntry!.id,
@@ -181,6 +198,8 @@ export async function POST(request: NextRequest) {
       {
         ok: true,
         userId,
+        decisionId: auditEntry!.id,
+        quoteExpiresAt,
         source: assignedWallet.source,
         provider: assignedWallet.provider ?? "unknown",
         sourcePublicKey,
@@ -188,6 +207,7 @@ export async function POST(request: NextRequest) {
         networkPassphrase: unsigned.networkPassphrase,
         decisionReceipt: verification.quote,
         paymentQuote: verification.quote,
+        buildAuthorization,
       },
       { headers: { ...rateLimitHeaders(rate), ...securityHeadersForRequest(request) } }
     );

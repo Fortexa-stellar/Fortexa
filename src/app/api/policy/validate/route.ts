@@ -31,6 +31,7 @@ export async function POST(request: Request) {
     const result = policyConfigSchema.safeParse(policy);
 
     if (!result.success) {
+      const flattened = result.error.flatten();
       const errors = result.error.issues.map((issue) => ({
         path: issue.path.join(".") || "root",
         message: issue.message,
@@ -40,6 +41,7 @@ export async function POST(request: Request) {
         {
           valid: false,
           errors: errors.map((e) => `${e.path}: ${e.message}`),
+          fieldErrors: flattened.fieldErrors,
         },
         { status: 400 }
       );
@@ -57,6 +59,9 @@ export async function POST(request: Request) {
             code: "DUPLICATE_RULE_IDENTIFIER",
             field: error.field,
             duplicateValue: error.value,
+            fieldErrors: {
+              [error.field]: [error.message],
+            },
           },
           { status: 422 }
         );

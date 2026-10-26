@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { requireAuth } from "@/lib/auth/require-auth";
 import { checkBlocklist } from "@/lib/security/blocklist";
+import { securityHeadersForRequest } from "@/lib/security/headers";
 import { stellarPublicKeySchema } from "@/lib/validation/schemas";
 import { getRequestLogContext, logWarn } from "@/lib/observability/logger";
 import { STELLAR_PUBLIC_NETWORK_PASSPHRASE } from "@/lib/stellar/network";

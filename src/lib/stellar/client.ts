@@ -84,7 +84,9 @@ export function decodeSignedXdrSourceAccount(signedXdr: string): SignedXdrSource
     return { ok: false, reason: "malformed" };
   }
 
+  let isFeeBump = false;
   if (decoded instanceof FeeBumpTransaction) {
+    isFeeBump = true;
     decoded = decoded.innerTransaction;
   }
 
@@ -97,7 +99,7 @@ export function decodeSignedXdrSourceAccount(signedXdr: string): SignedXdrSource
           amountXLM: operation.amount,
           asset: "native" as const,
           memo:
-            memoValue === undefined
+            memoValue === undefined || memoValue === null
               ? undefined
               : typeof memoValue === "string"
                 ? memoValue
@@ -108,7 +110,7 @@ export function decodeSignedXdrSourceAccount(signedXdr: string): SignedXdrSource
   return {
     ok: true,
     sourceAccount: decoded.source,
-    isFeeBump: false,
+    isFeeBump,
     payment,
   };
 }
@@ -154,4 +156,19 @@ export function verifySignedXdrSigner(signedXdr: string, publicKey: string): boo
     }
   }
   return false;
+}
+
+export type SignedXdrDestinationResult =
+  { ok: true; destination: string; isFeeBump: boolean } | { ok: false; reason: "malformed" };
+
+export function decodeSignedXdrDestination(signedXdr: string): SignedXdrDestinationResult {
+  const source = decodeSignedXdrSourceAccount(signedXdr);
+  if (!source.ok) {
+    return { ok: false, reason: "malformed" };
+  }
+  return {
+    ok: true,
+    destination: source.payment?.destination ?? "",
+    isFeeBump: source.isFeeBump,
+  };
 }

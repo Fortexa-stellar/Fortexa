@@ -8,6 +8,17 @@ import { POST } from "./route";
 const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
+vi.mock("@/lib/storage/user-wallet-store", () => ({
+  getUserWallet: vi.fn().mockResolvedValue({
+    userId: "redaction-decision-operator-id",
+    publicKey: "GA7QYNF7SOWQ3GLR2ZGMGIRKJ7F6NCWKUX6PS7LJVCUJUJQG2U5F6Z7P",
+    source: "external",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }),
+  isUserWalletRevoked: vi.fn().mockResolvedValue(false),
+}));
+
 vi.mock("@/lib/decision/engine", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/decision/engine")>();
   return {

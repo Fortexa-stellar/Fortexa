@@ -23,6 +23,30 @@ import {
   resolveStellarNetworkConfig,
 } from "@/lib/stellar/network-config";
 
+function isPolicyEqual(a: unknown, b: unknown): boolean {
+  if (!a || !b || typeof a !== "object" || typeof b !== "object") return false;
+  const norm = (val: unknown): unknown => {
+    if (Array.isArray(val)) {
+      return val.map(norm);
+    }
+    if (val !== null && typeof val === "object") {
+      const obj = { ...(val as Record<string, unknown>) };
+      if (!obj.memoRequiredDestinations) {
+        obj.memoRequiredDestinations = [];
+      }
+      const sorted: Record<string, unknown> = {};
+      for (const k of Object.keys(obj).sort()) {
+        if (obj[k] !== undefined) {
+          sorted[k] = norm(obj[k]);
+        }
+      }
+      return sorted;
+    }
+    return val;
+  };
+  return JSON.stringify(norm(a)) === JSON.stringify(norm(b));
+}
+
 export async function GET(request: NextRequest) {
   const startedAtMs = Date.now();
   const context = getRequestLogContext(request, "/api/policy");
@@ -118,6 +142,16 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    if (hasSensitiveField(bodyResult.data)) {
+      return jsonWithRequestContext(request, {
+        route: "/api/policy",
+        startedAtMs,
+        status: 400,
+        body: { error: "Policy payload contains a sensitive field." },
+        headers: rateLimitHeaders(rate),
+      });
+    }
+
     if (
       typeof bodyResult.data === "object" &&
       bodyResult.data !== null &&
@@ -148,7 +182,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Importing an unchanged export is a round trip, not a new policy revision.
-      if (JSON.stringify(imported.document.policy) === JSON.stringify(active.policy)) {
+      if (isPolicyEqual(imported.document.policy, active.policy)) {
         return jsonWithRequestContext(request, {
           route: "/api/policy",
           startedAtMs,
@@ -164,8 +198,8 @@ export async function POST(request: NextRequest) {
       return jsonWithRequestContext(request, {
         route: "/api/policy",
         startedAtMs,
-        status: 400,
-        body: { error: "Policy payload contains a sensitive field." },
+        status: 200,
+        body: updated,
         headers: rateLimitHeaders(rate),
       });
     }

@@ -1,8 +1,4 @@
-import { type ReactNode } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { getSessionRole } from "@/lib/auth/wallet-role";
-import { getSession } from "@/lib/auth/session";
+"use client";
 
 import { useEffect, useState } from "react";
 import Image from "next/image";

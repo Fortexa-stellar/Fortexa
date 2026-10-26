@@ -2,9 +2,11 @@ import path from "node:path";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
-vi.mock("@/lib/storage/paths", () => {
+vi.mock("@/lib/storage/paths", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/storage/paths")>();
   const dir = `/tmp/fortexa-history-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   return {
+    ...actual,
     getFortexaStoreDir: () => dir,
     getFortexaStorePath: (fileName: string) => path.join(dir, fileName),
   };

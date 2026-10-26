@@ -37,6 +37,10 @@ vi.mock("@/lib/storage/submit-idempotency-store", async (importOriginal) => {
   };
 });
 
+vi.mock("@/lib/storage/audit-store", () => ({
+  getAuditEntryById: vi.fn(),
+}));
+
 vi.mock("@stellar/stellar-sdk", async () => {
   const actual =
     await vi.importActual<typeof import("@stellar/stellar-sdk")>("@stellar/stellar-sdk");
@@ -68,6 +72,7 @@ import {
 import { NextRequest } from "next/server";
 
 import { POST as submitSignedPost } from "@/app/api/stellar/submit-signed/route";
+import { getAuditEntryById } from "@/lib/storage/audit-store";
 import { buildDecisionReceipt } from "@/lib/stellar/verify-payment-quote";
 import { IDEMPOTENCY_KEY_ERROR } from "@/lib/validation/schemas";
 import { AUTH_COOKIE_KEY, createSessionToken } from "@/lib/auth/session";
@@ -76,11 +81,30 @@ import {
   getIdempotencyRecord,
   resetSubmitIdempotencyState,
 } from "@/lib/storage/submit-idempotency-store";
+import { upsertUserWallet } from "@/lib/storage/user-wallet-store";
 
 const OPERATOR_USER_ID = "idem-operator-id";
+const OPERATOR_WALLET_KEYPAIR = Keypair.random();
 const mockTxHash = "b".repeat(64);
+const OTHER_TX_HASH = "c".repeat(64);
 const decisionId = "00000000-0000-4000-8000-000000000001";
 const quoteExpiresAt = new Date(Date.now() + 300_000).toISOString();
+
+function deferred<T>() {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
+function slowSuccess(delayMs: number, hash = mockTxHash) {
+  return new Promise<ReturnType<typeof horizonAccepted>>((resolve) => {
+    setTimeout(() => resolve(horizonAccepted(hash)), delayMs);
+  });
+}
 
 function horizonAccepted(hash = mockTxHash) {
   return {
@@ -104,6 +128,20 @@ function operatorCookie() {
 }
 
 function submitRequest(body: unknown, extraHeaders: Record<string, string> = {}) {
+  const payload =
+    typeof body === "object" && body !== null && "signedXdr" in body
+      ? {
+          decisionReceipt:
+            "decisionReceipt" in body
+              ? (body as Record<string, unknown>).decisionReceipt
+              : makeDecisionReceiptForXdr(
+                  (body as Record<string, unknown>).signedXdr as string,
+                  "1.0000000"
+                ),
+          ...(body as Record<string, unknown>),
+        }
+      : body;
+
   return new NextRequest("http://localhost/api/stellar/submit-signed", {
     method: "POST",
     headers: {
@@ -111,14 +149,13 @@ function submitRequest(body: unknown, extraHeaders: Record<string, string> = {})
       cookie: operatorCookie(),
       ...extraHeaders,
     },
-    body: JSON.stringify(authorizedBody),
+    body: JSON.stringify(payload),
   });
 }
 
 function buildSignedXdr(amount: string, destination?: string) {
-  const source = Keypair.random();
   const destinationKey = Keypair.random();
-  const account = new Account(source.publicKey(), "1");
+  const account = new Account(OPERATOR_WALLET_KEYPAIR.publicKey(), "1");
   const tx = new TransactionBuilder(account, {
     fee: "100",
     networkPassphrase: Networks.TESTNET,
@@ -133,7 +170,7 @@ function buildSignedXdr(amount: string, destination?: string) {
     .addMemo(Memo.text("fortexa:idem"))
     .setTimeout(30)
     .build();
-  tx.sign(source);
+  tx.sign(OPERATOR_WALLET_KEYPAIR);
   return tx.toXDR();
 }
 
@@ -154,6 +191,7 @@ function makeDecisionReceiptForXdr(signedXdr: string, amount: string) {
 }
 
 beforeEach(async () => {
+  await resetRateLimitStore();
   vi.mocked(getAuditEntryById).mockResolvedValue({
     id: decisionId,
     timestamp: new Date().toISOString(),
@@ -174,6 +212,12 @@ beforeEach(async () => {
   horizonMocks.verifyQuote.mockReturnValue({ ok: true, quote: {} });
 
   await resetSubmitIdempotencyState(OPERATOR_USER_ID);
+
+  await upsertUserWallet(OPERATOR_USER_ID, {
+    publicKey: OPERATOR_WALLET_KEYPAIR.publicKey(),
+    source: "external",
+    provider: "test-fixture",
+  });
 });
 
 afterAll(async () => {
@@ -266,7 +310,6 @@ describe("submit-signed idempotency", () => {
 
   it("treats a header key and a body key for the same payment as the same request", async () => {
     const signedXdr = buildSignedXdr("1.0000000");
-    const key = "idem-key-header-body-01";
 
     const decisionReceipt = makeDecisionReceiptForXdr(signedXdr, "1.0000000");
     for (const idempotencyKey of ["short", "a".repeat(256), "invalid key!", "bad/key"]) {
@@ -445,8 +488,10 @@ describe("submit-signed idempotency - rejected retries", () => {
 
     try {
       const store = await import("@/lib/storage/submit-idempotency-store");
+      const decisionReceipt = makeDecisionReceiptForXdr(signedXdr, "1.0000000");
       const requestHash = store.hashCanonicalPaymentBody(key, {
         signedXdr,
+        decisionReceipt,
         idempotencyKey: key,
       });
       await store.beginIdempotentSubmit(OPERATOR_USER_ID, key, requestHash, {
@@ -530,6 +575,7 @@ describe("submit-signed idempotency - failed submits", () => {
   });
 
   it("lets a waiting retry take over after the owning submit fails", async () => {
+    process.env.FORTEXA_IDEMPOTENCY_IN_FLIGHT_WAIT_MS = "1000";
     const signedXdr = buildSignedXdr("1.0000000");
     const key = "idem-key-retry-race01";
 
@@ -543,25 +589,29 @@ describe("submit-signed idempotency - failed submits", () => {
       })
       .mockImplementationOnce(() => slowSuccess(30, OTHER_TX_HASH));
 
-    const ownerPromise = submitSignedPost(submitRequest({ signedXdr, idempotencyKey: key }));
-    await horizonEntered.promise;
+    try {
+      const ownerPromise = submitSignedPost(submitRequest({ signedXdr, idempotencyKey: key }));
+      await horizonEntered.promise;
 
-    // The retry waits on the live claim; when the owner fails and releases the
-    // key, the retry must take it over instead of replaying a phantom result.
-    const waitedPromise = submitSignedPost(submitRequest({ signedXdr, idempotencyKey: key }));
+      // The retry waits on the live claim; when the owner fails and releases the
+      // key, the retry must take it over instead of replaying a phantom result.
+      const waitedPromise = submitSignedPost(submitRequest({ signedXdr, idempotencyKey: key }));
 
-    const failed = await ownerPromise;
-    expect(failed.status).toBe(500);
+      const failed = await ownerPromise;
+      expect(failed.status).toBe(500);
 
-    const waited = await waitedPromise;
-    expect(waited.status).toBe(200);
-    expect(waited.headers.get("Idempotency-Replayed")).toBe("false");
-    expect((await waited.json()).transactionHash).toBe(OTHER_TX_HASH);
+      const waited = await waitedPromise;
+      expect(waited.status).toBe(200);
+      expect(waited.headers.get("Idempotency-Replayed")).toBe("false");
+      expect((await waited.json()).transactionHash).toBe(OTHER_TX_HASH);
 
-    const stored = await getIdempotencyRecord(OPERATOR_USER_ID, key);
-    expect(stored?.state).toBe("settled");
-    expect(stored?.transactionId).toBe(OTHER_TX_HASH);
-  });
+      const stored = await getIdempotencyRecord(OPERATOR_USER_ID, key);
+      expect(stored?.state).toBe("settled");
+      expect(stored?.transactionId).toBe(OTHER_TX_HASH);
+    } finally {
+      delete process.env.FORTEXA_IDEMPOTENCY_IN_FLIGHT_WAIT_MS;
+    }
+  }, 10_000);
 });
 
 describe("submit-signed idempotency - settle failures", () => {

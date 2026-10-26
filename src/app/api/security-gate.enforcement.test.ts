@@ -19,6 +19,7 @@ import {
   Account,
   Asset,
   Keypair,
+  Memo,
   Networks,
   Operation,
   TransactionBuilder,
@@ -73,6 +74,7 @@ import { POST as decisionPost } from "@/app/api/decision/route";
 import { POST as buildPaymentPost } from "@/app/api/stellar/build-payment/route";
 import { POST as submitSignedPost } from "@/app/api/stellar/submit-signed/route";
 import { AUTH_COOKIE_KEY, createSessionToken } from "@/lib/auth/session";
+import { buildDecisionReceipt } from "@/lib/stellar/verify-payment-quote";
 import { defaultPolicyConfig } from "@/lib/policy/engine";
 import { resetBlocklistCache } from "@/lib/security/blocklist";
 import { resetRateLimitStore } from "@/lib/security/rate-limit";
@@ -92,6 +94,7 @@ function operatorCookie() {
   const token = createSessionToken({
     email: "gate-route@fortexa.local",
     role: "operator",
+    roles: ["operator", "signer"],
     userId: OPERATOR_USER_ID,
     expiresInSeconds: 600,
   });
@@ -365,6 +368,7 @@ describe("shared enforcement gate across routes", () => {
             amount: "1.0000000",
           })
         )
+        .addMemo(Memo.text("gate route test"))
         .setTimeout(30)
         .build();
       tx.sign(sourceKeypair);
@@ -373,18 +377,38 @@ describe("shared enforcement gate across routes", () => {
 
     const ip = "10.77.5.1";
     for (let i = 0; i < 30; i += 1) {
+      const signedXdr = makeSignedXdr();
+      const decisionReceipt = buildDecisionReceipt({
+        destination: destinationKeypair.publicKey(),
+        amountXLM: "1.0000000",
+        asset: "native",
+        memo: "gate route test",
+        network: "testnet",
+      });
       const res = await submitSignedPost(
         jsonRequest(
           "http://localhost/api/stellar/submit-signed",
-          { signedXdr: makeSignedXdr() },
+          { signedXdr, decisionReceipt },
           ip
         )
       );
       expect(res.status).toBe(200);
     }
 
+    const deniedSignedXdr = makeSignedXdr();
+    const deniedDecisionReceipt = buildDecisionReceipt({
+      destination: destinationKeypair.publicKey(),
+      amountXLM: "1.0000000",
+      asset: "native",
+      memo: "gate route test",
+      network: "testnet",
+    });
     const denied = await submitSignedPost(
-      jsonRequest("http://localhost/api/stellar/submit-signed", { signedXdr: makeSignedXdr() }, ip)
+      jsonRequest(
+        "http://localhost/api/stellar/submit-signed",
+        { signedXdr: deniedSignedXdr, decisionReceipt: deniedDecisionReceipt },
+        ip
+      )
     );
 
     expect(denied.status).toBe(429);
@@ -441,17 +465,26 @@ describe("shared enforcement gate across routes", () => {
         Operation.payment({
           destination: destinationKeypair.publicKey(),
           asset: Asset.native(),
-          amount: "2.0000000",
+          amount: "5.0000000",
         })
       )
+      .addMemo(Memo.text("gate route test"))
       .setTimeout(30)
       .build();
     tx.sign(sourceKeypair);
 
+    const decisionReceipt = buildDecisionReceipt({
+      destination: destinationKeypair.publicKey(),
+      amountXLM: "5.0000000",
+      asset: "native",
+      memo: "gate route test",
+      network: "testnet",
+    });
+
     const submitRes = await submitSignedPost(
       jsonRequest(
         "http://localhost/api/stellar/submit-signed",
-        { signedXdr: tx.toXDR() },
+        { signedXdr: tx.toXDR(), decisionReceipt },
         "10.77.6.3"
       )
     );

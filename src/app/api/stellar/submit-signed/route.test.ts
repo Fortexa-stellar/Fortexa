@@ -6,6 +6,7 @@ import {
   Account,
   Asset,
   Keypair,
+  Memo,
   Networks,
   Operation,
   TransactionBuilder,
@@ -16,7 +17,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "./route";
 
 const { getAuditEntryMock, verifyQuoteMock } = vi.hoisted(() => ({
-  getAuditEntryMock: vi.fn(),
   verifyQuoteMock: vi.fn(),
 }));
 
@@ -182,7 +182,9 @@ describe("POST /api/stellar/submit-signed - source wallet verification", () => {
   it("accepts a submission whose XDR source matches the session wallet and the decision receipt", async () => {
     const walletKp = Keypair.random();
     globalThis.MOCK_SESSION_PUBLIC_KEY = walletKp.publicKey();
-    const signedXdr = buildSignedXdr(walletKp, walletKp.publicKey());
+    const destination = Keypair.random().publicKey();
+    const signedXdr = buildSignedXdr(walletKp, walletKp.publicKey(), destination, "1", "test-memo");
+    const decisionReceipt = makeDecisionReceipt(destination, "1", "test-memo");
 
     vi.mocked(getUserWallet).mockResolvedValue({
       userId: "user-1",

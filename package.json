@@ -8,8 +8,6 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -20,7 +18,9 @@
     "check:env-example": "tsx scripts/check-env-example.ts",
     "check:docs": "node scripts/check-doc-links.mjs",
     "check:malware": "node scripts/check-repo-malware.mjs",
-    "check:docs:external": "node scripts/check-doc-links.mjs --external"
+    "check:docs:external": "node scripts/check-doc-links.mjs --external",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "keywords": [
     "web3",

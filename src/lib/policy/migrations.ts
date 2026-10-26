@@ -1,3 +1,4 @@
+import { normalizePolicy } from "@/lib/policy/normalize";
 import { z } from "zod";
 
 import { defaultPolicyConfig } from "@/lib/policy/engine";
@@ -295,4 +296,92 @@ export function parseStoredPolicy(raw: unknown): PolicyParseResult {
     migrations,
     version: declaredVersion,
   };
+}
+
+export function migratePolicy(
+  raw: unknown
+):
+  { ok: true; policy: PolicyConfig } | { ok: false; failedVersion?: number | null; error: string } {
+  if (typeof raw !== "object" || raw === null) {
+    return { ok: false, failedVersion: null, error: "Invalid policy object" };
+  }
+
+  const rawObj = raw as Record<string, unknown>;
+  const version = rawObj.schemaVersion ?? rawObj.version ?? 0;
+
+  if (typeof version === "number" && version > CURRENT_POLICY_SCHEMA_VERSION) {
+    return { ok: false, failedVersion: version, error: `Unknown version ${version}` };
+  }
+
+  if ("allowedDomains" in rawObj && !Array.isArray(rawObj.allowedDomains)) {
+    return {
+      ok: false,
+      failedVersion: typeof version === "number" ? version : null,
+      error: "allowedDomains must be an array",
+    };
+  }
+  if ("blockedDomains" in rawObj && !Array.isArray(rawObj.blockedDomains)) {
+    return {
+      ok: false,
+      failedVersion: typeof version === "number" ? version : null,
+      error: "blockedDomains must be an array",
+    };
+  }
+  if ("allowedTools" in rawObj && !Array.isArray(rawObj.allowedTools)) {
+    return {
+      ok: false,
+      failedVersion: typeof version === "number" ? version : null,
+      error: "allowedTools must be an array",
+    };
+  }
+  if ("blockedTools" in rawObj && !Array.isArray(rawObj.blockedTools)) {
+    return {
+      ok: false,
+      failedVersion: typeof version === "number" ? version : null,
+      error: "blockedTools must be an array",
+    };
+  }
+  if ("perTxCapXLM" in rawObj && typeof rawObj.perTxCapXLM !== "number") {
+    return {
+      ok: false,
+      failedVersion: typeof version === "number" ? version : null,
+      error: "perTxCapXLM must be a number",
+    };
+  }
+  if ("dailyCapXLM" in rawObj && typeof rawObj.dailyCapXLM !== "number") {
+    return {
+      ok: false,
+      failedVersion: typeof version === "number" ? version : null,
+      error: "dailyCapXLM must be a number",
+    };
+  }
+  if ("maxToolCallsPerDay" in rawObj && typeof rawObj.maxToolCallsPerDay !== "number") {
+    return {
+      ok: false,
+      failedVersion: typeof version === "number" ? version : null,
+      error: "maxToolCallsPerDay must be a number",
+    };
+  }
+  if ("riskThreshold" in rawObj && typeof rawObj.riskThreshold !== "number") {
+    return {
+      ok: false,
+      failedVersion: typeof version === "number" ? version : null,
+      error: "riskThreshold must be a number",
+    };
+  }
+  if (
+    "allowedHours" in rawObj &&
+    (typeof rawObj.allowedHours !== "object" ||
+      rawObj.allowedHours === null ||
+      Array.isArray(rawObj.allowedHours))
+  ) {
+    return {
+      ok: false,
+      failedVersion: typeof version === "number" ? version : null,
+      error: "allowedHours must be an object",
+    };
+  }
+
+  const normalized = normalizePolicy(rawObj as Partial<PolicyConfig>);
+  return { ok: true, policy: normalized };
 }

@@ -14,6 +14,7 @@ import {
   type PolicyExport,
 } from "@/lib/policy/import-export";
 import { generatePolicyDiff, groupDiffChanges } from "@/lib/validation/diff";
+import { hasSensitiveField } from "@/lib/settings/save-safety";
 
 interface PolicyImportExportProps {
   currentPolicy: PolicyConfig | null;
@@ -316,7 +317,7 @@ export function PolicyImportExport({
               View raw JSON
             </summary>
             <pre className="mt-2 overflow-auto rounded bg-[hsl(var(--muted)/0.4)] p-2 text-xs max-h-48">
-              {importState.jsonContent}
+              {JSON.stringify(importState.document, null, 2)}
             </pre>
           </details>
 

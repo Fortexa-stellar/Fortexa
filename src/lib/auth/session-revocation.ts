@@ -4,6 +4,7 @@ import {
   getSessionFromRequest,
   SESSION_MAX_AGE_SECONDS,
   type AuthSession,
+  type VerifySessionTokenOptions,
 } from "@/lib/auth/session";
 import {
   clearSharedSessionRevocations,
@@ -55,9 +56,10 @@ export async function isSessionRevoked(sessionId: string) {
  * not been revoked. Cookie presence, or even a valid signature, is not enough.
  */
 export async function getActiveSessionFromRequest(
-  request: NextRequest
+  request: NextRequest,
+  options?: VerifySessionTokenOptions
 ): Promise<AuthSession | null> {
-  const session = getSessionFromRequest(request);
+  const session = getSessionFromRequest(request, options);
   if (!session) {
     return null;
   }

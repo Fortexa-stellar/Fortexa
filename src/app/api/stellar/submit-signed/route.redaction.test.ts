@@ -23,7 +23,19 @@ vi.mock("@/lib/readiness/production", () => ({
 }));
 
 vi.mock("@/lib/http/read-json-body", () => ({
-  readJsonBody: vi.fn(async () => ({ ok: true as const, data: { signedXdr: "A".repeat(40) } })),
+  readJsonBody: vi.fn(async () => ({
+    ok: true as const,
+    data: {
+      signedXdr: "A".repeat(40),
+      decisionReceipt: {
+        destination: "GA7QYNF7SOWQ3GLR2ZGMGIRKJ7F6NCWKUX6PS7LJVCUJUJQG2U5F6Z7P",
+        amountXLM: "10.00",
+        asset: "native",
+        memo: "wire-8817",
+        network: "testnet",
+      },
+    },
+  })),
 }));
 
 vi.mock("@/lib/storage/submit-idempotency-store", () => ({

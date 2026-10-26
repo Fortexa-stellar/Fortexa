@@ -13,7 +13,7 @@ type LockoutRecord = {
 
 const records = new Map<string, LockoutRecord>();
 
-export type Clock = () => number;
+export type Clock = () => number | Date;
 
 let clock: Clock = () => Date.now();
 
@@ -25,12 +25,19 @@ export function resetLoginLockoutClock() {
   clock = () => Date.now();
 }
 
-function nowMs() {
-  return clock();
+function nowMs(): number {
+  const value = clock();
+  return typeof value === "number"
+    ? value
+    : value instanceof Date
+      ? value.getTime()
+      : Number(value);
 }
 
 function getMaxAttempts() {
-  const parsed = Number(process.env.FORTEXA_AUTH_MAX_ATTEMPTS ?? 5);
+  const parsed = Number(
+    process.env.FORTEXA_AUTH_MAX_ATTEMPTS ?? process.env.FORTEXA_AUTH_MAX_ATTEMPS ?? 5
+  );
   if (!Number.isFinite(parsed) || parsed < 1) {
     return 5;
   }
@@ -45,8 +52,8 @@ function getLockMinutes() {
   return parsed;
 }
 
-function keyOf(email: string, ip: string) {
-  return `${email.trim().toLowerCase()}::${ip}`;
+function keyOf(email: string, _ip?: string) {
+  return email.trim().toLowerCase();
 }
 
 export function readClientIp(headers: Headers) {

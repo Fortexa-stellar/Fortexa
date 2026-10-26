@@ -491,9 +491,15 @@ export async function getAllIdempotencyRecords(): Promise<SubmitIdempotencyRecor
     return result.rows.map((row) => ({
       userId: row.user_id,
       idempotencyKey: row.idempotency_key,
+      requestHash: row.xdr_hash,
+      state: "settled" as const,
+      leaseExpiresAt: null,
+      statusCode: 200,
+      transactionId: null,
       xdrHash: row.xdr_hash,
       result: row.result,
       createdAt: new Date(row.created_at).toISOString(),
+      updatedAt: new Date(row.created_at).toISOString(),
     }));
   });
 
@@ -505,7 +511,7 @@ export async function getAllIdempotencyRecords(): Promise<SubmitIdempotencyRecor
   return Object.values(store.records);
 }
 
-export async function putIdempotencyRecord(
+export async function beginIdempotentSubmit(
   userId: string,
   idempotencyKey: string,
   requestHash: string,
@@ -823,3 +829,4 @@ export function maybeRunCleanup(): void {
     // Cleanup is best-effort; failures should not affect the request.
   });
 }
+export const putIdempotencyRecord = beginIdempotentSubmit;
