@@ -5,7 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { AlertTriangle, Home, RotateCcw } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils/cn";
 
 /**
  * Application error boundary for Fortexa.
@@ -75,16 +76,17 @@ export default function ErrorBoundary({
             <RotateCcw className="h-4 w-4" />
             <span>Try Again</span>
           </Button>
-          <Button
-            asChild
-            variant="outline"
-            className="flex-1 gap-2 border-white/10 text-white hover:bg-white/10"
+          <Link
+            href="/dashboard"
+            aria-label="Return to Dashboard"
+            className={cn(
+              buttonVariants({ variant: "outline" }),
+              "flex-1 gap-2 border-white/10 text-white hover:bg-white/10"
+            )}
           >
-            <Link href="/dashboard" aria-label="Return to Dashboard">
-              <Home className="h-4 w-4" />
-              <span>Dashboard</span>
-            </Link>
-          </Button>
+            <Home className="h-4 w-4" />
+            <span>Dashboard</span>
+          </Link>
         </div>
       </div>
     </main>
