@@ -30,6 +30,7 @@ type PolicyResponse = {
   version?: number;
   error?: string;
   code?: string;
+  details?: { fieldErrors?: PolicyFieldErrors };
 };
 
 type PolicyConflictResponse = {
@@ -85,12 +86,12 @@ function textToList(text: string) {
 }
 
 export function PolicyEditor({
-  networkMatches,
-  networkFingerprint,
+  networkMatches = true,
+  networkFingerprint = "",
 }: {
-  networkMatches: boolean;
-  networkFingerprint: string;
-}) {
+  networkMatches?: boolean;
+  networkFingerprint?: string;
+} = {}) {
   const { isOperator, loading: sessionLoading } = useAuthSession();
   const [policy, setPolicy] = useState<PolicyConfig | null>(null);
   const [allowedDomains, setAllowedDomains] = useState("");
@@ -114,6 +115,13 @@ export function PolicyEditor({
   const [rollbackPreviewStatus, setRollbackPreviewStatus] = useState<string | null>(null);
   const [previewingRollback, setPreviewingRollback] = useState(false);
   const [serverNetworkMatches, setServerNetworkMatches] = useState<boolean | null>(null);
+  const [validationGate, setValidationGate] = useState<PolicyValidationGate>(
+    INITIAL_POLICY_VALIDATION_GATE,
+  );
+
+  function resetActivationGate() {
+    setValidationGate(INITIAL_POLICY_VALIDATION_GATE);
+  }
 
   const sensitivePayload = hasSensitiveField(policy);
   const networkMismatch = !networkMatches || serverNetworkMatches === false;
@@ -224,7 +232,8 @@ export function PolicyEditor({
       return;
     }
 
-    await postPolicyUpdate(buildDraftPolicy(policy), "Policy saved successfully.");
+    const nextPolicy = buildDraftPolicy(policy);
+    await postPolicyUpdate(nextPolicy, "Policy saved successfully.");
   }
 
   /**
@@ -256,7 +265,7 @@ export function PolicyEditor({
         if (conflictBody.code === "NETWORK_MISMATCH") {
           setServerNetworkMatches(false);
           setStatus(conflictBody.error ?? "Server network changed. Saving is disabled.");
-          return;
+          return false;
         }
         const expectedVersion =
           conflictBody.expectedVersion ?? version ?? -1;

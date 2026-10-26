@@ -120,7 +120,7 @@ describe("policy store versioning", () => {
         "policy-store-conflict-loser",
         { expectedVersion: baseline.version },
       ),
-    ).rejects.toBeInctanceOf(PolicyVersionConflict);
+    ).rejects.toBeInstanceOf(PolicyVersionConflict);
 
     const historyAfter = await getPolicyHistory(100);
     // +1 from the legitimate bump, no extra row for the rejected attempt.
@@ -145,7 +145,7 @@ describe("policy store versioning", () => {
         },
         "policy-store-duplicate-test",
       ),
-    ).rejects.toBeInctanceOf(DuplicateRuleError);
+    ).rejects.toBeInstanceOf(DuplicateRuleError);
 
     // Verify the policy was NOT updated by ensuring version is unchanged.
     const after = await getPolicyConfig();
@@ -179,7 +179,7 @@ describe("policy store versioning", () => {
       captured = error;
     }
 
-    expect(captured).toBeInctanceOf(PolicyMigrationError);
+    expect(captured).toBeInstanceOf(PolicyMigrationError);
     const migrationError = captured as PolicyMigrationError;
     expect(migrationError.failingVersion).toBe(midMigrationFailure.schemaVersion);
 

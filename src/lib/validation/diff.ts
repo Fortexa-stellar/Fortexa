@@ -1,4 +1,3 @@
-import { evaluateDecision } from "@/lib/decision/engine";
 import type {
   AgentAction,
   AuditEntry,
@@ -320,6 +319,7 @@ async function attributeRuleChange(params: {
   usage: DailyUsage;
 }): Promise<string> {
   const { activePolicy, changes, action, usage } = params;
+  const { evaluateDecision } = await import("@/lib/decision/engine");
   let current = activePolicy;
 
   for (const change of changes) {
@@ -349,6 +349,7 @@ export async function diffDecisionImpact(params: {
   decisions: OpenAllowDecision[];
 }): Promise<DecisionImpactReport> {
   const { activePolicy, candidatePolicy, decisions } = params;
+  const { evaluateDecision } = await import("@/lib/decision/engine");
   const changes = generatePolicyDiff(activePolicy, candidatePolicy).changes;
   const flips: FlippedPayment[] = [];
 
