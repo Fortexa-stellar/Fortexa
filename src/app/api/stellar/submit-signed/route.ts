@@ -112,7 +112,7 @@ function verifySignedXdrMatchesDecisionReceipt(
     receiptHash?: string;
   },
 ) {
-  const validation = validateDecisionReceipt(receipt as any);
+  const validation = validateDecisionReceipt(receipt as unknown as Parameters<typeof validateDecisionReceipt>[0]);
   if (!validation.ok) {
     return {
       ok: false,
@@ -136,7 +136,7 @@ function verifySignedXdrMatchesDecisionReceipt(
     };
   }
 
-  const paymentOp = decoded.operations.find((op: any) => op.type === "payment");
+  const paymentOp = decoded.operations.find((op: (typeof decoded.operations)[number]) => op.type === "payment");
   if (!paymentOp || paymentOp.type !== "payment") {
     return {
       ok: false,
