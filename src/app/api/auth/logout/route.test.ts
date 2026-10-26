@@ -39,7 +39,7 @@ async function refreshWith(token: string) {
 }
 
 function sessionIdOf(token: string) {
-  const session = verifySessionToken(token);
+  const session = verifySessionToken(token, { allowStaleGeneration: true });
   if (!session) {
     throw new Error("token does not verify");
   }
