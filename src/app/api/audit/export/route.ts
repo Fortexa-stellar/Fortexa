@@ -165,6 +165,7 @@ export async function GET(request: NextRequest) {
         headers: {
           "Content-Type": "text/csv; charset=utf-8",
           "Content-Disposition": `attachment; filename=${buildAuditExportFilename("all")}`,
+          "X-Content-Type-Options": "nosniff",
           "x-request-id": request.headers.get("x-request-id") ?? crypto.randomUUID(),
         },
       });
@@ -219,6 +220,7 @@ export async function GET(request: NextRequest) {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
         "Content-Disposition": `attachment; filename=${filenameMine}`,
+        "X-Content-Type-Options": "nosniff",
         "x-request-id": request.headers.get("x-request-id") ?? crypto.randomUUID(),
       },
     });

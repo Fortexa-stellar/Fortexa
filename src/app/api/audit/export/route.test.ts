@@ -162,6 +162,7 @@ describe("/api/audit/export route", () => {
     expect(response.headers.get("Content-Disposition")).toMatch(
       /^attachment; filename=fortexa-audit-all-\d{4}-\d{2}-\d{2}\.csv$/
     );
+    expect(response.headers.get("X-Content-Type-Options")).toBe("nosniff");
   });
 
   it("redacts entriesByUser on all-scope JSON exports for operators", async () => {
