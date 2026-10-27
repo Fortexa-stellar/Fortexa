@@ -5,6 +5,7 @@ import {
   removeSharedLockout,
   writeSharedLockout,
 } from "@/lib/security/shared-security-state";
+import { parseBoundedInteger } from "@/lib/env/bounded-integer";
 
 type LockoutRecord = {
   attempts: number;
@@ -30,19 +31,19 @@ function nowMs() {
 }
 
 function getMaxAttempts() {
-  const parsed = Number(process.env.FORTEXA_AUTH_MAX_ATTEMPTS ?? 5);
-  if (!Number.isFinite(parsed) || parsed < 1) {
-    return 5;
-  }
-  return Math.floor(parsed);
+  return parseBoundedInteger(process.env.FORTEXA_AUTH_MAX_ATTEMPTS, {
+    min: 1,
+    max: 1000,
+    fallback: 5,
+  });
 }
 
 function getLockMinutes() {
-  const parsed = Number(process.env.FORTEXA_AUTH_LOCK_MINUTES ?? 10);
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    return 10;
-  }
-  return parsed;
+  return parseBoundedInteger(process.env.FORTEXA_AUTH_LOCK_MINUTES, {
+    min: 1,
+    max: 10080,
+    fallback: 10,
+  });
 }
 
 function keyOf(email: string, ip: string) {
