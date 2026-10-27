@@ -70,3 +70,16 @@ jobs:
 
       - name: Check documentation links
         run: npm run check:docs
+
+      # Fixture-backed run: exercises the checker with safe CI fixtures only.
+      # Expects the valid fixture to pass and the invalid fixture to fail.
+      # No real secrets are used; fixtures live under fixtures/production-readiness/.
+      - name: Production readiness checker (fixtures)
+        run: npm run check:production-readiness -- --config fixtures/production-readiness/valid.json
+
+      - name: Production readiness checker expected failure (fixtures)
+        run: |
+          if npm run check:production-readiness -- --config fixtures/production-readiness/invalid.json; then
+            echo "Expected production readiness checker to fail on invalid fixture" >&2
+            exit 1
+          fi

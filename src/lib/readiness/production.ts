@@ -296,6 +296,42 @@ export function shouldEnforceProductionReadiness(
   return env.NODE_ENV === "production";
 }
 
+/**
+ * CI fixture entry point for `check:production-readiness`.
+ *
+ * Set `FORTEXA_READINESS_FIXTURE` to `valid` or `invalid` to run the checker
+ * against a built-in, secret-free fixture instead of the real environment.
+ * `valid` must pass; `invalid` must fail with the expected issue. Any other
+ * value (or unset) falls through to the real environment check.
+ */
+export function runReadinessFixture(
+  fixture: string | undefined,
+  cwd: string = process.cwd()
+): ProductionReadinessReport | null {
+  if (fixture !== "valid" && fixture !== "invalid") {
+    return null;
+  }
+
+  const validEnv: ReadinessEnv = {
+    NODE_ENV: "production",
+    STELLAR_HORIZON_URL: "https://horizon.stellar.org",
+    STELLAR_NETWORK_PASSPHRASE: STELLAR_PUBLIC_NETWORK_PASSPHRASE,
+    FORTEXA_AUTH_SECRET: "fixture-secret-0123456789abcdefghijklmnop",
+    FORTEXA_OPERATOR_WALLETS: "G" + "A".repeat(55),
+    DATABASE_URL: "postgres://fixture.invalid/fortexa",
+    REDIS_URL: "redis://fixture.invalid:6379",
+  };
+
+  if (fixture === "valid") {
+    return checkProductionReadiness(validEnv, { cwd, appliedMigrationId: undefined });
+  }
+
+  return checkProductionReadiness(
+    { ...validEnv, STELLAR_NETWORK_PASSPHRASE: STELLAR_TESTNET_NETWORK_PASSPHRASE },
+    { cwd, appliedMigrationId: undefined }
+  );
+}
+
 export function getProtectedPaymentFlowReadinessReport(
   env: ReadinessEnv = process.env,
   options: ProductionReadinessOptions = {}

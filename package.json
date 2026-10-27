@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check:production-readiness": "tsx scripts/check-production-readiness.ts",
+    "check:production-readiness:fixtures": "tsx scripts/check-production-readiness.ts --env-file fixtures/production-readiness/valid.env && tsx scripts/check-production-readiness.ts --env-file fixtures/production-readiness/invalid.env --expect-failure",
     "demo:scenarios": "tsx scripts/demo-scenarios.ts",
     "db:migrate": "tsx scripts/run-db-migrations.ts",
     "demo:reset": "tsx scripts/reset-local-demo-state.ts",

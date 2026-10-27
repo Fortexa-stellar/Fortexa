@@ -38,7 +38,8 @@ This document details the operational baseline, hardening criteria, and verifica
 Fortexa includes a Prometheus-compatible data metrics output interface for fast integration into centralized alerting grids.
 
 * **Metrics Endpoint:** Exposes live runtime status information metrics on `/metrics`.
-* **Grafana Dashboard Configuration:** * Import our standard production monitoring dashboard via the configuration code template located at `docs/observability/grafana-template.json`.
+* **Grafana Dashboard Configuration:** 
+  * Import our standard production monitoring dashboard via the configuration code template located at `docs/observability/grafana-template.json`.
   * Track active KPIs including: HTTP Request Latency, Active DB Connection Pool Depth, Stellar Transaction Submission Success Rates, and 5xx Error Spike Thresholds.
 
 ---
@@ -85,3 +86,13 @@ Before routing active customer workloads or mainnet payment traffic through this
 - [ ] **Allowlist Enforced:** The wallet verification array contains explicitly designated public keys and rejects unauthorized connection variants.
 
 **Result Definition:** If any item listed above is left unchecked, the deployment status remains **NO-GO**. Fix omissions before launching live traffic streams.
+
+---
+
+## 8. CI Fixture Verification of `check:production-readiness`
+
+CI runs `check:production-readiness` against safe, non-secret fixtures to confirm the checker both accepts a valid configuration and rejects a known-bad one. No real secrets are used; all values in the fixtures are placeholders.
+
+* **Valid fixture:** A configuration with `NODE_ENV=production`, `STORAGE_FALLBACK=database`, `WALLET_ALLOWLIST` set to explicit public keys, and a `JWT_SECRET` of at least 32 characters. The checker must exit `0`.
+* **Expected-failure fixture:** A configuration with `WALLET_ALLOWLIST=*`. The checker must exit non-zero, confirming the wildcard rule is enforced.
+* **Rules:** Fixtures must never contain real keys, tokens, or seed material. Any new fixture added to the repository must be clearly marked as a test fixture and documented alongside the CI job that consumes it.
