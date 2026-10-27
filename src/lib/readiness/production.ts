@@ -8,6 +8,7 @@ import {
 } from "@/lib/stellar/network";
 import { productionBlocklistUrlProblem } from "@/lib/security/blocklist";
 import { STORAGE_MIGRATIONS } from "@/lib/storage/migrations";
+import { hasEmbeddedCredentials } from "@/lib/validation/remote-urls";
 
 const STELLAR_PUBLIC_KEY = /^G[A-Z2-7]{55}$/u;
 const MIN_AUTH_SECRET_LENGTH = 32;
@@ -107,6 +108,13 @@ export function checkProductionReadiness(
       "Stellar Horizon URL is missing.",
       "Set STELLAR_HORIZON_URL to your production Horizon endpoint."
     );
+  } else if (hasEmbeddedCredentials(horizonUrl)) {
+    addIssue(
+      issues,
+      "STELLAR_HORIZON_URL",
+      "Stellar Horizon URL must not contain embedded username or password credentials.",
+      "Remove embedded credentials from STELLAR_HORIZON_URL."
+    );
   } else if (!isValidHttpsUrl(horizonUrl)) {
     addIssue(
       issues,
@@ -139,7 +147,7 @@ export function checkProductionReadiness(
     );
   }
 
-  if (horizonUrl) {
+  if (horizonUrl && !hasEmbeddedCredentials(horizonUrl)) {
     const inferredNetwork = inferStellarNetworkFromHorizonUrl(
       getStellarHorizonUrl({
         ...env,
@@ -227,12 +235,29 @@ export function checkProductionReadiness(
   const sharedStatePath = normalizeConfiguredValue(
     env.FORTEXA_SHARED_STATE_PATH
   );
-  if (!redisUrl && !sharedStatePath) {
+  if (redisUrl && hasEmbeddedCredentials(redisUrl)) {
+    addIssue(
+      issues,
+      "REDIS_URL",
+      "REDIS_URL must not contain embedded username or password credentials.",
+      "Remove embedded credentials from REDIS_URL and configure credentials via REDIS_PASSWORD / REDIS_USERNAME."
+    );
+  } else if (!redisUrl && !sharedStatePath) {
     addIssue(
       issues,
       "REDIS_URL or FORTEXA_SHARED_STATE_PATH",
       "Shared lockout and rate-limit state is not configured.",
       "Configure REDIS_URL for multi-instance deployments or FORTEXA_SHARED_STATE_PATH for a shared file-backed state store."
+    );
+  }
+
+  const blocklistUrl = normalizeConfiguredValue(env.FORTEXA_BLOCKLIST_URL);
+  if (blocklistUrl && hasEmbeddedCredentials(blocklistUrl)) {
+    addIssue(
+      issues,
+      "FORTEXA_BLOCKLIST_URL",
+      "FORTEXA_BLOCKLIST_URL must not contain embedded username or password credentials.",
+      "Remove credentials from FORTEXA_BLOCKLIST_URL."
     );
   }
 

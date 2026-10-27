@@ -1,12 +1,19 @@
 import { createHash } from "node:crypto";
 import { Networks } from "@stellar/stellar-sdk";
 
+import { assertNoEmbeddedCredentials, hasEmbeddedCredentials } from "@/lib/validation/remote-urls";
+
 export const DEFAULT_STELLAR_HORIZON_URL = "https://horizon-testnet.stellar.org";
 
 export type StellarNetworkProfile = "testnet" | "public" | "custom";
 
 export function getStellarHorizonUrl(): string {
-  return process.env.STELLAR_HORIZON_URL ?? DEFAULT_STELLAR_HORIZON_URL;
+  const configured = process.env.STELLAR_HORIZON_URL;
+  if (configured) {
+    assertNoEmbeddedCredentials(configured, "STELLAR_HORIZON_URL");
+    return configured;
+  }
+  return DEFAULT_STELLAR_HORIZON_URL;
 }
 
 export function getStellarNetworkPassphrase(): string {
@@ -62,6 +69,14 @@ export type StellarNetworkConfig =
     };
 
 export function resolveStellarNetworkConfig(): StellarNetworkConfig {
+  const configuredHorizon = process.env.STELLAR_HORIZON_URL;
+  if (configuredHorizon && hasEmbeddedCredentials(configuredHorizon)) {
+    return {
+      ok: false,
+      error: "STELLAR_HORIZON_URL must not contain embedded username or password credentials.",
+    };
+  }
+
   const horizonUrl = getStellarHorizonUrl();
   const networkPassphrase = getStellarNetworkPassphrase();
   const profile = inferStellarNetworkProfile(horizonUrl);

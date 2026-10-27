@@ -1,3 +1,5 @@
+import { hasEmbeddedCredentials } from "@/lib/validation/remote-urls";
+
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const DEFAULT_FETCH_TIMEOUT_MS = 5000; // 5 second timeout for blocklist fetch
 const MAX_BLOCKLIST_RESPONSE_BYTES = 1024 * 1024; // 1 MiB
@@ -115,6 +117,16 @@ function getBlocklistTimeout(): number {
 
 /** Return current blocklist feed health without triggering a refresh. */
 export function getBlocklistHealth(): BlocklistHealth {
+  const url = process.env.FORTEXA_BLOCKLIST_URL;
+  if (url && hasEmbeddedCredentials(url)) {
+    return {
+      configured: false,
+      lastRefreshAt,
+      domainCount: cachedDomains.length,
+      lastError: "FORTEXA_BLOCKLIST_URL contains embedded credentials",
+    };
+  }
+
   return {
     configured: Boolean(readConfiguredBlocklistUrl()),
     lastRefreshAt,
@@ -127,6 +139,12 @@ export function getBlocklistHealth(): BlocklistHealth {
 export async function fetchBlocklist(): Promise<string[]> {
   const url = readConfiguredBlocklistUrl();
   if (!url) return [];
+
+  if (hasEmbeddedCredentials(url)) {
+    const errorMsg = "FORTEXA_BLOCKLIST_URL must not contain embedded username or password credentials";
+    lastErrorSummary = errorMsg;
+    throw new Error(errorMsg);
+  }
 
   if (Date.now() < cacheExpiresAt) return cachedDomains;
 

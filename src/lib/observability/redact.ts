@@ -40,11 +40,12 @@ const SECRET_ASSIGNMENT_PATTERNS: Array<[RegExp, string]> = [
   [/\b(secret|token|signature)\s*[=:]\s*("[^"]*"|'[^']*'|[^\s,;&"']+)/gi, "$1=[REDACTED]"],
   [/"(api[_-]?key|apikey|secret|token|signature|signed[_-]?xdr|xdr|password)"\s*:\s*"[^"]*"/gi, '"$1":"[REDACTED]"'],
   [/Authorization:\s*(Bearer\s+)?[^,;"']+/gi, "Authorization: [REDACTED]"],
+  [/([a-zA-Z][a-zA-Z0-9+.-]*:\/\/)(?:[^@\/\s]+)@/g, "$1[REDACTED]@"],
 ];
 
 const REDACTED = "[REDACTED]";
 
-function redactString(value: string): string {
+export function redactString(value: string): string {
   let result = value;
   for (const [pattern, replacement] of SECRET_ASSIGNMENT_PATTERNS) {
     result = result.replace(pattern, replacement);
