@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getSessionFromRequest, type AuthRole } from "@/lib/auth/session";
 import { isSessionRevoked } from "@/lib/auth/session-revocation";
+import { applySecurityHeaders } from "@/lib/security/headers";
 
 type RequireAuthOptions = {
   allowedRoles?: AuthRole[];
